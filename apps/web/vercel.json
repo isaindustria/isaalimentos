@@ -24,19 +24,6 @@
       ]
     }
   ],
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.isaindalimentos.com.br"
-        }
-      ],
-      "destination": "https://isaindalimentos.com.br/$1",
-      "permanent": true
-    }
-  ],
   "rewrites": [
     {
       "source": "/",
@@ -44,6 +31,16 @@
         {
           "type": "host",
           "value": "isaindalimentos.com.br"
+        }
+      ],
+      "destination": "/site/index.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.isaindalimentos.com.br"
         }
       ],
       "destination": "/site/index.html"
