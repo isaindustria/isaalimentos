@@ -23,7 +23,6 @@ win:
       arch: [x64]
   artifactName: ISA-Alimentos-${version}-${arch}-${os}.${ext}
   icon: build/icon.ico
-  publisherName: ISA Indústria de Alimentos e Temperos
 nsis:
   oneClick: false
   perMachine: false

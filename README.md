@@ -45,6 +45,8 @@ Quando uma nova versão é publicada, o site em aberto detecta pelo `version.jso
 npm run desktop:build      # gera apps/desktop/release/ISA-Alimentos-Setup-x.y.z.exe e ISA-Alimentos-Portable-x.y.z.exe
 ```
 
+> Se o build local falhar com "Cannot create symbolic link", ative o **Modo de Desenvolvedor** do Windows (Configurações → Sistema → Para desenvolvedores) ou rode o terminal como administrador. No GitHub Actions isso não acontece.
+
 ### Atualização automática
 
 1. Ajuste `homepage`/`repository` em `apps/desktop/package.json` para o seu repositório GitHub.
