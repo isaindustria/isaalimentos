@@ -300,3 +300,79 @@ export async function demand(f: DemandFilters): Promise<{ rows: DemandRow[]; ord
   const rows = [...map.values()].map(({ orderSet, ...r }) => ({ ...r, ordersCount: orderSet.size }));
   return { rows, orders, unresolved };
 }
+
+// ---------------------------------------------------------------------------
+// Pedidos manuais (lancados direto no sistema) e baixa de estoque
+// ---------------------------------------------------------------------------
+import { addMovements } from './stock';
+
+export interface ManualOrderItemInput {
+  product_code: string;
+  quantity_boxes: number;
+  units_per_box: number;
+  unit_price?: number | null;
+}
+
+export interface ManualOrderInput {
+  id?: string;
+  customer_id: string | null;
+  order_number: string | null;
+  order_date: string | null;
+  delivery_date: string | null;
+  status: OrderStatus;
+  notes?: string | null;
+  items: ManualOrderItemInput[];
+}
+
+export async function saveManualOrder(input: ManualOrderInput): Promise<{ id: string }> {
+  const total = input.items.reduce((s, i) => s + (i.unit_price ?? 0) * i.quantity_boxes, 0);
+  const payload = {
+    customer_id: input.customer_id,
+    order_number: input.order_number || null,
+    order_date: input.order_date,
+    delivery_date: input.delivery_date,
+    status: input.status,
+    notes: input.notes ?? null,
+    total_value: total,
+    source: 'manual',
+  };
+  let id = input.id;
+  if (id) {
+    unwrap(await supabase.from('orders').update(payload).eq('id', id));
+    unwrap(await supabase.from('order_items').delete().eq('order_id', id));
+  } else {
+    const row = unwrap(await supabase.from('orders').insert(payload).select('id').single()) as { id: string };
+    id = row.id;
+  }
+  const rows = input.items
+    .filter((i) => i.product_code && i.quantity_boxes > 0)
+    .map((i, idx) => ({
+      order_id: id,
+      seq: idx + 1,
+      client_code: null,
+      raw_description: i.product_code,
+      product_code: i.product_code,
+      quantity_boxes: i.quantity_boxes,
+      units_per_box: i.units_per_box,
+      quantity_units: i.quantity_boxes * i.units_per_box,
+      unit_price: i.unit_price ?? null,
+      total_price: i.unit_price != null ? Math.round(i.unit_price * i.quantity_boxes * 100) / 100 : null,
+      match_status: 'manual',
+      match_score: 1,
+      candidates: [],
+    }));
+  if (rows.length) unwrap(await supabase.from('order_items').insert(rows));
+  return { id: id! };
+}
+
+/** Baixa o estoque (local 1) com as unidades do pedido. Idempotente via orders.stock_posted. */
+export async function postOrderStock(orderId: string, userId?: string | null): Promise<number> {
+  const order = unwrap(await supabase.from('orders').select('id, order_number, stock_posted').eq('id', orderId).single()) as { id: string; order_number: string | null; stock_posted: boolean };
+  if (order.stock_posted) return 0;
+  const items = unwrap(await supabase.from('order_items').select('product_code, quantity_units').eq('order_id', orderId).not('product_code', 'is', null)) as Array<{ product_code: string; quantity_units: number }>;
+  const moves = await addMovements(
+    items.map((i) => ({ product_code: i.product_code, location: 1, quantity: Number(i.quantity_units), kind: 'venda' as const, reason: `Pedido #${order.order_number ?? ''}`, reference_type: 'order', reference_id: orderId, created_by: userId ?? null })),
+  );
+  unwrap(await supabase.from('orders').update({ stock_posted: true }).eq('id', orderId));
+  return moves.length;
+}

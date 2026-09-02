@@ -9,6 +9,8 @@ import { useUpdates } from '@/hooks/useUpdates';
 import { listPendingItems } from '@/api/orders';
 import { cn, initials } from '@/lib/utils';
 import { Button } from './ui';
+import { NotificationsBell } from './Notifications';
+import { ROLE_LABEL } from '@/lib/types';
 
 const NAV = [
   { to: '/', label: 'Painel', icon: LayoutDashboard, end: true },
@@ -28,7 +30,7 @@ function useTheme() {
     } catch {
       /* ignore */
     }
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+    return false; // padrao: tema claro
   });
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -158,7 +160,7 @@ export default function AppShell() {
             <div className="h-9 w-9 rounded-full bg-brand-soft text-brand grid place-items-center text-xs font-bold">{initials(profile?.name ?? session?.user.email)}</div>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold truncate">{profile?.name ?? session?.user.email}</div>
-              <div className="text-[11px] text-muted capitalize">{profile?.role ?? 'usuário'}</div>
+              <div className="text-[11px] text-muted">{profile?.role ? ROLE_LABEL[profile.role] ?? profile.role : 'usuário'}</div>
             </div>
             <button
               className="text-muted hover:text-danger p-1.5 rounded-lg hover:bg-surface-2"
@@ -193,6 +195,8 @@ export default function AppShell() {
               <AlertTriangle className="h-3.5 w-3.5" /> {pendingCount} item(ns) para conferir
             </button>
           )}
+          <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>
+          <NotificationsBell />
           <button className="h-9 w-9 rounded-xl grid place-items-center text-muted hover:bg-surface-2" onClick={toggle} title="Alternar tema">
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>

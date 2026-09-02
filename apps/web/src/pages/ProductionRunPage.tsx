@@ -2,8 +2,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowLeft, Printer, CheckCircle2 } from 'lucide-react';
-import { getRun, setProduced, setRunStatus } from '@/api/production';
-import { Badge, Button, Card, PageHeader, ProgressBar, Select, Spinner, Stat, Table } from '@/components/ui';
+import { completeRun, getRun, setProduced, setRunStatus } from '@/api/production';
+import { logActivity } from '@/api/activity';
+import { useAuth } from '@/hooks/useAuth';
+import { Badge, Button, Card, PageHeader, ProgressBar, Spinner, Stat, Table } from '@/components/ui';
 import { fmtDateTime, fmtInt } from '@/lib/utils';
 import type { RunStatus } from '@/lib/types';
 
@@ -12,10 +14,24 @@ export default function ProductionRunPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const run = useQuery({ queryKey: ['run', id], queryFn: () => getRun(id) });
+  const { session, profile } = useAuth();
+  const complete = useMutation({
+    mutationFn: () => completeRun(id, session?.user.id),
+    onSuccess: async (n) => {
+      toast.success(n ? `Ordem concluída. ${n} produto(s) entraram no estoque.` : 'Ordem concluída.');
+      await logActivity({ kind: 'producao', title: `Ordem concluída · ${run.data?.name ?? ''}`, body: n ? `${n} produto(s) lançados no estoque (local 1)` : null, link: `/producao/${id}`, actor_id: session?.user.id, actor_name: profile?.name ?? null });
+      qc.invalidateQueries({ queryKey: ['run', id] });
+      qc.invalidateQueries({ queryKey: ['runs'] });
+      qc.invalidateQueries({ queryKey: ['current-stock'] });
+      qc.invalidateQueries({ queryKey: ['movements'] });
+    },
+    onError: (e: Error) => toast.error(`Não foi possível concluir: ${e.message}`),
+  });
 
   const status = useMutation({
     mutationFn: (s: RunStatus) => setRunStatus(id, s),
-    onSuccess: () => {
+    onSuccess: (_r, s) => {
+      toast.success(s === 'em_andamento' ? 'Ordem em andamento.' : 'Status atualizado.');
       qc.invalidateQueries({ queryKey: ['run', id] });
       qc.invalidateQueries({ queryKey: ['runs'] });
     },
@@ -44,11 +60,14 @@ export default function ProductionRunPage() {
           <>
             <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate('/producao')}>Voltar</Button>
             <Button variant="outline" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Imprimir</Button>
-            <Select className="w-44" value={r.status} onChange={(e) => status.mutate(e.target.value as RunStatus)}>
-              <option value="planejado">Planejada</option>
-              <option value="em_andamento">Em andamento</option>
-              <option value="concluido">Concluída</option>
-            </Select>
+            {r.status !== 'concluido' ? (
+              <>
+                {r.status === 'planejado' && <Button variant="outline" onClick={() => status.mutate('em_andamento')}>Iniciar produção</Button>}
+                <Button icon={<CheckCircle2 className="h-4 w-4" />} loading={complete.isPending} onClick={() => confirm('Concluir a ordem e lançar as unidades produzidas no estoque (local 1)?') && complete.mutate()}>Concluir e dar entrada</Button>
+              </>
+            ) : (
+              <Badge tone="ok" dot>Concluída {r.stock_posted ? '· estoque lançado' : ''}</Badge>
+            )}
           </>
         }
       />

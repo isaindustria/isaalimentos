@@ -1,8 +1,9 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, Trash2, Printer } from 'lucide-react';
-import { deleteOrder, getOrder, setOrderStatus } from '@/api/orders';
+import { ArrowLeft, Trash2, Printer, Pencil, PackageMinus } from 'lucide-react';
+import { deleteOrder, getOrder, postOrderStock, setOrderStatus } from '@/api/orders';
+import { logActivity } from '@/api/activity';
 import { Badge, Button, Card, PageHeader, Select, Spinner, Table } from '@/components/ui';
 import { fmtBRL, fmtDate, fmtDec, fmtInt, formatCnpj } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
@@ -14,13 +15,28 @@ export default function OrderDetailPage() {
   const { id = '' } = useParams();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, session, profile } = useAuth();
   const order = useQuery({ queryKey: ['order', id], queryFn: () => getOrder(id) });
+  const post = useMutation({
+    mutationFn: () => postOrderStock(id, session?.user.id),
+    onSuccess: async (n) => {
+      toast.success(n ? `Estoque baixado: ${n} produto(s) do pedido.` : 'Este pedido já tinha sido baixado do estoque.');
+      if (n) await logActivity({ kind: 'estoque', title: `Baixa de estoque do pedido #${order.data?.order_number ?? ''}`, body: `${n} produto(s) · ${order.data?.customer?.name ?? ''}`, link: '/estoque', actor_id: session?.user.id, actor_name: profile?.name ?? null });
+      qc.invalidateQueries({ queryKey: ['order', id] });
+      qc.invalidateQueries({ queryKey: ['current-stock'] });
+      qc.invalidateQueries({ queryKey: ['movements'] });
+    },
+    onError: (e: Error) => toast.error(`Não foi possível baixar o estoque: ${e.message}`),
+  });
 
   const status = useMutation({
     mutationFn: (s: OrderStatus) => setOrderStatus(id, s),
-    onSuccess: () => {
-      toast.success('Status atualizado.');
+    onSuccess: async (_r, s) => {
+      toast.success(`Status alterado para ${STATUS_LABEL[s].label}.`);
+      await logActivity({ kind: 'pedido', title: `Pedido #${order.data?.order_number ?? ''} · ${STATUS_LABEL[s].label}`, body: order.data?.customer?.name ?? null, link: `/pedidos/${id}`, actor_id: session?.user.id, actor_name: profile?.name ?? null });
+      if ((s === 'faturado' || s === 'entregue') && !order.data?.stock_posted) {
+        toast('Baixar o estoque deste pedido agora?', { action: { label: 'Baixar estoque', onClick: () => post.mutate() }, duration: 12000 });
+      }
       qc.invalidateQueries({ queryKey: ['order', id] });
       qc.invalidateQueries({ queryKey: ['orders'] });
       qc.invalidateQueries({ queryKey: ['demand'] });
@@ -51,7 +67,9 @@ export default function OrderDetailPage() {
         actions={
           <>
             <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(-1)}>Voltar</Button>
+            <Button variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${id}/editar`)}>Editar</Button>
             <Button variant="outline" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Imprimir</Button>
+            {!o.stock_posted && <Button variant="outline" icon={<PackageMinus className="h-4 w-4" />} loading={post.isPending} onClick={() => confirm('Baixar do estoque (local 1) todas as unidades deste pedido?') && post.mutate()}>Baixar estoque</Button>}
             <Select className="w-44" value={o.status} onChange={(e) => status.mutate(e.target.value as OrderStatus)}>
               {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </Select>

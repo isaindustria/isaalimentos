@@ -97,3 +97,59 @@ export async function setCurrentImport(importId: string) {
 export async function deleteStockImport(importId: string) {
   unwrap(await supabase.from('stock_imports').delete().eq('id', importId));
 }
+
+// ---------------------------------------------------------------------------
+// Movimentacoes manuais (entrada, saida, ajuste, producao, venda...)
+// ---------------------------------------------------------------------------
+import type { MovementKind, StockMovement } from '@/lib/types';
+
+export async function listMovements(limit = 100, productCode?: string): Promise<StockMovement[]> {
+  let q = supabase
+    .from('stock_movements')
+    .select('*, product:products(code, description), author:profiles(name)')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (productCode) q = q.eq('product_code', productCode);
+  return unwrap(await q);
+}
+
+export interface MovementInput {
+  product_code: string;
+  location: number;
+  quantity: number; // sempre positivo; o sinal vem do tipo
+  kind: MovementKind;
+  reason?: string | null;
+  reference_type?: string | null;
+  reference_id?: string | null;
+  created_by?: string | null;
+}
+
+const NEGATIVE: MovementKind[] = ['saida', 'venda', 'perda'];
+
+export async function addMovements(inputs: MovementInput[]) {
+  const rows = inputs
+    .filter((i) => i.quantity !== 0)
+    .map((i) => ({
+      product_code: i.product_code,
+      location: i.location,
+      quantity: NEGATIVE.includes(i.kind) ? -Math.abs(i.quantity) : i.kind === 'ajuste' || i.kind === 'inventario' ? i.quantity : Math.abs(i.quantity),
+      kind: i.kind,
+      reason: i.reason ?? null,
+      reference_type: i.reference_type ?? null,
+      reference_id: i.reference_id ?? null,
+      created_by: i.created_by ?? null,
+    }));
+  if (!rows.length) return [];
+  return unwrap(await supabase.from('stock_movements').insert(rows).select('*')) as StockMovement[];
+}
+
+/** Inventario: define o saldo absoluto de um produto/local (gera o ajuste necessario). */
+export async function setInventory(input: { product_code: string; location: number; target: number; current: number; reason?: string; created_by?: string | null }) {
+  const diff = input.target - input.current;
+  if (diff === 0) return null;
+  return addMovements([{ ...input, quantity: diff, kind: 'inventario', reason: input.reason ?? 'Contagem de inventário' }]);
+}
+
+export async function deleteMovement(id: string) {
+  unwrap(await supabase.from('stock_movements').delete().eq('id', id));
+}

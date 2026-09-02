@@ -10,6 +10,7 @@ import { computeProduction, summarize } from '@/domain/production';
 import { Badge, Button, Card, PageHeader, Skeleton, Stat, Table } from '@/components/ui';
 import { fmtAgo, fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { ActivityList } from '@/components/Notifications';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -106,7 +107,10 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4 mt-4">
+      <div className="grid lg:grid-cols-3 gap-4 mt-4">
+        <Card title="Atividades da equipe" action={<Badge tone="brand" dot>ao vivo</Badge>}>
+          <ActivityList limit={7} />
+        </Card>
         <Card title="Últimos pedidos" padded={false} action={<Link to="/pedidos" className="text-xs font-semibold text-brand">Ver todos</Link>}>
           <Table>
             <thead>

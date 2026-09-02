@@ -17,12 +17,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!loading && session) return <Navigate to="/" replace />;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
+    setError(null);
     try {
       if (mode === 'login') {
         await signIn(email, password);
@@ -39,7 +41,9 @@ export default function LoginPage() {
         setMode('login');
       }
     } catch (err) {
-      toast.error((err as Error).message);
+      const msg = (err as Error).message;
+      setError(msg);
+      toast.error(msg, { duration: 6000 });
     } finally {
       setBusy(false);
     }
@@ -97,6 +101,11 @@ export default function LoginPage() {
               <Field label="Senha">
                 <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
               </Field>
+            )}
+            {error && (
+              <div role="alert" className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger font-medium">
+                {error}
+              </div>
             )}
             <Button type="submit" size="lg" className="w-full" loading={busy} icon={<ArrowRight className="h-4 w-4" />}>
               {mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Enviar link'}

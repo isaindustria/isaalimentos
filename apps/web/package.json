@@ -1,6 +1,6 @@
 {
   "name": "@isa/web",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -36,6 +36,7 @@
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.2",
     "vite": "^5.4.8",
+    "vite-plugin-pwa": "^0.20.5",
     "vitest": "^2.1.2"
   }
 }

@@ -55,3 +55,24 @@ export async function setProduced(itemId: string, produced: number) {
 export async function deleteRun(id: string) {
   unwrap(await supabase.from('production_runs').delete().eq('id', id));
 }
+
+// ---------------------------------------------------------------------------
+// Conclusao da ordem com entrada de estoque (unidades produzidas -> local 1)
+// ---------------------------------------------------------------------------
+import { addMovements } from './stock';
+
+export async function completeRun(runId: string, userId?: string | null): Promise<number> {
+  const run = unwrap(await supabase.from('production_runs').select('id, name, stock_posted').eq('id', runId).single()) as { id: string; name: string; stock_posted: boolean };
+  const items = unwrap(await supabase.from('production_run_items').select('product_code, produced_units, production_need').eq('run_id', runId)) as Array<{ product_code: string; produced_units: number; production_need: number }>;
+  let posted = 0;
+  if (!run.stock_posted) {
+    const moves = await addMovements(
+      items
+        .filter((i) => Number(i.produced_units) > 0)
+        .map((i) => ({ product_code: i.product_code, location: 1, quantity: Number(i.produced_units), kind: 'producao' as const, reason: `Ordem: ${run.name}`, reference_type: 'production_run', reference_id: runId, created_by: userId ?? null })),
+    );
+    posted = moves.length;
+  }
+  unwrap(await supabase.from('production_runs').update({ status: 'concluido', completed_at: new Date().toISOString(), stock_posted: true }).eq('id', runId));
+  return posted;
+}

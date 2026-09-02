@@ -8,11 +8,12 @@ import { parseStockWorkbook, type StockParseResult } from '@/domain/parsers/stoc
 import { Badge, Button, Card, Dialog, Dropzone, EmptyState, Input, PageHeader, Stat, Table, Tabs } from '@/components/ui';
 import { downloadBlob, fmtAgo, fmtDateTime, fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import StockMovements from '@/components/StockMovements';
 
 export default function StockPage() {
   const qc = useQueryClient();
   const { session, isAdmin } = useAuth();
-  const [tab, setTab] = useState<'atual' | 'historico'>('atual');
+  const [tab, setTab] = useState<'atual' | 'lancamentos' | 'historico'>('atual');
   const [importOpen, setImportOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [parsed, setParsed] = useState<StockParseResult | null>(null);
@@ -89,7 +90,7 @@ export default function StockPage() {
     <>
       <PageHeader
         title="Estoque"
-        description="Saldo unificado dos locais de estoque 1 e 5. Cada importação substitui a anterior."
+        description="Saldo dos locais 1 e 5 = última planilha importada + lançamentos feitos aqui (entradas, saídas, produção, inventário)."
         actions={
           <>
             <Button variant="outline" icon={<Download className="h-4 w-4" />} onClick={exportCsv} disabled={!stock.data?.length}>Exportar CSV</Button>
@@ -104,11 +105,13 @@ export default function StockPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <Tabs value={tab} onChange={setTab} items={[{ value: 'atual', label: 'Estoque atual' }, { value: 'historico', label: 'Histórico', count: imports.data?.length }]} />
+        <Tabs value={tab} onChange={setTab} items={[{ value: 'atual', label: 'Estoque atual' }, { value: 'lancamentos', label: 'Lançamentos' }, { value: 'historico', label: 'Importações', count: imports.data?.length }]} />
         {tab === 'atual' && <Input className="ml-auto w-full sm:w-72" placeholder="Buscar produto" value={search} onChange={(e) => setSearch(e.target.value)} />}
       </div>
 
-      {tab === 'atual' ? (
+      {tab === 'lancamentos' ? (
+        <StockMovements />
+      ) : tab === 'atual' ? (
         <Card padded={false}>
           {filtered.length ? (
             <Table>

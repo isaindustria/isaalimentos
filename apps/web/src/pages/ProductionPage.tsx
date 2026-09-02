@@ -27,6 +27,7 @@ export default function ProductionPage() {
   const [view, setView] = useState<View>('todos');
   const [unit, setUnit] = useState<'un' | 'cx'>('un');
   const [runName, setRunName] = useState('');
+  const [jit, setJit] = useState(true);
 
   const stock = useQuery({ queryKey: ['current-stock'], queryFn: getCurrentStock });
   const stockImports = useQuery({ queryKey: ['stock-imports'], queryFn: () => listStockImports(1) });
@@ -35,7 +36,7 @@ export default function ProductionPage() {
   const filters = scope === 'importacao' ? { importId: importId || undefined } : scope === 'periodo' ? { from: from || undefined, to: to || undefined } : {};
   const dem = useQuery({ queryKey: ['demand', filters], queryFn: () => demand(filters), enabled: scope !== 'importacao' || !!importId });
 
-  const rows = useMemo(() => (stock.data && dem.data ? computeProduction(stock.data, dem.data.rows) : []), [stock.data, dem.data]);
+  const rows = useMemo(() => (stock.data && dem.data ? computeProduction(stock.data, dem.data.rows, { includeMinStock: jit }) : []), [stock.data, dem.data, jit]);
   const summary = useMemo(() => summarize(rows), [rows]);
   const visible = rows.filter((r) => view === 'todos' || (view === 'produzir' ? r.need > 0 : view === 'atende' ? r.ordered > 0 && r.need === 0 : r.ordered === 0));
   const currentImport = stockImports.data?.[0];
@@ -85,7 +86,7 @@ export default function ProductionPage() {
     <>
       <PageHeader
         title="Necessidade de produção"
-        description="Total pedido por todas as lojas menos o estoque disponível (locais 1 + 5). Valores positivos precisam ser produzidos."
+        description="Total pedido por todas as lojas menos o estoque disponível (locais 1 + 5). Com 'repor estoque mínimo' ligado, a meta inclui o mínimo de cada produto."
         actions={
           <>
             <Button variant="outline" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Imprimir</Button>
@@ -120,6 +121,10 @@ export default function ProductionPage() {
                   <Field label="Até"><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
                 </>
               )}
+              <label className="flex items-center gap-2 text-sm h-10">
+                <input type="checkbox" className="h-4 w-4 accent-[rgb(var(--brand))]" checked={jit} onChange={(e) => setJit(e.target.checked)} />
+                Repor estoque mínimo (just in time)
+              </label>
               <div className="flex-1" />
               <div className="text-xs text-muted text-right">
                 <div>Estoque: {currentImport ? `${currentImport.file_name} · ${fmtDateTime(currentImport.imported_at)}` : 'nenhuma importação'}</div>

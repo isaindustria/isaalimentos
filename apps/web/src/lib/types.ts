@@ -1,6 +1,15 @@
 import type { MatchStatus, Candidate } from '@/domain/matching';
 
-export type Role = 'admin' | 'operador';
+export type Role = 'admin' | 'gestor' | 'comercial' | 'estoque' | 'producao' | 'operador';
+
+export const ROLE_LABEL: Record<Role, string> = {
+  admin: 'Administrador',
+  gestor: 'Gestor',
+  comercial: 'Comercial / Compras',
+  estoque: 'Estoque',
+  producao: 'Produção',
+  operador: 'Operador',
+};
 
 export interface Profile {
   id: string;
@@ -122,6 +131,7 @@ export interface Order {
   status: OrderStatus;
   source: string;
   notes: string | null;
+  stock_posted?: boolean;
   created_at: string;
   updated_at: string;
   customer?: Pick<Customer, 'id' | 'name' | 'cnpj' | 'city' | 'state' | 'group_name'> | null;
@@ -159,6 +169,8 @@ export interface ProductionRun {
   notes: string | null;
   created_by: string | null;
   created_at: string;
+  completed_at?: string | null;
+  stock_posted?: boolean;
 }
 
 export interface ProductionRunItem {
@@ -177,4 +189,36 @@ export interface AppSetting {
   key: string;
   value: unknown;
   updated_at: string;
+}
+
+export type MovementKind = 'entrada' | 'saida' | 'ajuste' | 'producao' | 'venda' | 'perda' | 'inventario';
+
+export interface StockMovement {
+  id: string;
+  import_id: string | null;
+  product_code: string;
+  location: number;
+  quantity: number;
+  kind: MovementKind;
+  reason: string | null;
+  reference_type: string | null;
+  reference_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  product?: Pick<Product, 'code' | 'description'> | null;
+  author?: Pick<Profile, 'name'> | null;
+}
+
+export type ActivityKind = 'estoque' | 'pedido' | 'producao' | 'cliente' | 'sistema' | 'mensagem';
+
+export interface Activity {
+  id: string;
+  kind: ActivityKind;
+  title: string;
+  body: string | null;
+  link: string | null;
+  actor_id: string | null;
+  actor_name: string | null;
+  audience: string[];
+  created_at: string;
 }

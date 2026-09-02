@@ -14,6 +14,7 @@ const OrdersPage = lazy(() => import('./pages/OrdersPage'));
 const OrderImportPage = lazy(() => import('./pages/OrderImportPage'));
 const OrderReviewPage = lazy(() => import('./pages/OrderReviewPage'));
 const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
+const OrderFormPage = lazy(() => import('./pages/OrderFormPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
 const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage'));
 const ProductionPage = lazy(() => import('./pages/ProductionPage'));
@@ -55,6 +56,8 @@ export default function App() {
             <Route path="pedidos" element={<OrdersPage />} />
             <Route path="pedidos/importar" element={<OrderImportPage />} />
             <Route path="pedidos/conferencia" element={<OrderReviewPage />} />
+            <Route path="pedidos/novo" element={<OrderFormPage />} />
+            <Route path="pedidos/:id/editar" element={<OrderFormPage />} />
             <Route path="pedidos/:id" element={<OrderDetailPage />} />
             <Route path="clientes" element={<CustomersPage />} />
             <Route path="clientes/:id" element={<CustomerDetailPage />} />

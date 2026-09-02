@@ -49,7 +49,12 @@ export interface ProductionSummary {
   totalStockUnits: number;
 }
 
-export function computeProduction(stock: StockLine[], demand: DemandLine[]): ProductionRow[] {
+export interface ProductionOptions {
+  /** Just-in-time: keep the minimum stock after serving orders (safety stock). */
+  includeMinStock?: boolean;
+}
+
+export function computeProduction(stock: StockLine[], demand: DemandLine[], options: ProductionOptions = {}): ProductionRow[] {
   const byCode = new Map<string, DemandLine>();
   for (const d of demand) {
     const cur = byCode.get(d.productCode);
@@ -66,11 +71,12 @@ export function computeProduction(stock: StockLine[], demand: DemandLine[]): Pro
       const ordered = d?.units ?? 0;
       const unitsPerBox = s.units_per_box && s.units_per_box > 0 ? s.units_per_box : 48;
       const stockTotal = Number(s.total ?? 0);
-      const difference = ordered - stockTotal;
+      const safety = options.includeMinStock ? Number(s.min_stock ?? 0) : 0;
+      const difference = ordered + safety - stockTotal;
       const need = Math.max(0, difference);
       const remaining = Math.max(0, -difference);
       let status: RowStatus = 'sem_pedido';
-      if (ordered > 0) status = need > 0 ? 'produzir' : 'atende';
+      if (ordered > 0 || need > 0) status = need > 0 ? 'produzir' : 'atende';
       if (ordered > 0 && need > 0 && stockTotal === 0) status = 'critico';
       return {
         code: s.code,

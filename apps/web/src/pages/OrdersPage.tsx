@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { FileText, AlertTriangle, Trash2, Filter } from 'lucide-react';
+import { FileText, AlertTriangle, Trash2, Filter, Plus } from 'lucide-react';
 import { deleteOrderImport, listOrderImports, listOrders, listPendingItems, type OrderFilters } from '@/api/orders';
 import { listCustomers } from '@/api/customers';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select, Table, Tabs } from '@/components/ui';
@@ -56,7 +56,10 @@ export default function OrdersPage() {
               </Link>
             )}
             <Link to="/pedidos/importar">
-              <Button icon={<FileText className="h-4 w-4" />}>Importar PDF</Button>
+              <Button variant="outline" icon={<FileText className="h-4 w-4" />}>Importar PDF</Button>
+            </Link>
+            <Link to="/pedidos/novo">
+              <Button icon={<Plus className="h-4 w-4" />}>Novo pedido</Button>
             </Link>
           </>
         }

@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUpdates } from '@/hooks/useUpdates';
 import { RELEASES_URL, openExternal } from '@/lib/desktop';
 import { fmtDate } from '@/lib/utils';
-import type { Role } from '@/lib/types';
+import { ROLE_LABEL, type Role } from '@/lib/types';
 
 export default function SettingsPage() {
   const qc = useQueryClient();
@@ -71,7 +71,7 @@ export default function SettingsPage() {
           <dl className="text-sm space-y-2">
             <div className="flex justify-between"><dt className="text-muted">Versão instalada</dt><dd className="font-mono">{updates.currentVersion}</dd></div>
             <div className="flex justify-between"><dt className="text-muted">Plataforma</dt><dd>{updates.isDesktop ? (updates.isPortable ? 'Windows (portátil)' : 'Windows (instalado)') : 'Web'}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted">Usuário</dt><dd>{profile?.name} <Badge tone={isAdmin ? 'brand' : 'neutral'} className="ml-1">{profile?.role}</Badge></dd></div>
+            <div className="flex justify-between"><dt className="text-muted">Usuário</dt><dd>{profile?.name} <Badge tone={isAdmin ? 'brand' : 'neutral'} className="ml-1">{profile?.role ? ROLE_LABEL[profile.role] : ''}</Badge></dd></div>
             <div className="flex justify-between"><dt className="text-muted">Data</dt><dd>{fmtDate(new Date())}</dd></div>
           </dl>
           <div className="mt-4 rounded-xl bg-surface-2 p-3 text-sm">
@@ -102,8 +102,7 @@ export default function SettingsPage() {
                     <td className="td text-muted">{p.email}</td>
                     <td className="td">
                       <Select className="w-36 h-8" value={p.role} onChange={(e) => role.mutate({ id: p.id, role: e.target.value as Role })} disabled={p.id === profile?.id}>
-                        <option value="admin">Administrador</option>
-                        <option value="operador">Operador</option>
+                        {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                       </Select>
                     </td>
                     <td className="td text-muted">{fmtDate(p.created_at)}</td>
@@ -111,7 +110,7 @@ export default function SettingsPage() {
                 ))}
               </tbody>
             </Table>
-            <p className="text-xs text-muted px-5 py-3">Novos usuários criam a conta na tela de login. Administradores podem excluir produtos, clientes e importações.</p>
+            <p className="text-xs text-muted px-5 py-3">Novos usuários criam a conta na tela de login. Administradores podem excluir produtos, clientes e importações. No celular, use "Adicionar à tela inicial" para instalar o aplicativo.</p>
           </Card>
         )}
       </div>
