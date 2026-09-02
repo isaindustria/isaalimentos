@@ -14,6 +14,7 @@ extraFiles: []
 extraMetadata:
   main: dist/main.js
 asar: true
+npmRebuild: false
 compression: maximum
 win:
   target:
