@@ -44,10 +44,10 @@ function useTheme() {
 export function Brand({ compact }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="h-9 w-9 rounded-xl bg-brand text-brand-ink grid place-items-center font-display font-extrabold shadow-sm">I</div>
+      <img src="./brand/logo.png" alt="ISA Alimentos" className="h-10 w-auto drop-shadow-sm" draggable={false} />
       {!compact && (
         <div className="leading-tight">
-          <div className="font-display font-bold tracking-tight">ISA Alimentos</div>
+          <div className="font-display font-extrabold tracking-tight text-brand">ISA Alimentos</div>
           <div className="text-[11px] text-muted">Gestão · Estoque · CRM</div>
         </div>
       )}
@@ -124,6 +124,7 @@ export default function AppShell() {
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
+        <div className="h-1.5 bg-[linear-gradient(90deg,rgb(var(--brand))_0%,rgb(var(--brand))_55%,rgb(var(--brand-green))_55%,rgb(var(--brand-green))_100%)]" />
         <div className="flex items-center justify-between px-5 h-16 border-b border-line">
           <Brand />
           <button className="md:hidden text-muted" onClick={() => setOpen(false)}>

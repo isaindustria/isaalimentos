@@ -47,22 +47,30 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-full grid lg:grid-cols-[1.1fr_1fr]">
-      <div className="hidden lg:flex flex-col justify-between p-12 bg-[radial-gradient(ellipse_at_top_left,_rgb(var(--brand)/.35),_transparent_55%),linear-gradient(160deg,#1c1917,#292524)] text-white">
-        <Brand />
-        <div>
-          <h2 className="font-display text-4xl font-bold leading-tight max-w-md">Do pedido da loja à linha de produção, em um clique.</h2>
-          <p className="text-white/70 mt-4 max-w-md text-sm leading-relaxed">
+      <div className="hidden lg:flex relative overflow-hidden flex-col justify-between p-12 text-white bg-[radial-gradient(ellipse_at_top_left,_rgb(255_255_255_/_.18),_transparent_50%),linear-gradient(160deg,#e21420_0%,#b8101a_100%)]">
+        <div className="flex items-center gap-3">
+          <img src="./brand/logo.png" alt="ISA" className="h-14 w-auto drop-shadow-lg" draggable={false} />
+          <div className="leading-tight">
+            <div className="font-display font-extrabold tracking-tight text-lg">ISA Alimentos</div>
+            <div className="text-xs text-white/70">Indústria de Alimentos e Temperos</div>
+          </div>
+        </div>
+        <div className="relative z-10 max-w-md">
+          <h2 className="font-display text-4xl font-extrabold leading-tight">Do pedido da loja à linha de produção, em um clique.</h2>
+          <p className="text-white/80 mt-4 text-sm leading-relaxed">
             Importe a planilha de estoque e os pedidos em PDF. O sistema cruza tudo com os 45 produtos e mostra exatamente o que precisa ser produzido.
           </p>
-          <ul className="mt-8 space-y-3 text-sm text-white/80">
+          <ul className="mt-8 space-y-3 text-sm text-white/90">
             {['Estoque unificado dos locais 1 e 5', 'Leitura automática dos pedidos de todas as lojas', 'Necessidade de produção calculada na hora', 'CRM com histórico por cliente'].map((t) => (
               <li key={t} className="flex items-center gap-3">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand" /> {t}
+                <span className="h-2 w-2 rounded-full bg-brand-yellow shadow" /> {t}
               </li>
             ))}
           </ul>
         </div>
-        <div className="text-xs text-white/40">versão {APP_VERSION}</div>
+        <img src="./brand/mascot.png" alt="" aria-hidden className="absolute right-[-40px] bottom-[-30px] w-[46%] max-w-[460px] drop-shadow-2xl select-none pointer-events-none animate-fade-up" draggable={false} />
+        <div className="absolute left-0 right-0 bottom-0 h-3 bg-[linear-gradient(90deg,rgb(var(--brand-green))_0%,rgb(var(--brand-green))_60%,rgb(var(--brand-yellow))_60%,rgb(var(--brand-yellow))_100%)]" />
+        <div className="relative z-10 text-xs text-white/60">versão {APP_VERSION}</div>
       </div>
 
       <div className="flex items-center justify-center p-6">

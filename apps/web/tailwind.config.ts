@@ -20,6 +20,8 @@ export default {
           DEFAULT: 'rgb(var(--brand) / <alpha-value>)',
           soft: 'rgb(var(--brand-soft) / <alpha-value>)',
           ink: 'rgb(var(--brand-ink) / <alpha-value>)',
+          yellow: 'rgb(var(--brand-yellow) / <alpha-value>)',
+          green: 'rgb(var(--brand-green) / <alpha-value>)',
         },
         ok: 'rgb(var(--ok) / <alpha-value>)',
         warn: 'rgb(var(--warn) / <alpha-value>)',

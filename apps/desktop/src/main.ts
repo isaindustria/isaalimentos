@@ -25,6 +25,7 @@ function createWindow() {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#faf9f6',
+    // icon: build/icon.ico (logo ISA)
     title: 'ISA Alimentos · Gestão',
     icon: path.join(__dirname, '../build/icon.ico'),
     webPreferences: {

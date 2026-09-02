@@ -63,10 +63,12 @@ npm run desktop:build      # gera apps/desktop/release/ISA-Alimentos-Setup-x.y.z
 4. O programa instalado verifica a cada 6 horas (e ao abrir). Ao encontrar versão nova aparece a faixa **"Baixar atualização"** e depois **"Reiniciar e atualizar"**.
    A versão **portátil** não se substitui sozinha: o botão abre a página de download da nova versão.
 
-### Ícone
+### Branding
 
-Coloque o ícone da marca em `apps/desktop/build/icon.ico` (256×256 ou maior) e o logo em `apps/web/public/`.
-As cores ficam em `apps/web/src/index.css` (`--brand`).
+Assets da marca (pasta `LOGOS E IMAGENS`) já aplicados:
+- `apps/web/public/brand/logo.png` (coração ISA, extraído do catálogo em 512px), `mascot.png` (cupido), `logo-watermark.png`.
+- `apps/web/public/favicon.png`, `icon-192.png` e `apps/desktop/build/icon.ico` gerados a partir do logo.
+- Paleta em `apps/web/src/index.css`: vermelho `--brand` (#E21420), amarelo `--brand-yellow` (#F5D000), verde `--brand-green` (#3FA33F).
 
 ## 5. Fluxo de uso
 
