@@ -42,6 +42,7 @@ Quando uma nova versão é publicada, o site em aberto detecta pelo `version.jso
 ## 4. Programa Windows (instalável + portátil)
 
 ```bash
+npm run desktop:dev        # abre o programa apontando para o build web local
 npm run desktop:build      # gera apps/desktop/release/ISA-Alimentos-Setup-x.y.z.exe e ISA-Alimentos-Portable-x.y.z.exe
 ```
 

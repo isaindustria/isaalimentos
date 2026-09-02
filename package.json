@@ -2,13 +2,18 @@
   "name": "isa-alimentos",
   "version": "1.0.0",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "npm run dev -w @isa/web",
     "build": "npm run build -w @isa/web",
-    "desktop:dev": "npm run dev -w @isa/desktop",
+    "desktop:dev": "npm run build -w @isa/web && npm run start -w @isa/desktop",
     "desktop:build": "npm run build -w @isa/web && npm run build -w @isa/desktop",
     "typecheck": "npm run typecheck -w @isa/web && npm run typecheck -w @isa/desktop",
     "test": "npm run test -w @isa/web"
+  },
+  "devDependencies": {
+    "app-builder-bin": "^4.2.0"
   }
 }
