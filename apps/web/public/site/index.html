@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ISA Alimentos · Gestão de estoque, pedidos e produção</title>
+<meta name="description" content="Sistema da ISA Indústria de Alimentos e Temperos: importa a planilha de estoque e os pedidos das lojas em PDF e mostra exatamente o que precisa ser produzido." />
+<meta name="theme-color" content="#e21420" />
+<link rel="icon" type="image/png" href="/favicon.png" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<meta property="og:title" content="ISA Alimentos · Gestão" />
+<meta property="og:description" content="Do pedido da loja à linha de produção, sem planilha na mão." />
+<meta property="og:image" content="/brand/logo-512.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;1,800;1,900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --red: #e21420;
+    --red-deep: #b8101a;
+    --yellow: #f5d000;
+    --green: #3fa33f;
+    --cocoa: #241b1a;
+    --ink: #2a2220;
+    --mute: #7a6d69;
+    --line: #eadfd9;
+    --paper: #ffffff;
+    --blush: #fff1f1;
+    --radius: 22px;
+    --w: 1160px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: Inter, system-ui, sans-serif; color: var(--ink); background: var(--paper); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+  h1, h2, h3 { font-family: Rubik, Inter, sans-serif; margin: 0; line-height: 1.05; letter-spacing: -0.01em; }
+  h1 { font-weight: 900; font-style: italic; font-size: clamp(2.6rem, 6vw, 5rem); }
+  h2 { font-weight: 800; font-style: italic; font-size: clamp(1.9rem, 3.6vw, 2.8rem); }
+  h3 { font-weight: 700; font-size: 1.15rem; }
+  p { margin: 0; }
+  .wrap { width: min(var(--w), calc(100% - 2.5rem)); margin-inline: auto; }
+  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+
+  /* Header */
+  header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; gap: 1.5rem; height: 72px; }
+  .brand { display: flex; align-items: center; gap: .7rem; text-decoration: none; font-family: Rubik; font-weight: 800; font-style: italic; color: var(--red); font-size: 1.15rem; }
+  .brand img { height: 42px; }
+  nav { margin-left: auto; display: flex; gap: 1.4rem; font-weight: 500; font-size: .95rem; }
+  nav a { text-decoration: none; color: var(--mute); }
+  nav a:hover { color: var(--ink); }
+  .btn { display: inline-flex; align-items: center; gap: .55rem; padding: .85rem 1.35rem; border-radius: 999px; font-weight: 600; text-decoration: none; font-size: .98rem; transition: transform .15s ease, box-shadow .15s ease; }
+  .btn:active { transform: scale(.98); }
+  .btn-red { background: var(--red); color: #fff; box-shadow: 0 10px 24px -12px rgba(226,20,32,.7); }
+  .btn-red:hover { background: var(--red-deep); }
+  .btn-ghost { border: 2px solid var(--line); color: var(--ink); background: #fff; }
+  .btn-ghost:hover { border-color: var(--ink); }
+  .btn-dark { background: var(--cocoa); color: #fff; }
+  .btn svg { width: 18px; height: 18px; }
+  @media (max-width: 760px) { nav { display: none; } }
+
+  /* Hero */
+  .hero { position: relative; overflow: hidden; padding: 4.5rem 0 0; }
+  .hero .wrap { display: grid; grid-template-columns: 1.15fr .85fr; gap: 2rem; align-items: center; }
+  .hero h1 { color: var(--red); max-width: 12ch; }
+  .hero .lede { font-size: 1.2rem; color: var(--mute); max-width: 46ch; margin-top: 1.4rem; }
+  .cta { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
+  .hero-art { position: relative; min-height: 420px; }
+  .hero-art img { position: absolute; right: -6%; bottom: -4%; width: 92%; max-width: 460px; filter: drop-shadow(0 30px 40px rgba(36,27,26,.25)); }
+  .stamp { position: absolute; left: 0; top: 8%; background: var(--yellow); color: var(--cocoa); font-family: Rubik; font-weight: 800; font-style: italic; padding: .6rem 1rem; border-radius: 14px; transform: rotate(-6deg); box-shadow: 0 12px 30px -14px rgba(0,0,0,.4); }
+  .stamp small { display: block; font-family: Inter; font-style: normal; font-weight: 500; font-size: .75rem; opacity: .75; }
+  @media (max-width: 860px) {
+    .hero .wrap { grid-template-columns: 1fr; }
+    .hero-art { min-height: 300px; }
+    .hero-art img { right: -10%; width: 80%; }
+  }
+
+  /* Linha de produção (elemento principal) */
+  .line { margin-top: 3.5rem; background: var(--cocoa); color: #fff; padding: 3rem 0 3.5rem; position: relative; }
+  .line::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 10px; background: linear-gradient(90deg, var(--red) 0 58%, var(--green) 58% 100%); }
+  .line-head { display: flex; align-items: end; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+  .line-head p { color: rgba(255,255,255,.7); max-width: 52ch; }
+  .track { position: relative; margin-top: 2.2rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+  .track::before { content: ""; position: absolute; left: 6%; right: 6%; top: 34px; height: 3px; background: rgba(255,255,255,.14); border-radius: 3px; }
+  .arrow { position: absolute; top: 24px; left: 6%; width: 64px; height: 22px; color: var(--yellow); filter: drop-shadow(0 4px 10px rgba(245,208,0,.5)); animation: fly 2.6s cubic-bezier(.65,0,.25,1) .4s 1 both; }
+  @keyframes fly { from { left: 6%; opacity: 0; } 12% { opacity: 1; } to { left: calc(94% - 64px); opacity: 1; } }
+  .step { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius); padding: 1.4rem 1.4rem 1.2rem; position: relative; }
+  .step .n { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-family: Rubik; font-weight: 800; background: var(--red); color: #fff; margin-bottom: 1.1rem; position: relative; z-index: 1; }
+  .step:nth-child(4) .n { background: var(--green); }
+  .step:nth-child(5) .n { background: var(--yellow); color: var(--cocoa); }
+  .step h3 { color: #fff; }
+  .step p { color: rgba(255,255,255,.7); margin-top: .5rem; font-size: .95rem; }
+  .step code { font-family: inherit; background: rgba(255,255,255,.1); padding: .1rem .4rem; border-radius: 6px; font-size: .85em; }
+  @media (max-width: 760px) { .track { grid-template-columns: 1fr; } .track::before, .arrow { display: none; } }
+
+  /* Demo table */
+  .demo { margin-top: 2.4rem; background: #fff; color: var(--ink); border-radius: var(--radius); overflow: hidden; box-shadow: 0 30px 60px -30px rgba(0,0,0,.6); }
+  .demo-top { display: flex; align-items: center; gap: .8rem; padding: .9rem 1.2rem; border-bottom: 1px solid var(--line); font-size: .9rem; color: var(--mute); }
+  .demo-top b { color: var(--ink); font-weight: 600; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th { text-align: left; font-weight: 600; color: var(--mute); font-size: .8rem; padding: .7rem 1.2rem; border-bottom: 1px solid var(--line); }
+  td { padding: .75rem 1.2rem; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  td.r, th.r { text-align: right; }
+  tr:last-child td { border-bottom: 0; }
+  .tag { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
+  .tag.go { background: #ffe3e5; color: var(--red-deep); }
+  .tag.ok { background: #e3f5e3; color: #21702a; }
+  .need { color: var(--red); font-weight: 700; }
+  @media (max-width: 640px) { .hide-sm { display: none; } }
+
+  /* Features */
+  .feat { padding: 5rem 0; }
+  .feat h2 { color: var(--ink); max-width: 20ch; }
+  .feat .sub { color: var(--mute); margin-top: .8rem; max-width: 56ch; font-size: 1.05rem; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 2.6rem; }
+  .card { border: 1px solid var(--line); border-radius: var(--radius); padding: 1.6rem; background: #fff; }
+  .card.pop { background: var(--blush); border-color: #ffd3d6; }
+  .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--red); color: #fff; margin-bottom: 1rem; }
+  .ico.g { background: var(--green); } .ico.y { background: var(--yellow); color: var(--cocoa); } .ico.d { background: var(--cocoa); }
+  .ico svg { width: 22px; height: 22px; }
+  .card p { color: var(--mute); margin-top: .5rem; font-size: .96rem; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+  /* Downloads */
+  .dl { background: var(--blush); padding: 5rem 0; }
+  .dl .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; }
+  .dl h2 { color: var(--red); }
+  .dl p { color: var(--mute); margin-top: .8rem; max-width: 46ch; }
+  .dl-cards { display: grid; gap: 1rem; }
+  .dl-card { background: #fff; border-radius: var(--radius); padding: 1.4rem 1.5rem; display: flex; gap: 1.1rem; align-items: center; border: 1px solid #ffd3d6; text-decoration: none; }
+  .dl-card:hover { border-color: var(--red); }
+  .dl-card .ico { margin: 0; flex: none; }
+  .dl-card b { display: block; font-weight: 600; }
+  .dl-card span { color: var(--mute); font-size: .9rem; }
+  .dl-card .go { margin-left: auto; color: var(--red); font-weight: 600; white-space: nowrap; }
+  @media (max-width: 860px) { .dl .wrap { grid-template-columns: 1fr; } }
+
+  /* Footer */
+  footer { background: var(--cocoa); color: rgba(255,255,255,.75); padding: 3rem 0 2.2rem; position: relative; font-size: .92rem; }
+  footer::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 10px; background: linear-gradient(90deg, var(--green) 0 62%, var(--yellow) 62% 100%); }
+  .foot { display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; align-items: center; }
+  .foot .brand { color: #fff; }
+  .foot .brand img { height: 46px; }
+  .foot small { display: block; color: rgba(255,255,255,.5); margin-top: .3rem; font-size: .8rem; }
+
+  @media (prefers-reduced-motion: reduce) { .arrow { animation: none; left: calc(94% - 64px); } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="/"><img src="/brand/logo.png" alt="ISA Alimentos" /> ISA Alimentos</a>
+    <nav>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#recursos">Recursos</a>
+      <a href="#baixar">Baixar</a>
+    </nav>
+    <a class="btn btn-red" href="https://app.isaindalimentos.com.br">Entrar no sistema
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Do pedido da loja à linha de produção, sem planilha na mão.</h1>
+      <p class="lede">O sistema da ISA lê a planilha de estoque e os pedidos das lojas em PDF, cruza com os 45 produtos e mostra exatamente o que precisa ser produzido hoje.</p>
+      <div class="cta">
+        <a class="btn btn-red" href="https://app.isaindalimentos.com.br">Acessar o sistema</a>
+        <a class="btn btn-ghost" href="#baixar">Baixar para Windows</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <div class="stamp">45 produtos<small>estoque, pedidos e produção em um lugar</small></div>
+      <img src="/brand/mascot.png" alt="Mascote da ISA, o cupido de óculos, mirando com arco e flecha" />
+    </div>
+  </div>
+
+  <div class="line" id="como-funciona">
+    <div class="wrap">
+      <div class="line-head">
+        <h2>Três passos e a ordem de produção sai pronta.</h2>
+        <p>Nada de somar loja por loja. O sistema soma os pedidos de todas as lojas, desconta o estoque dos locais 1 e 5 e entrega a necessidade por produto.</p>
+      </div>
+      <div class="track" aria-label="Fluxo do sistema">
+        <svg class="arrow" viewBox="0 0 64 22" aria-hidden="true"><path d="M0 11h50" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M46 3l12 8-12 8z" fill="currentColor"/></svg>
+        <div class="step"><div class="n">1</div><h3>Importe o estoque</h3><p>Solte a planilha <code>ESTOQUE ATUAL</code> do ERP. Só os locais 1 e 5 entram, linhas repetidas são somadas e a importação anterior é substituída.</p></div>
+        <div class="step"><div class="n">2</div><h3>Importe os pedidos</h3><p>Um PDF com todas as lojas. Cada item é reconhecido pela descrição; quando há dúvida entre dois produtos, o sistema pergunta uma vez e aprende.</p></div>
+        <div class="step"><div class="n">3</div><h3>Veja o que produzir</h3><p>Total pedido menos estoque disponível, em unidades e caixas. Exporte para Excel, imprima ou salve a ordem e acompanhe o que já foi produzido.</p></div>
+      </div>
+
+      <div class="demo" role="img" aria-label="Exemplo da tela de necessidade de produção">
+        <div class="demo-top"><span class="dot"></span> Necessidade de produção · <b>10 pedidos, 45 produtos</b> · exemplo</div>
+        <table>
+          <thead><tr><th>Produto</th><th class="r hide-sm">Estoque 1+5</th><th class="r">Pedido</th><th class="r">Produzir</th><th>Situação</th></tr></thead>
+          <tbody>
+            <tr><td>Tempero Pega Marido 50g</td><td class="r hide-sm">1.707</td><td class="r">2.880</td><td class="r need">1.173</td><td><span class="tag go">Produzir</span></td></tr>
+            <tr><td>Chimichurri Pimenta 50g</td><td class="r hide-sm">311</td><td class="r">1.440</td><td class="r need">1.129</td><td><span class="tag go">Produzir</span></td></tr>
+            <tr><td>Tempero para Frango 80g</td><td class="r hide-sm">1.796</td><td class="r">2.400</td><td class="r need">604</td><td><span class="tag go">Produzir</span></td></tr>
+            <tr><td>Lemon Pepper 100g</td><td class="r hide-sm">5.609</td><td class="r">2.400</td><td class="r">—</td><td><span class="tag ok">Estoque atende</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="feat" id="recursos">
+  <div class="wrap">
+    <h2>Feito para a rotina da fábrica e do comercial.</h2>
+    <p class="sub">Um sistema só, com as mesmas funções no navegador e no programa para Windows. Todo mundo vê o mesmo estoque, os mesmos pedidos e a mesma ordem de produção.</p>
+    <div class="grid">
+      <div class="card pop"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/></svg></div><h3>Estoque unificado</h3><p>Locais 1 e 5 somados por produto. Histórico de todas as importações, com a atual sempre marcada.</p></div>
+      <div class="card"><div class="ico d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></div><h3>Leitura de PDF que aprende</h3><p>Reconhece "HF.TEMPERO P/FRANGO ISA" como Tempero para Frango. Confirmou uma vez, nunca mais pergunta.</p></div>
+      <div class="card"><div class="ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div><h3>Ordem de produção</h3><p>Necessidade em unidades e caixas, saldo restante quando o estoque cobre, exportação para Excel e impressão.</p></div>
+      <div class="card"><div class="ico y"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><h3>Clientes por rede e loja</h3><p>Cada loja é criada pelo CNPJ de entrega do pedido. Pedidos, valores e histórico de contato por cliente.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Navegador e Windows</h3><p>Use no site ou instale o programa. Os dois falam com o mesmo banco, então nada fica desatualizado.</p></div>
+      <div class="card"><div class="ico d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg></div><h3>Atualização automática</h3><p>Quando sai uma versão nova, o programa avisa e instala com um clique. No site, basta atualizar a página.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="dl" id="baixar">
+  <div class="wrap">
+    <div>
+      <h2>Escolha como usar.</h2>
+      <p>O acesso é com e-mail e senha. Quem entra pelo site e quem usa o programa vê os mesmos dados, na hora.</p>
+    </div>
+    <div class="dl-cards">
+      <a class="dl-card" href="https://app.isaindalimentos.com.br"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg></div><div><b>Usar no navegador</b><span>app.isaindalimentos.com.br</span></div><span class="go">Abrir</span></a>
+      <a class="dl-card" href="https://github.com/isaindustria/isaalimentos/releases/latest"><div class="ico d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div><div><b>Instalar no Windows</b><span>Instalador com atualização automática</span></div><span class="go">Baixar</span></a>
+      <a class="dl-card" href="https://github.com/isaindustria/isaalimentos/releases/latest"><div class="ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg></div><div><b>Versão portátil</b><span>Sem instalar, roda direto do arquivo</span></div><span class="go">Baixar</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="/"><img src="/brand/logo.png" alt="" /> <span>ISA Indústria de Alimentos e Temperos<small>Itaquaquecetuba, SP · CNPJ 55.747.709/0001-47</small></span></a>
+    <a class="btn btn-dark" href="https://app.isaindalimentos.com.br" style="border:1px solid rgba(255,255,255,.2)">Entrar no sistema</a>
+  </div>
+</footer>
+
+</body>
+</html>

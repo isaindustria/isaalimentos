@@ -5,7 +5,48 @@
   "outputDirectory": "apps/web/dist",
   "framework": null,
   "headers": [
-    { "source": "/version.json", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
-    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] }
+    {
+      "source": "/version.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.isaindalimentos.com.br"
+        }
+      ],
+      "destination": "https://isaindalimentos.com.br/$1",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "isaindalimentos.com.br"
+        }
+      ],
+      "destination": "/site/index.html"
+    }
   ]
 }
