@@ -11,7 +11,9 @@
     "desktop:dev": "npm run build -w @isa/web && npm run start -w @isa/desktop",
     "desktop:build": "npm run build -w @isa/web && npm run build -w @isa/desktop",
     "typecheck": "npm run typecheck -w @isa/web && npm run typecheck -w @isa/desktop",
-    "test": "npm run test -w @isa/web"
+    "test": "npm run test -w @isa/web",
+    "backup": "node scripts/backup-release.mjs",
+    "release": "npm run desktop:build && node scripts/backup-release.mjs"
   },
   "devDependencies": {
     "app-builder-bin": "^4.2.0"

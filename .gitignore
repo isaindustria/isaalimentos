@@ -10,3 +10,4 @@ apps/web/public/version.json
 .DS_Store
 Thumbs.db
 scripts/_*.mjs
+backups/
