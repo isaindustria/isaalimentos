@@ -7,7 +7,7 @@ import { getLastSeen, listActivities, logActivity, markSeen, subscribeActivities
 import { useAuth } from '@/hooks/useAuth';
 import { cn, fmtAgo } from '@/lib/utils';
 import type { Activity, ActivityKind } from '@/lib/types';
-import { Button, Input } from './ui';
+import { Button, Input } from './primitives';
 
 const ICON: Record<ActivityKind, typeof Bell> = { estoque: Boxes, pedido: ClipboardList, producao: Factory, cliente: Users, sistema: Settings, mensagem: MessageCircle };
 const TONE: Record<ActivityKind, string> = { estoque: 'bg-ok/15 text-ok', pedido: 'bg-info/15 text-info', producao: 'bg-brand-soft text-brand', cliente: 'bg-warn/15 text-warn', sistema: 'bg-surface-2 text-muted', mensagem: 'bg-brand-yellow/30 text-ink' };

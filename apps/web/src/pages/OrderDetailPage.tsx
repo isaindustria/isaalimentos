@@ -4,18 +4,21 @@ import { toast } from 'sonner';
 import { ArrowLeft, Trash2, Printer, Pencil, PackageMinus } from 'lucide-react';
 import { deleteOrder, getOrder, postOrderStock, setOrderStatus } from '@/api/orders';
 import { logActivity } from '@/api/activity';
-import { Badge, Button, Card, PageHeader, Select, Spinner, Table } from '@/components/ui';
+import { Badge, Button, Card, PageHeader, Select, Spinner, Table } from '@/components/primitives';
 import { fmtBRL, fmtDate, fmtDec, fmtInt, formatCnpj } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
 import { STATUS_LABEL } from './OrdersPage';
 import { MatchBadge } from './OrderImportPage';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtime } from '@/hooks/useRealtime';
 
 export default function OrderDetailPage() {
   const { id = '' } = useParams();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { isAdmin, session, profile } = useAuth();
+  const rt = useRealtime();
+  const editors = rt.editorsOf(`order:${id}`);
   const order = useQuery({ queryKey: ['order', id], queryFn: () => getOrder(id) });
   const post = useMutation({
     mutationFn: () => postOrderStock(id, session?.user.id),
@@ -84,6 +87,9 @@ export default function OrderDetailPage() {
         <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Unidades</div><div className="font-display text-xl font-bold num">{fmtInt(units)}</div></div>
         <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Entrega</div><div className="font-display text-xl font-bold">{fmtDate(o.delivery_date)}</div><div className="text-xs text-muted">{o.payment_terms ? `pgto ${o.payment_terms} dias` : ''} {o.buyer ? `· ${o.buyer}` : ''}</div></div>
       </div>
+      {editors.length > 0 && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-warn/30 bg-warn/5 p-3 text-sm"><span className="size-2 animate-pulse rounded-full bg-warn" /> {editors.map((e) => e.name).join(', ')} está editando este pedido agora.</div>
+      )}
       {unresolved > 0 && (
         <div className="mb-4 rounded-xl border border-warn/30 bg-warn/5 p-3 text-sm flex items-center gap-3">
           <span className="flex-1">{unresolved} item(ns) deste pedido ainda não foram associados a um produto.</span>

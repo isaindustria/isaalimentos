@@ -5,7 +5,7 @@ import { Upload, History, CheckCircle2, Download, RotateCcw, Trash2 } from 'luci
 import { createStockImport, deleteStockImport, getCurrentStock, listStockImports, setCurrentImport } from '@/api/stock';
 import { getSettings } from '@/api/settings';
 import { parseStockWorkbook, type StockParseResult } from '@/domain/parsers/stockXlsx';
-import { Badge, Button, Card, Dialog, Dropzone, EmptyState, Input, PageHeader, Stat, Table, Tabs } from '@/components/ui';
+import { Badge, Button, Card, Dialog, Dropzone, EmptyState, Input, PageHeader, Stat, Table, Tabs } from '@/components/primitives';
 import { downloadBlob, fmtAgo, fmtDateTime, fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import StockMovements from '@/components/StockMovements';

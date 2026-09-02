@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { FileText, AlertTriangle, Trash2, Filter, Plus } from 'lucide-react';
 import { deleteOrderImport, listOrderImports, listOrders, listPendingItems, type OrderFilters } from '@/api/orders';
 import { listCustomers } from '@/api/customers';
-import { Badge, Button, Card, EmptyState, Input, PageHeader, Select, Table, Tabs } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Input, PageHeader, Select, Table, Tabs } from '@/components/primitives';
 import { fmtBRL, fmtDate, fmtDateTime, fmtInt } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';

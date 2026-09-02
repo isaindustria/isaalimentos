@@ -7,7 +7,7 @@ import { ignoreItem, listPendingItems, resolveItem } from '@/api/orders';
 import { listProducts } from '@/api/products';
 import { rankCandidates } from '@/domain/matching';
 import { normalizedKey } from '@/domain/normalize';
-import { Button, Card, EmptyState, Input, PageHeader, Select } from '@/components/ui';
+import { Button, Card, EmptyState, Input, PageHeader, Select } from '@/components/primitives';
 import { fmtInt, fmtPct } from '@/lib/utils';
 import type { OrderItem } from '@/lib/types';
 import { MatchBadge } from './OrderImportPage';

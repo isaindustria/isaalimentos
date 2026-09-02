@@ -70,7 +70,14 @@ Assets da marca (pasta `LOGOS E IMAGENS`) já aplicados:
 - `apps/web/public/favicon.png`, `icon-192.png` e `apps/desktop/build/icon.ico` gerados a partir do logo.
 - Paleta em `apps/web/src/index.css`: vermelho `--brand` (#E21420), amarelo `--brand-yellow` (#F5D000), verde `--brand-green` (#3FA33F).
 
-## 5. Fluxo de uso
+## 5. Base de UI e tempo real
+
+- Componentes: **shadcn/ui** (`apps/web/components.json`, estilo radix-nova, Tailwind v4). Os primitivos do app ficam em `src/components/primitives.tsx` e compõem `src/components/ui/*`.
+- Skills instaladas em `.claude/skills/` (`find-skills`, `shadcn`): use-as como base para novas telas.
+- Tempo real (Supabase Realtime): presença de quem está online no cabeçalho, aviso de "fulano está editando" no pedido, e atualização automática das listas quando outra pessoa altera pedidos, estoque, produção ou clientes.
+- Abertura animada: mostrada no programa Windows e no PWA instalado (no navegador comum, não).
+
+## 6. Fluxo de uso
 
 1. **Estoque → Importar planilha**: lê o XLSX do ERP, considera só os locais 1 e 5, soma linhas repetidas e substitui o estoque anterior.
 2. **Pedidos → Importar PDF**: lê todos os pedidos de compra (uma loja por página), cria os clientes pelo CNPJ de entrega e identifica os produtos por aproximação de texto.

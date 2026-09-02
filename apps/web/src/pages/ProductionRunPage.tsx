@@ -5,7 +5,7 @@ import { ArrowLeft, Printer, CheckCircle2 } from 'lucide-react';
 import { completeRun, getRun, setProduced, setRunStatus } from '@/api/production';
 import { logActivity } from '@/api/activity';
 import { useAuth } from '@/hooks/useAuth';
-import { Badge, Button, Card, PageHeader, ProgressBar, Spinner, Stat, Table } from '@/components/ui';
+import { Badge, Button, Card, PageHeader, ProgressBar, Spinner, Stat, Table } from '@/components/primitives';
 import { fmtDateTime, fmtInt } from '@/lib/utils';
 import type { RunStatus } from '@/lib/types';
 

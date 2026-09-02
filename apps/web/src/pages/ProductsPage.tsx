@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Plus, Search, Pencil, Link2, Trash2 } from 'lucide-react';
 import { deleteAlias, deleteProduct, listAliases, listProducts, upsertProduct } from '@/api/products';
 import { getCurrentStock } from '@/api/stock';
-import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Tabs } from '@/components/ui';
+import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Tabs } from '@/components/primitives';
 import type { Product } from '@/lib/types';
 import { fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';

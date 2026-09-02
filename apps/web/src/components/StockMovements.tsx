@@ -5,7 +5,7 @@ import { Plus, Trash2, ClipboardCheck, ArrowDownToLine, ArrowUpFromLine } from '
 import { addMovements, deleteMovement, getCurrentStock, listMovements, setInventory } from '@/api/stock';
 import { listProducts } from '@/api/products';
 import { logActivity } from '@/api/activity';
-import { Badge, Button, Card, Dialog, EmptyState, Field, Input, Select, Table, Textarea } from '@/components/ui';
+import { Badge, Button, Card, Dialog, EmptyState, Field, Input, Select, Table, Textarea } from '@/components/primitives';
 import { fmtDateTime, fmtInt } from '@/lib/utils';
 import type { MovementKind } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';

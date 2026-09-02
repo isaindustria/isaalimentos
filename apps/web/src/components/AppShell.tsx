@@ -8,8 +8,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUpdates } from '@/hooks/useUpdates';
 import { listPendingItems } from '@/api/orders';
 import { cn, initials } from '@/lib/utils';
-import { Button } from './ui';
+import { Button } from './primitives';
 import { NotificationsBell } from './Notifications';
+import { OnlineUsers } from './OnlineUsers';
 import { ROLE_LABEL } from '@/lib/types';
 
 const NAV = [
@@ -195,6 +196,7 @@ export default function AppShell() {
               <AlertTriangle className="h-3.5 w-3.5" /> {pendingCount} item(ns) para conferir
             </button>
           )}
+          <OnlineUsers meId={session?.user.id} />
           <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>
           <NotificationsBell />
           <button className="h-9 w-9 rounded-xl grid place-items-center text-muted hover:bg-surface-2" onClick={toggle} title="Alternar tema">

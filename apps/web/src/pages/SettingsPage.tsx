@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Save, RefreshCw, Users, SlidersHorizontal, Info, ExternalLink } from 'lucide-react';
 import { getSettings, listProfiles, setSetting, updateProfile, type Settings } from '@/api/settings';
-import { Badge, Button, Card, Field, Input, PageHeader, Select, Table } from '@/components/ui';
+import { Badge, Button, Card, Field, Input, PageHeader, Select, Table } from '@/components/primitives';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdates } from '@/hooks/useUpdates';
 import { RELEASES_URL, openExternal } from '@/lib/desktop';

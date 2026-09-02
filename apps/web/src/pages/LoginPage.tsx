@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { Button, Field, Input } from '@/components/ui';
+import { Button, Field, Input } from '@/components/primitives';
 import { Brand } from '@/components/AppShell';
 import { APP_VERSION } from '@/lib/desktop';
 

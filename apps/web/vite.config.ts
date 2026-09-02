@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import tailwindcss from '@tailwindcss/vite';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -24,6 +25,7 @@ function versionFile() {
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     versionFile(),
     VitePWA({
       registerType: 'prompt',

@@ -1,8 +1,12 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
+import { RealtimeProvider } from './hooks/useRealtime';
+import { TooltipProvider } from './components/ui/tooltip';
+import { Splash } from './components/Splash';
+import { isDesktop } from './lib/desktop';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import AppShell from './components/AppShell';
-import { Spinner } from './components/ui';
+import { Spinner } from './components/primitives';
 import { supabaseConfigured } from './lib/supabase';
 import SetupPage from './pages/SetupPage';
 
@@ -36,10 +40,16 @@ function Protected({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+const isStandalone = typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true);
+
 export default function App() {
+  const [splash, setSplash] = useState(() => isDesktop || isStandalone);
   if (!supabaseConfigured) return <SetupPage />;
   return (
     <HashRouter>
+      {splash && <Splash onDone={() => setSplash(false)} />}
+      <RealtimeProvider>
+      <TooltipProvider>
       <Suspense fallback={<FullSpinner />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -68,6 +78,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </TooltipProvider>
+      </RealtimeProvider>
     </HashRouter>
   );
 }

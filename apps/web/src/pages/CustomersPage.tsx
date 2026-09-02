@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Search, Building2 } from 'lucide-react';
 import { customerStats, listCustomers, upsertCustomer } from '@/api/customers';
-import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Textarea } from '@/components/ui';
+import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Textarea } from '@/components/primitives';
 import type { Customer } from '@/lib/types';
 import { fmtBRL, fmtDate, formatCnpj } from '@/lib/utils';
 

@@ -7,7 +7,7 @@ import { getCurrentStock, listStockImports } from '@/api/stock';
 import { demand, listOrders, listPendingItems } from '@/api/orders';
 import { listCustomers } from '@/api/customers';
 import { computeProduction, summarize } from '@/domain/production';
-import { Badge, Button, Card, PageHeader, Skeleton, Stat, Table } from '@/components/ui';
+import { Badge, Button, Card, PageHeader, Skeleton, Stat, Table } from '@/components/primitives';
 import { fmtAgo, fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { ActivityList } from '@/components/Notifications';

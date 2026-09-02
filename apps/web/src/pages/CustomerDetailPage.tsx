@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowLeft, Pencil, Phone, Mail, MapPin, Plus, Trash2, MessageCircle, PhoneCall, Users, Calendar, StickyNote, Mailbox } from 'lucide-react';
 import { addInteraction, deleteCustomer, deleteInteraction, getCustomer, listCustomerOrders, listInteractions, upsertCustomer } from '@/api/customers';
-import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Select, Spinner, Table, Textarea } from '@/components/ui';
+import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Select, Spinner, Table, Textarea } from '@/components/primitives';
 import type { Customer, InteractionKind } from '@/lib/types';
 import { fmtBRL, fmtDate, fmtDateTime, formatCnpj } from '@/lib/utils';
 import { STATUS_LABEL } from './OrdersPage';

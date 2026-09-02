@@ -9,7 +9,7 @@ import { importParsedOrders } from '@/api/orders';
 import { extractRowsFromFile } from '@/domain/parsers/pdfText';
 import { consolidateItems, parseOrderPages, type ParsedOrderFile } from '@/domain/parsers/orderPdf';
 import { matchProduct } from '@/domain/matching';
-import { Badge, Button, Card, Dropzone, PageHeader, Spinner, Table } from '@/components/ui';
+import { Badge, Button, Card, Dropzone, PageHeader, Spinner, Table } from '@/components/primitives';
 import { fmtBRL, fmtDate, fmtInt, formatCnpj } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 

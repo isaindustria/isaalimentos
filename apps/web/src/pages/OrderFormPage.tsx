@@ -8,11 +8,14 @@ import { listCustomers } from '@/api/customers';
 import { listProducts } from '@/api/products';
 import { getCurrentStock } from '@/api/stock';
 import { logActivity } from '@/api/activity';
-import { Button, Card, Field, Input, PageHeader, Select, Spinner, Table, Textarea } from '@/components/ui';
+import { Button, Card, Field, Input, PageHeader, Select, Spinner, Table, Textarea } from '@/components/primitives';
 import { fmtBRL, fmtInt } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
 import { STATUS_LABEL } from './OrdersPage';
 import { useAuth } from '@/hooks/useAuth';
+import { useEditLock } from '@/hooks/useRealtime';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Users } from 'lucide-react';
 
 interface Line extends ManualOrderItemInput {
   key: number;
@@ -24,6 +27,7 @@ export default function OrderFormPage() {
   const qc = useQueryClient();
   const { session, profile } = useAuth();
   const editing = Boolean(id);
+  const editors = useEditLock(id ? `order:${id}` : 'order:new');
 
   const customers = useQuery({ queryKey: ['customers'], queryFn: () => listCustomers() });
   const products = useQuery({ queryKey: ['products', 'active'], queryFn: () => listProducts(false) });
@@ -109,7 +113,14 @@ export default function OrderFormPage() {
           </>
         }
       />
-      <div className="grid lg:grid-cols-[1fr_2fr] gap-4">
+      {editors.length > 0 && (
+        <Alert className="mb-4 border-warn/40 bg-warn/10">
+          <Users />
+          <AlertTitle>{editors.map((e) => e.name).join(', ')} {editors.length > 1 ? 'também estão' : 'também está'} editando {editing ? 'este pedido' : 'um pedido novo'} agora</AlertTitle>
+          <AlertDescription>Combine antes de salvar para não sobrescrever o trabalho de ninguém. O que for salvo por último prevalece.</AlertDescription>
+        </Alert>
+      )}
+      <div className="grid gap-4 lg:grid-cols-[1fr_2fr]">
         <Card title="Dados do pedido">
           <div className="space-y-4">
             <Field label="Cliente / loja">

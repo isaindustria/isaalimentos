@@ -8,7 +8,7 @@ import { getCurrentStock, listStockImports } from '@/api/stock';
 import { demand, listOrderImports } from '@/api/orders';
 import { deleteRun, listRuns, saveRun } from '@/api/production';
 import { computeProduction, summarize, type ProductionRow } from '@/domain/production';
-import { Badge, Button, Card, EmptyState, Field, Input, PageHeader, Select, Stat, Table, Tabs } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Field, Input, PageHeader, Select, Stat, Table, Tabs } from '@/components/primitives';
 import { downloadBlob, fmtDate, fmtDateTime, fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
