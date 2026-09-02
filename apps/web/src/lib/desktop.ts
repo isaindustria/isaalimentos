@@ -34,7 +34,7 @@ declare global {
 export const APP_VERSION: string = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
 export const desktop = typeof window !== 'undefined' ? window.isaDesktop : undefined;
 export const isDesktop = Boolean(desktop);
-export const GITHUB_REPO = (import.meta.env.VITE_GITHUB_REPO as string | undefined) ?? '';
+export const GITHUB_REPO = ((import.meta.env.VITE_GITHUB_REPO as string | undefined) || 'isaindustria/isaalimentos').trim();
 export const RELEASES_URL = GITHUB_REPO ? `https://github.com/${GITHUB_REPO}/releases/latest` : '';
 
 export function openExternal(url: string) {

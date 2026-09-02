@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm ci",
+  "installCommand": "npm ci -w @isa/web --include-workspace-root",
   "buildCommand": "npm run build -w @isa/web",
   "outputDirectory": "apps/web/dist",
   "framework": null,

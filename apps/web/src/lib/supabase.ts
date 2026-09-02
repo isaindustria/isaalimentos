@@ -1,11 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Projeto Supabase da ISA. A chave "publishable" e publica por natureza (protegida por RLS),
+// por isso pode ficar no codigo; variaveis VITE_* sobrescrevem quando definidas.
+const DEFAULT_URL = 'https://exbhhwrutvzpwcjxqikp.supabase.co';
+const DEFAULT_KEY = 'sb_publishable_vky72zhDlTjITsvk6eVQzg_qVhAXKHn';
 
-export const supabaseConfigured = Boolean(url && key && !url.includes('SEU-PROJETO'));
+function pick(value: string | undefined, fallback: string): string {
+  const v = (value ?? '').trim();
+  if (!v || v.includes('SEU-PROJETO') || v.includes('xxx')) return fallback;
+  return v;
+}
 
-export const supabase = createClient(url || 'https://placeholder.supabase.co', key || 'placeholder', {
+const url = pick(import.meta.env.VITE_SUPABASE_URL as string | undefined, DEFAULT_URL);
+const key = pick(import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined, DEFAULT_KEY);
+
+export const supabaseConfigured = Boolean(url && key);
+
+export const supabase = createClient(url, key, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
 
