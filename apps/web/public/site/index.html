@@ -54,9 +54,9 @@
   .progress { position: fixed; top: 0; left: 0; height: 4px; width: 100%; z-index: 60; background: transparent; pointer-events: none; }
   .progress i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--red), var(--yellow) 55%, var(--green)); }
   header { position: fixed; inset: 0 0 auto 0; z-index: 50; transition: background .35s var(--ease), box-shadow .35s, backdrop-filter .35s; }
-  header .bar { display: flex; align-items: center; gap: 1.2rem; height: 84px; transition: height .35s var(--ease); }
+  header .topbar { display: flex; align-items: center; gap: 1.2rem; height: 84px; transition: height .35s var(--ease); }
   header.solid { background: rgba(255,255,255,.88); backdrop-filter: blur(14px); box-shadow: 0 10px 30px -22px rgba(0,0,0,.35); }
-  header.solid .bar { height: 66px; }
+  header.solid .topbar { height: 66px; }
   .brand { display: flex; align-items: center; gap: .65rem; text-decoration: none; font-family: Outfit; font-weight: 800; font-size: 1.15rem; color: var(--red); }
   .brand img { height: 46px; width: auto; transition: height .35s var(--ease); }
   header.solid .brand img { height: 38px; }
@@ -254,7 +254,7 @@
 <div class="progress" aria-hidden="true"><i id="progress"></i></div>
 
 <header id="header">
-  <div class="wrap bar">
+  <div class="wrap topbar">
     <a class="brand" href="/"><img src="/brand/logo.png" alt="ISA Alimentos" width="52" height="46" /> ISA Alimentos</a>
     <nav class="menu" aria-label="Principal">
       <a href="#como-funciona">Como funciona</a>
@@ -460,6 +460,11 @@
       var cur = -1;
       sections.forEach(function (s, idx) { if (s && s.getBoundingClientRect().top <= innerHeight * 0.4) cur = idx; });
       links.forEach(function (a, idx) { a.classList.toggle('active', idx === cur); });
+      // Safety net: anything scrolled past (anchor jumps, fast scroll) is shown.
+      document.querySelectorAll('.reveal:not(.in), .card:not(.in)').forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        if (r.top < innerHeight * 0.92) { el.classList.add('in'); el.querySelectorAll('[data-count]').forEach(count); }
+      });
       if (!reduce) document.querySelectorAll('.pot').forEach(function (p) {
         var depth = parseFloat(p.dataset.depth || 0.5);
         p.style.setProperty('transform', 'translateY(' + (-y * depth * 0.18) + 'px)');
@@ -500,6 +505,7 @@
     });
   }, { threshold: 0.18 });
   document.querySelectorAll('.reveal, .proof').forEach(function (el) { io.observe(el); });
+  window.count = count;
   function count(el) {
     if (el.dataset.done) return; el.dataset.done = 1;
     var end = parseInt(el.dataset.count, 10), start = performance.now(), dur = reduce ? 1 : 1400;
