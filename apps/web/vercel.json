@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd ../.. && npm ci",
+  "buildCommand": "cd ../.. && npm run build -w @isa/web",
+  "outputDirectory": "dist",
+  "framework": null,
+  "headers": [
+    { "source": "/version.json", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] }
+  ]
+}
