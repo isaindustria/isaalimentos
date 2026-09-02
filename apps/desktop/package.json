@@ -1,0 +1,33 @@
+{
+  "name": "@isa/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ISA Alimentos - Sistema de Gestão (Desktop)",
+  "author": "ISA Indústria de Alimentos e Temperos",
+  "homepage": "https://github.com/SEU-USUARIO/isa-alimentos",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SEU-USUARIO/isa-alimentos.git"
+  },
+  "main": "dist/main.js",
+  "scripts": {
+    "compile": "tsc -p tsconfig.json",
+    "copy-web": "node scripts/copy-web.mjs",
+    "dev": "npm run compile && electron .",
+    "start": "npm run compile && npm run copy-web && electron .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "npm run compile && npm run copy-web && electron-builder --win",
+    "build:dir": "npm run compile && npm run copy-web && electron-builder --win --dir",
+    "release": "npm run compile && npm run copy-web && electron-builder --win --publish always"
+  },
+  "dependencies": {
+    "electron-log": "^5.2.0",
+    "electron-updater": "^6.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "electron": "^32.1.2",
+    "electron-builder": "^25.0.5",
+    "typescript": "^5.6.2"
+  }
+}

@@ -1,0 +1,40 @@
+appId: br.com.isaalimentos.gestao
+productName: ISA Alimentos
+copyright: Copyright © ISA Indústria de Alimentos e Temperos
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - web/**/*
+  - package.json
+extraResources: []
+extraFiles: []
+# The web build is copied into apps/desktop/web before packaging (see package.json scripts / CI).
+extraMetadata:
+  main: dist/main.js
+asar: true
+compression: maximum
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  artifactName: ISA-Alimentos-${version}-${arch}-${os}.${ext}
+  icon: build/icon.ico
+  publisherName: ISA Indústria de Alimentos e Temperos
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: ISA Alimentos
+  artifactName: ISA-Alimentos-Setup-${version}.${ext}
+  deleteAppDataOnUninstall: false
+portable:
+  artifactName: ISA-Alimentos-Portable-${version}.${ext}
+publish:
+  provider: github
+  releaseType: release

@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Design tokens (troque --brand quando o branding chegar) ---- */
+:root {
+  --bg: 250 249 246;
+  --surface: 255 255 255;
+  --surface-2: 245 243 238;
+  --line: 231 227 219;
+  --ink: 28 25 23;
+  --muted: 120 113 108;
+  --brand: 194 65 12; /* terracota / paprica */
+  --brand-soft: 255 237 213;
+  --brand-ink: 255 247 237;
+  --ok: 22 163 74;
+  --warn: 217 119 6;
+  --danger: 220 38 38;
+  --info: 37 99 235;
+}
+.dark {
+  --bg: 20 18 17;
+  --surface: 30 27 25;
+  --surface-2: 41 37 34;
+  --line: 58 52 48;
+  --ink: 245 241 236;
+  --muted: 168 160 152;
+  --brand: 249 115 22;
+  --brand-soft: 67 30 10;
+  --brand-ink: 255 247 237;
+  --ok: 74 222 128;
+  --warn: 251 191 36;
+  --danger: 248 113 113;
+  --info: 96 165 250;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  @apply bg-bg text-ink font-sans antialiased;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+::selection {
+  background: rgb(var(--brand) / 0.25);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--line)) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgb(var(--line));
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-2xl shadow-card;
+  }
+  .input {
+    @apply w-full h-10 rounded-xl border border-line bg-surface px-3 text-sm text-ink placeholder:text-muted outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15 disabled:opacity-60;
+  }
+  .label {
+    @apply block text-xs font-semibold uppercase tracking-wide text-muted mb-1.5;
+  }
+  .th {
+    @apply text-left text-[11px] font-semibold uppercase tracking-wider text-muted px-3 py-2.5 whitespace-nowrap;
+  }
+  .td {
+    @apply px-3 py-2.5 text-sm align-middle border-t border-line;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .kbd {
+    @apply inline-flex items-center rounded-md border border-line bg-surface-2 px-1.5 text-[11px] font-medium text-muted;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.35s ease both;
+}
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  @apply rounded-lg bg-surface-2;
+  background-image: linear-gradient(90deg, transparent, rgb(var(--surface) / 0.6), transparent);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}

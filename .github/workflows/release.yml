@@ -1,0 +1,40 @@
+name: Release desktop
+
+# Crie uma tag "vX.Y.Z" (ex.: v1.0.1) e faça push: o instalador e a versão portátil
+# são gerados e publicados em GitHub Releases. O app instalado detecta a nova versão
+# e mostra o botão "Baixar atualização".
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build web
+        run: npm run build -w @isa/web
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_GITHUB_REPO: ${{ github.repository }}
+      - name: Build and publish desktop (NSIS + portable)
+        run: npm run release -w @isa/desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-builds
+          path: |
+            apps/desktop/release/*.exe
+            apps/desktop/release/*.yml
