@@ -4,205 +4,361 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ISA Alimentos · Gestão de estoque, pedidos e produção</title>
-<meta name="description" content="Sistema da ISA Indústria de Alimentos e Temperos: importa a planilha de estoque e os pedidos das lojas em PDF e mostra exatamente o que precisa ser produzido." />
+<meta name="description" content="O sistema da ISA Indústria de Alimentos e Temperos lê a planilha de estoque e os pedidos das lojas em PDF e mostra exatamente o que produzir. No navegador e no Windows." />
 <meta name="theme-color" content="#e21420" />
+<link rel="canonical" href="https://isaindalimentos.com.br/" />
 <link rel="icon" type="image/png" href="/favicon.png" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
+<meta property="og:type" content="website" />
 <meta property="og:title" content="ISA Alimentos · Gestão" />
 <meta property="og:description" content="Do pedido da loja à linha de produção, sem planilha na mão." />
-<meta property="og:image" content="/brand/logo-512.png" />
+<meta property="og:image" content="https://isaindalimentos.com.br/brand/logo-512.png" />
+<meta property="og:url" content="https://isaindalimentos.com.br/" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;1,800;1,900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Rubik:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="preload" as="image" href="/brand/products/lemon-pepper.webp" />
 <style>
   :root {
-    --red: #e21420;
-    --red-deep: #b8101a;
-    --yellow: #f5d000;
-    --green: #3fa33f;
-    --cocoa: #241b1a;
-    --ink: #2a2220;
-    --mute: #7a6d69;
-    --line: #eadfd9;
-    --paper: #ffffff;
-    --blush: #fff1f1;
-    --radius: 22px;
-    --w: 1160px;
+    --red: #e21420; --red-deep: #b30f19; --yellow: #f5d000; --yellow-deep: #d9b800; --green: #3fa33f; --green-deep: #2f8a2f;
+    --cocoa: #1f1615; --cocoa-2: #2b201e; --ink: #241b1a; --mute: #6f625e; --line: #ebe3df; --paper: #fff; --blush: #fff2f2; --sun: #fff9d6;
+    --r-lg: 28px; --r-md: 18px; --r-sm: 12px; --w: 1180px;
+    --ease: cubic-bezier(.2,.7,.2,1); --spring: cubic-bezier(.34,1.56,.64,1);
   }
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; font-family: Inter, system-ui, sans-serif; color: var(--ink); background: var(--paper); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font-family: Rubik, system-ui, sans-serif; font-size: 17px; line-height: 1.6; color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   img { max-width: 100%; display: block; }
   a { color: inherit; }
-  h1, h2, h3 { font-family: Rubik, Inter, sans-serif; margin: 0; line-height: 1.05; letter-spacing: -0.01em; }
-  h1 { font-weight: 900; font-style: italic; font-size: clamp(2.6rem, 6vw, 5rem); }
-  h2 { font-weight: 800; font-style: italic; font-size: clamp(1.9rem, 3.6vw, 2.8rem); }
-  h3 { font-weight: 700; font-size: 1.15rem; }
+  h1, h2, h3, h4 { font-family: Outfit, Rubik, sans-serif; margin: 0; line-height: 1.02; letter-spacing: -0.02em; }
+  h1 { font-weight: 900; font-size: clamp(2.7rem, 7vw, 6rem); }
+  h2 { font-weight: 800; font-size: clamp(2rem, 4.4vw, 3.4rem); }
+  h3 { font-weight: 700; font-size: 1.25rem; letter-spacing: -0.01em; }
   p { margin: 0; }
   .wrap { width: min(var(--w), calc(100% - 2.5rem)); margin-inline: auto; }
-  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
-
-  /* Header */
-  header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-  .bar { display: flex; align-items: center; gap: 1.5rem; height: 72px; }
-  .brand { display: flex; align-items: center; gap: .7rem; text-decoration: none; font-family: Rubik; font-weight: 800; font-style: italic; color: var(--red); font-size: 1.15rem; }
-  .brand img { height: 42px; }
-  nav { margin-left: auto; display: flex; gap: 1.4rem; font-weight: 500; font-size: .95rem; }
-  nav a { text-decoration: none; color: var(--mute); }
-  nav a:hover { color: var(--ink); }
-  .btn { display: inline-flex; align-items: center; gap: .55rem; padding: .85rem 1.35rem; border-radius: 999px; font-weight: 600; text-decoration: none; font-size: .98rem; transition: transform .15s ease, box-shadow .15s ease; }
-  .btn:active { transform: scale(.98); }
-  .btn-red { background: var(--red); color: #fff; box-shadow: 0 10px 24px -12px rgba(226,20,32,.7); }
-  .btn-red:hover { background: var(--red-deep); }
-  .btn-ghost { border: 2px solid var(--line); color: var(--ink); background: #fff; }
+  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; border-radius: 6px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; min-height: 50px; padding: .8rem 1.5rem; border-radius: 999px; font-weight: 600; font-size: 1rem; text-decoration: none; border: 0; cursor: pointer; transition: transform .18s var(--spring), box-shadow .2s, background .2s, color .2s; white-space: nowrap; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:active { transform: scale(.97); }
+  .btn-red { background: var(--red); color: #fff; box-shadow: 0 14px 30px -14px rgba(226,20,32,.8); }
+  .btn-red:hover { background: var(--red-deep); box-shadow: 0 18px 34px -14px rgba(226,20,32,.9); }
+  .btn-yellow { background: var(--yellow); color: var(--cocoa); box-shadow: 0 14px 30px -14px rgba(245,208,0,.9); }
+  .btn-yellow:hover { background: var(--yellow-deep); }
+  .btn-ghost { background: #fff; color: var(--ink); border: 2px solid var(--line); }
   .btn-ghost:hover { border-color: var(--ink); }
-  .btn-dark { background: var(--cocoa); color: #fff; }
-  .btn svg { width: 18px; height: 18px; }
-  @media (max-width: 760px) { nav { display: none; } }
+  .btn-white { background: #fff; color: var(--red); }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+
+  /* Scroll progress + header */
+  .progress { position: fixed; top: 0; left: 0; height: 4px; width: 100%; z-index: 60; background: transparent; pointer-events: none; }
+  .progress i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--red), var(--yellow) 55%, var(--green)); }
+  header { position: fixed; inset: 0 0 auto 0; z-index: 50; transition: background .35s var(--ease), box-shadow .35s, backdrop-filter .35s; }
+  header .bar { display: flex; align-items: center; gap: 1.2rem; height: 84px; transition: height .35s var(--ease); }
+  header.solid { background: rgba(255,255,255,.88); backdrop-filter: blur(14px); box-shadow: 0 10px 30px -22px rgba(0,0,0,.35); }
+  header.solid .bar { height: 66px; }
+  .brand { display: flex; align-items: center; gap: .65rem; text-decoration: none; font-family: Outfit; font-weight: 800; font-size: 1.15rem; color: var(--red); }
+  .brand img { height: 46px; width: auto; transition: height .35s var(--ease); }
+  header.solid .brand img { height: 38px; }
+  nav.menu { margin-left: auto; display: flex; gap: .2rem; }
+  nav.menu a { text-decoration: none; color: var(--ink); font-weight: 500; font-size: .95rem; padding: .55rem .85rem; border-radius: 999px; transition: background .2s, color .2s; }
+  nav.menu a:hover, nav.menu a.active { background: var(--blush); color: var(--red); }
+  .burger { display: none; margin-left: auto; width: 46px; height: 46px; border-radius: 12px; border: 0; background: #fff; cursor: pointer; place-items: center; }
+  .burger svg { width: 24px; height: 24px; }
+  .mobile { display: none; position: fixed; inset: 0; z-index: 55; background: var(--cocoa); color: #fff; padding: 6rem 2rem 2rem; flex-direction: column; gap: 1.2rem; font-family: Outfit; font-size: 2rem; font-weight: 800; }
+  .mobile a { text-decoration: none; }
+  .mobile.open { display: flex; }
+  .mobile .close { position: absolute; top: 1.2rem; right: 1.2rem; background: transparent; border: 0; color: #fff; cursor: pointer; }
+  @media (max-width: 900px) { nav.menu, header .btn { display: none; } .burger { display: grid; } }
 
   /* Hero */
-  .hero { position: relative; overflow: hidden; padding: 4.5rem 0 0; }
-  .hero .wrap { display: grid; grid-template-columns: 1.15fr .85fr; gap: 2rem; align-items: center; }
-  .hero h1 { color: var(--red); max-width: 12ch; }
-  .hero .lede { font-size: 1.2rem; color: var(--mute); max-width: 46ch; margin-top: 1.4rem; }
-  .cta { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
-  .hero-art { position: relative; min-height: 420px; }
-  .hero-art img { position: absolute; right: -6%; bottom: -4%; width: 92%; max-width: 460px; filter: drop-shadow(0 30px 40px rgba(36,27,26,.25)); }
-  .stamp { position: absolute; left: 0; top: 8%; background: var(--yellow); color: var(--cocoa); font-family: Rubik; font-weight: 800; font-style: italic; padding: .6rem 1rem; border-radius: 14px; transform: rotate(-6deg); box-shadow: 0 12px 30px -14px rgba(0,0,0,.4); }
-  .stamp small { display: block; font-family: Inter; font-style: normal; font-weight: 500; font-size: .75rem; opacity: .75; }
-  @media (max-width: 860px) {
-    .hero .wrap { grid-template-columns: 1fr; }
-    .hero-art { min-height: 300px; }
-    .hero-art img { right: -10%; width: 80%; }
-  }
+  .hero { position: relative; min-height: 100svh; display: grid; align-items: center; padding: 7rem 0 4rem; overflow: hidden; background:
+    radial-gradient(60% 50% at 85% 20%, rgba(245,208,0,.22), transparent 60%),
+    radial-gradient(45% 40% at 10% 90%, rgba(63,163,63,.14), transparent 60%),
+    #fff; }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 3rem; align-items: center; }
+  .kicker { display: inline-flex; align-items: center; gap: .6rem; font-weight: 600; font-size: .9rem; color: var(--red-deep); background: var(--blush); padding: .45rem .9rem .45rem .5rem; border-radius: 999px; margin-bottom: 1.4rem; }
+  .kicker i { width: 26px; height: 26px; border-radius: 50%; background: var(--red); display: grid; place-items: center; }
+  .kicker svg { width: 14px; height: 14px; color: #fff; }
+  .hero h1 { color: var(--ink); }
+  .hero h1 .w { display: inline-block; opacity: 0; transform: translateY(.6em) rotate(2deg); animation: word .8s var(--ease) forwards; }
+  .hero h1 .hl { color: var(--red); }
+  @keyframes word { to { opacity: 1; transform: none; } }
+  .hero .lede { margin-top: 1.4rem; font-size: 1.2rem; color: var(--mute); max-width: 48ch; opacity: 0; animation: word .8s var(--ease) .55s forwards; }
+  .hero .cta { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; opacity: 0; animation: word .8s var(--ease) .7s forwards; }
+  .hero .proof { display: flex; gap: 2rem; margin-top: 2.6rem; flex-wrap: wrap; opacity: 0; animation: word .8s var(--ease) .85s forwards; }
+  .proof b { font-family: Outfit; font-size: 2rem; font-weight: 900; color: var(--ink); display: block; line-height: 1; }
+  .proof span { font-size: .85rem; color: var(--mute); }
 
-  /* Linha de produção (elemento principal) */
-  .line { margin-top: 3.5rem; background: var(--cocoa); color: #fff; padding: 3rem 0 3.5rem; position: relative; }
-  .line::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 10px; background: linear-gradient(90deg, var(--red) 0 58%, var(--green) 58% 100%); }
-  .line-head { display: flex; align-items: end; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
-  .line-head p { color: rgba(255,255,255,.7); max-width: 52ch; }
-  .track { position: relative; margin-top: 2.2rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
-  .track::before { content: ""; position: absolute; left: 6%; right: 6%; top: 34px; height: 3px; background: rgba(255,255,255,.14); border-radius: 3px; }
-  .arrow { position: absolute; top: 24px; left: 6%; width: 64px; height: 22px; color: var(--yellow); filter: drop-shadow(0 4px 10px rgba(245,208,0,.5)); animation: fly 2.6s cubic-bezier(.65,0,.25,1) .4s 1 both; }
-  @keyframes fly { from { left: 6%; opacity: 0; } 12% { opacity: 1; } to { left: calc(94% - 64px); opacity: 1; } }
-  .step { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius); padding: 1.4rem 1.4rem 1.2rem; position: relative; }
-  .step .n { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-family: Rubik; font-weight: 800; background: var(--red); color: #fff; margin-bottom: 1.1rem; position: relative; z-index: 1; }
-  .step:nth-child(4) .n { background: var(--green); }
-  .step:nth-child(5) .n { background: var(--yellow); color: var(--cocoa); }
-  .step h3 { color: #fff; }
-  .step p { color: rgba(255,255,255,.7); margin-top: .5rem; font-size: .95rem; }
-  .step code { font-family: inherit; background: rgba(255,255,255,.1); padding: .1rem .4rem; border-radius: 6px; font-size: .85em; }
-  @media (max-width: 760px) { .track { grid-template-columns: 1fr; } .track::before, .arrow { display: none; } }
+  .stage { position: relative; height: 560px; }
+  .pot { position: absolute; width: var(--s, 220px); filter: drop-shadow(0 30px 30px rgba(31,22,21,.28)); opacity: 0; transform: translateY(60px) scale(.8); animation: potIn 1s var(--spring) var(--d, 0s) forwards; will-change: transform; }
+  .pot img { width: 100%; height: auto; animation: float 6s ease-in-out infinite; animation-delay: var(--fd, 0s); }
+  @keyframes potIn { to { opacity: 1; transform: none; } }
+  @keyframes float { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-14px) rotate(1.5deg); } }
+  .pot.p1 { --s: 300px; left: 50%; top: 50%; margin: -150px 0 0 -150px; --d: .15s; z-index: 3; }
+  .pot.p2 { --s: 200px; left: 2%; top: 4%; --d: .35s; --fd: 1.2s; z-index: 2; }
+  .pot.p3 { --s: 190px; right: 0; top: 8%; --d: .5s; --fd: 2.1s; }
+  .pot.p4 { --s: 170px; left: 8%; bottom: 2%; --d: .65s; --fd: .6s; }
+  .pot.p5 { --s: 210px; right: 2%; bottom: 0; --d: .8s; --fd: 3s; z-index: 2; }
+  .blob { position: absolute; inset: 12% 8%; border-radius: 48% 52% 46% 54% / 55% 45% 55% 45%; background: linear-gradient(135deg, var(--red), var(--red-deep)); opacity: .95; z-index: 0; animation: blob 12s ease-in-out infinite; }
+  @keyframes blob { 0%,100% { border-radius: 48% 52% 46% 54% / 55% 45% 55% 45%; } 50% { border-radius: 54% 46% 52% 48% / 45% 55% 45% 55%; } }
+  .scroll-hint { position: absolute; left: 50%; bottom: 1.6rem; transform: translateX(-50%); font-size: .8rem; color: var(--mute); display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+  .scroll-hint i { width: 1px; height: 34px; background: linear-gradient(var(--red), transparent); animation: hint 1.6s ease-in-out infinite; }
+  @keyframes hint { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+  @media (max-width: 960px) { .hero .wrap { grid-template-columns: 1fr; } .stage { height: 420px; } .pot.p1 { --s: 220px; margin: -110px 0 0 -110px; } .pot.p2, .pot.p3, .pot.p4, .pot.p5 { --s: 140px; } }
+  @media (max-width: 520px) { .stage { height: 340px; } .pot.p1 { --s: 180px; margin: -90px 0 0 -90px; } .pot.p2, .pot.p3, .pot.p4, .pot.p5 { --s: 110px; } .hero { padding-top: 6rem; } }
 
-  /* Demo table */
-  .demo { margin-top: 2.4rem; background: #fff; color: var(--ink); border-radius: var(--radius); overflow: hidden; box-shadow: 0 30px 60px -30px rgba(0,0,0,.6); }
-  .demo-top { display: flex; align-items: center; gap: .8rem; padding: .9rem 1.2rem; border-bottom: 1px solid var(--line); font-size: .9rem; color: var(--mute); }
-  .demo-top b { color: var(--ink); font-weight: 600; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+  /* Marquee */
+  .marquee { padding: 2.2rem 0; background: var(--cocoa); color: #fff; overflow: hidden; position: relative; }
+  .marquee::before, .marquee::after { content: ""; position: absolute; top: 0; bottom: 0; width: 120px; z-index: 2; pointer-events: none; }
+  .marquee::before { left: 0; background: linear-gradient(90deg, var(--cocoa), transparent); }
+  .marquee::after { right: 0; background: linear-gradient(-90deg, var(--cocoa), transparent); }
+  .marquee-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.4rem; }
+  .marquee-head h2 { font-size: 1.5rem; color: #fff; }
+  .marquee-head span { color: rgba(255,255,255,.6); font-size: .9rem; }
+  .track { display: flex; gap: 1rem; width: max-content; animation: slide var(--t, 70s) linear infinite; }
+  .track.rev { animation-direction: reverse; margin-top: 1rem; }
+  .marquee:hover .track { animation-play-state: paused; }
+  @keyframes slide { to { transform: translateX(-50%); } }
+  .chip { display: flex; align-items: center; gap: .8rem; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: .4rem 1.1rem .4rem .4rem; white-space: nowrap; font-weight: 500; font-size: .95rem; transition: background .2s; }
+  .chip:hover { background: rgba(255,255,255,.14); }
+  .chip img { width: 56px; height: 56px; object-fit: contain; }
+
+  /* Journey (como funciona) */
+  .journey { padding: 6rem 0 4rem; background: #fff; }
+  .sec-head { max-width: 62ch; }
+  .sec-head p { color: var(--mute); margin-top: 1rem; font-size: 1.1rem; }
+  .steps { margin-top: 3rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; position: relative; }
+  .step { position: relative; border-radius: var(--r-lg); padding: 2rem 1.8rem 1.8rem; min-height: 340px; display: flex; flex-direction: column; overflow: hidden; }
+  .step.a { background: var(--sun); } .step.b { background: var(--blush); } .step.c { background: #e9f6e9; }
+  .step .num { font-family: Outfit; font-weight: 900; font-size: 4.5rem; line-height: 1; opacity: .16; position: absolute; right: 1.2rem; top: .6rem; }
+  .step .ico { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; color: #fff; margin-bottom: 1.4rem; }
+  .step.a .ico { background: var(--yellow-deep); } .step.b .ico { background: var(--red); } .step.c .ico { background: var(--green); }
+  .step .ico svg { width: 26px; height: 26px; }
+  .step p { color: var(--mute); margin-top: .6rem; font-size: .98rem; }
+  .step .mini { margin-top: auto; padding-top: 1.4rem; font-size: .85rem; color: var(--ink); font-weight: 500; display: flex; gap: .5rem; align-items: center; }
+  .step .mini i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .step code { font-family: inherit; background: rgba(0,0,0,.06); padding: .05rem .4rem; border-radius: 6px; }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } .step { min-height: 0; } }
+
+  /* Demo */
+  .demo { padding: 2rem 0 6rem; }
+  .screen { border-radius: var(--r-lg); background: var(--cocoa); padding: 1.2rem; box-shadow: 0 50px 80px -50px rgba(31,22,21,.7); }
+  .screen-top { display: flex; align-items: center; gap: .5rem; padding: 0 .4rem .9rem; color: rgba(255,255,255,.6); font-size: .85rem; }
+  .screen-top i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.2); }
+  .screen-top i:first-child { background: var(--red); } .screen-top i:nth-child(2) { background: var(--yellow); } .screen-top i:nth-child(3) { background: var(--green); }
+  .screen-top span { margin-left: .6rem; }
+  .panel { background: #fff; border-radius: 18px; overflow: hidden; }
+  .panel-head { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); }
+  .stat { background: #fff; padding: 1.1rem 1.3rem; }
+  .stat small { color: var(--mute); font-size: .78rem; font-weight: 500; }
+  .stat b { display: block; font-family: Outfit; font-size: 1.8rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat.red b { color: var(--red); } .stat.green b { color: var(--green-deep); }
   table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-  th { text-align: left; font-weight: 600; color: var(--mute); font-size: .8rem; padding: .7rem 1.2rem; border-bottom: 1px solid var(--line); }
-  td { padding: .75rem 1.2rem; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-weight: 600; color: var(--mute); font-size: .78rem; padding: .8rem 1.3rem; border-bottom: 1px solid var(--line); }
+  td { padding: .8rem 1.3rem; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; vertical-align: middle; }
   td.r, th.r { text-align: right; }
   tr:last-child td { border-bottom: 0; }
-  .tag { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
-  .tag.go { background: #ffe3e5; color: var(--red-deep); }
-  .tag.ok { background: #e3f5e3; color: #21702a; }
+  td .pill { display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .65rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
+  .pill.go { background: #ffe3e5; color: var(--red-deep); } .pill.ok { background: #e3f5e3; color: #21702a; }
+  .pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  td .prod { display: flex; align-items: center; gap: .7rem; font-weight: 500; }
+  td .prod img { width: 34px; height: 34px; object-fit: contain; }
+  .bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; width: 120px; display: inline-block; vertical-align: middle; margin-left: .6rem; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--red); border-radius: 999px; transition: width 1.2s var(--ease); }
+  .in .bar i { width: var(--v); }
   .need { color: var(--red); font-weight: 700; }
-  @media (max-width: 640px) { .hide-sm { display: none; } }
+  @media (max-width: 760px) { .panel-head { grid-template-columns: 1fr 1fr; } .hide-sm { display: none; } .bar { display: none; } }
 
-  /* Features */
-  .feat { padding: 5rem 0; }
-  .feat h2 { color: var(--ink); max-width: 20ch; }
-  .feat .sub { color: var(--mute); margin-top: .8rem; max-width: 56ch; font-size: 1.05rem; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 2.6rem; }
-  .card { border: 1px solid var(--line); border-radius: var(--radius); padding: 1.6rem; background: #fff; }
-  .card.pop { background: var(--blush); border-color: #ffd3d6; }
-  .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--red); color: #fff; margin-bottom: 1rem; }
-  .ico.g { background: var(--green); } .ico.y { background: var(--yellow); color: var(--cocoa); } .ico.d { background: var(--cocoa); }
-  .ico svg { width: 22px; height: 22px; }
-  .card p { color: var(--mute); margin-top: .5rem; font-size: .96rem; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+  /* Products */
+  .products { padding: 6rem 0; background: linear-gradient(180deg, #fff, var(--sun) 30%, #fff); }
+  .filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 2rem; }
+  .filters button { min-height: 44px; padding: .5rem 1.1rem; border-radius: 999px; border: 2px solid var(--line); background: #fff; font: inherit; font-weight: 500; cursor: pointer; transition: all .2s; }
+  .filters button:hover { border-color: var(--ink); }
+  .filters button.on { background: var(--cocoa); color: #fff; border-color: var(--cocoa); }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 2rem; }
+  .card { background: #fff; border-radius: var(--r-md); padding: 1.2rem 1rem 1rem; border: 1px solid var(--line); text-align: center; transform-style: preserve-3d; transition: transform .35s var(--ease), box-shadow .35s, opacity .4s; opacity: 0; transform: translateY(24px); }
+  .card.in { opacity: 1; transform: none; }
+  .card:hover { box-shadow: 0 30px 50px -30px rgba(31,22,21,.5); z-index: 2; }
+  .card img { width: 100%; aspect-ratio: 1; object-fit: contain; transition: transform .35s var(--ease); }
+  .card:hover img { transform: translateZ(30px) scale(1.06); }
+  .card b { display: block; font-weight: 600; font-size: .95rem; margin-top: .4rem; }
+  .card small { color: var(--mute); font-size: .78rem; }
+  .card.hidden { display: none; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 760px) { .grid { grid-template-columns: repeat(3, 1fr); gap: .7rem; } .card { padding: .8rem .6rem .7rem; } .card b { font-size: .82rem; } }
+  @media (max-width: 480px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 
-  /* Downloads */
-  .dl { background: var(--blush); padding: 5rem 0; }
-  .dl .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; }
-  .dl h2 { color: var(--red); }
-  .dl p { color: var(--mute); margin-top: .8rem; max-width: 46ch; }
-  .dl-cards { display: grid; gap: 1rem; }
-  .dl-card { background: #fff; border-radius: var(--radius); padding: 1.4rem 1.5rem; display: flex; gap: 1.1rem; align-items: center; border: 1px solid #ffd3d6; text-decoration: none; }
-  .dl-card:hover { border-color: var(--red); }
-  .dl-card .ico { margin: 0; flex: none; }
-  .dl-card b { display: block; font-weight: 600; }
-  .dl-card span { color: var(--mute); font-size: .9rem; }
-  .dl-card .go { margin-left: auto; color: var(--red); font-weight: 600; white-space: nowrap; }
-  @media (max-width: 860px) { .dl .wrap { grid-template-columns: 1fr; } }
+  /* Bento features */
+  .features { padding: 6rem 0; background: var(--cocoa); color: #fff; }
+  .features .sec-head p { color: rgba(255,255,255,.7); }
+  .bento { margin-top: 3rem; display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 200px; gap: 1rem; }
+  .b { border-radius: var(--r-lg); padding: 1.6rem; background: var(--cocoa-2); border: 1px solid rgba(255,255,255,.08); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; transition: transform .35s var(--ease), border-color .3s; }
+  .b:hover { transform: translateY(-4px); border-color: rgba(255,255,255,.25); }
+  .b h3 { color: #fff; }
+  .b p { color: rgba(255,255,255,.7); margin-top: .4rem; font-size: .95rem; max-width: 40ch; }
+  .b .ico { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; position: absolute; top: 1.4rem; left: 1.4rem; }
+  .b .ico svg { width: 22px; height: 22px; }
+  .b.red .ico { background: var(--red); } .b.yellow .ico { background: var(--yellow); color: var(--cocoa); } .b.green .ico { background: var(--green); } .b.white .ico { background: #fff; color: var(--cocoa); }
+  .b.wide { grid-column: span 4; } .b.mid { grid-column: span 3; } .b.small { grid-column: span 2; } .b.tall { grid-row: span 2; grid-column: span 2; }
+  .b.feature { background: linear-gradient(140deg, var(--red), var(--red-deep)); border: 0; }
+  .b.feature p { color: rgba(255,255,255,.85); }
+  .b.feature img { position: absolute; right: -10px; bottom: -20px; width: 45%; max-width: 260px; filter: drop-shadow(0 20px 30px rgba(0,0,0,.4)); }
+  .b .learn { position: absolute; top: 1.4rem; right: 1.4rem; display: flex; gap: .4rem; }
+  .b .learn span { font-size: .72rem; padding: .25rem .6rem; border-radius: 999px; background: rgba(255,255,255,.1); }
+  .b .learn span.k { background: var(--yellow); color: var(--cocoa); font-weight: 600; }
+  @media (max-width: 960px) { .bento { grid-template-columns: 1fr 1fr; grid-auto-rows: auto; } .b { min-height: 200px; grid-column: span 1 !important; grid-row: auto !important; } .b.feature { grid-column: span 2 !important; min-height: 260px; } }
+  @media (max-width: 560px) { .bento { grid-template-columns: 1fr; } .b.feature { grid-column: span 1 !important; } }
 
-  /* Footer */
-  footer { background: var(--cocoa); color: rgba(255,255,255,.75); padding: 3rem 0 2.2rem; position: relative; font-size: .92rem; }
-  footer::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 10px; background: linear-gradient(90deg, var(--green) 0 62%, var(--yellow) 62% 100%); }
-  .foot { display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; align-items: center; }
+  /* Download / CTA */
+  .cta-sec { padding: 6rem 0; position: relative; overflow: hidden; background: radial-gradient(70% 90% at 30% 50%, #fff, var(--blush)); }
+  .cta-sec .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 2rem; align-items: center; }
+  .cta-sec h2 { color: var(--red); }
+  .cta-sec p.sub { color: var(--mute); margin-top: 1rem; max-width: 46ch; font-size: 1.05rem; }
+  .dl { display: grid; gap: .8rem; margin-top: 2rem; }
+  .dl a { display: flex; align-items: center; gap: 1rem; background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); padding: 1.1rem 1.3rem; text-decoration: none; transition: transform .25s var(--spring), border-color .2s, box-shadow .25s; }
+  .dl a:hover { transform: translateX(6px); border-color: var(--red); box-shadow: 0 20px 40px -30px rgba(226,20,32,.6); }
+  .dl .ico { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; flex: none; }
+  .dl .ico svg { width: 22px; height: 22px; }
+  .dl b { display: block; font-weight: 600; } .dl span { color: var(--mute); font-size: .88rem; }
+  .dl em { margin-left: auto; font-style: normal; color: var(--red); font-weight: 600; }
+  .mascot-wrap { position: relative; min-height: 440px; }
+  .mascot-wrap img { position: absolute; right: -4%; bottom: -8%; width: 100%; max-width: 480px; filter: drop-shadow(0 40px 40px rgba(31,22,21,.3)); transform: translateY(40px); opacity: 0; transition: transform 1s var(--spring), opacity .6s; }
+  .in .mascot-wrap img { transform: none; opacity: 1; }
+  .bubble { position: absolute; left: 0; top: 10%; background: var(--yellow); color: var(--cocoa); font-family: Outfit; font-weight: 800; padding: .8rem 1.1rem; border-radius: 18px 18px 18px 4px; box-shadow: 0 16px 30px -18px rgba(0,0,0,.5); transform: scale(.6) rotate(-8deg); opacity: 0; transition: transform .7s var(--spring) .4s, opacity .3s .4s; max-width: 240px; line-height: 1.2; }
+  .in .bubble { transform: none; opacity: 1; }
+  @media (max-width: 900px) { .cta-sec .wrap { grid-template-columns: 1fr; } .mascot-wrap { min-height: 320px; } }
+
+  footer { background: var(--cocoa); color: rgba(255,255,255,.7); padding: 3.5rem 0 2rem; font-size: .92rem; position: relative; }
+  footer::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 8px; background: linear-gradient(90deg, var(--red) 0 40%, var(--yellow) 40% 70%, var(--green) 70%); }
+  .foot { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 2rem; }
   .foot .brand { color: #fff; }
-  .foot .brand img { height: 46px; }
-  .foot small { display: block; color: rgba(255,255,255,.5); margin-top: .3rem; font-size: .8rem; }
+  .foot h4 { color: #fff; margin-bottom: .8rem; font-size: 1rem; }
+  .foot a { display: block; text-decoration: none; margin: .35rem 0; opacity: .8; } .foot a:hover { opacity: 1; color: var(--yellow); }
+  .foot small { display: block; margin-top: 1rem; color: rgba(255,255,255,.45); line-height: 1.5; }
+  .copy { margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid rgba(255,255,255,.1); font-size: .8rem; color: rgba(255,255,255,.45); display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+  @media (max-width: 760px) { .foot { grid-template-columns: 1fr; } }
 
-  @media (prefers-reduced-motion: reduce) { .arrow { animation: none; left: calc(94% - 64px); } html { scroll-behavior: auto; } }
+  /* Reveal system */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s var(--ease), transform .8s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal[data-delay="1"] { transition-delay: .12s; } .reveal[data-delay="2"] { transition-delay: .24s; } .reveal[data-delay="3"] { transition-delay: .36s; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; }
+    .reveal, .card, .hero h1 .w, .hero .lede, .hero .cta, .hero .proof, .pot, .mascot-wrap img, .bubble { opacity: 1 !important; transform: none !important; }
+    .track { animation: none; }
+  }
 </style>
 </head>
 <body>
+<div class="progress" aria-hidden="true"><i id="progress"></i></div>
 
-<header>
+<header id="header">
   <div class="wrap bar">
-    <a class="brand" href="/"><img src="/brand/logo.png" alt="ISA Alimentos" /> ISA Alimentos</a>
-    <nav>
+    <a class="brand" href="/"><img src="/brand/logo.png" alt="ISA Alimentos" width="52" height="46" /> ISA Alimentos</a>
+    <nav class="menu" aria-label="Principal">
       <a href="#como-funciona">Como funciona</a>
+      <a href="#produtos">Produtos</a>
       <a href="#recursos">Recursos</a>
       <a href="#baixar">Baixar</a>
     </nav>
     <a class="btn btn-red" href="https://app.isaindalimentos.com.br">Entrar no sistema
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <button class="burger" id="burger" aria-label="Abrir menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div>
 </header>
+<div class="mobile" id="mobile" aria-hidden="true">
+  <button class="close" id="close" aria-label="Fechar menu"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <a href="#como-funciona">Como funciona</a><a href="#produtos">Produtos</a><a href="#recursos">Recursos</a><a href="#baixar">Baixar</a>
+  <a class="btn btn-yellow" style="font-size:1.1rem;margin-top:1rem" href="https://app.isaindalimentos.com.br">Entrar no sistema</a>
+</div>
 
-<section class="hero">
+<main>
+<section class="hero" id="topo">
   <div class="wrap">
     <div>
-      <h1>Do pedido da loja à linha de produção, sem planilha na mão.</h1>
-      <p class="lede">O sistema da ISA lê a planilha de estoque e os pedidos das lojas em PDF, cruza com os 45 produtos e mostra exatamente o que precisa ser produzido hoje.</p>
+      <span class="kicker"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></i> Sistema oficial da ISA Indústria de Alimentos e Temperos</span>
+      <h1 id="headline">Do pedido da loja à <span class="hl">linha de produção</span>, sem planilha na mão.</h1>
+      <p class="lede">Solte a planilha de estoque e o PDF dos pedidos. O sistema cruza tudo com os 45 produtos e diz, em unidades e caixas, o que precisa ser produzido hoje.</p>
       <div class="cta">
-        <a class="btn btn-red" href="https://app.isaindalimentos.com.br">Acessar o sistema</a>
+        <a class="btn btn-red" href="https://app.isaindalimentos.com.br">Acessar o sistema
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         <a class="btn btn-ghost" href="#baixar">Baixar para Windows</a>
       </div>
+      <div class="proof">
+        <div><b data-count="45">0</b><span>produtos cadastrados</span></div>
+        <div><b data-count="10">0</b><span>lojas por PDF, de uma vez</span></div>
+        <div><b data-count="2">0</b><span>locais de estoque somados</span></div>
+      </div>
     </div>
-    <div class="hero-art">
-      <div class="stamp">45 produtos<small>estoque, pedidos e produção em um lugar</small></div>
-      <img src="/brand/mascot.png" alt="Mascote da ISA, o cupido de óculos, mirando com arco e flecha" />
+    <div class="stage" id="stage" aria-hidden="true">
+      <div class="blob"></div>
+      <div class="pot p1" data-depth="0.35"><img src="/brand/products/lemon-pepper.webp" alt="" width="420" height="420" /></div>
+      <div class="pot p2" data-depth="0.8"><img src="/brand/products/chimichurri-defumado.webp" alt="" width="420" height="420" loading="eager" /></div>
+      <div class="pot p3" data-depth="0.6"><img src="/brand/products/paprica-defumada.webp" alt="" width="420" height="420" /></div>
+      <div class="pot p4" data-depth="0.9"><img src="/brand/products/tempero-para-frango.webp" alt="" width="420" height="420" /></div>
+      <div class="pot p5" data-depth="0.5"><img src="/brand/products/caldo-de-galinha.webp" alt="" width="420" height="420" /></div>
     </div>
   </div>
+  <div class="scroll-hint" aria-hidden="true">role<i></i></div>
+</section>
 
-  <div class="line" id="como-funciona">
-    <div class="wrap">
-      <div class="line-head">
-        <h2>Três passos e a ordem de produção sai pronta.</h2>
-        <p>Nada de somar loja por loja. O sistema soma os pedidos de todas as lojas, desconta o estoque dos locais 1 e 5 e entrega a necessidade por produto.</p>
-      </div>
-      <div class="track" aria-label="Fluxo do sistema">
-        <svg class="arrow" viewBox="0 0 64 22" aria-hidden="true"><path d="M0 11h50" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M46 3l12 8-12 8z" fill="currentColor"/></svg>
-        <div class="step"><div class="n">1</div><h3>Importe o estoque</h3><p>Solte a planilha <code>ESTOQUE ATUAL</code> do ERP. Só os locais 1 e 5 entram, linhas repetidas são somadas e a importação anterior é substituída.</p></div>
-        <div class="step"><div class="n">2</div><h3>Importe os pedidos</h3><p>Um PDF com todas as lojas. Cada item é reconhecido pela descrição; quando há dúvida entre dois produtos, o sistema pergunta uma vez e aprende.</p></div>
-        <div class="step"><div class="n">3</div><h3>Veja o que produzir</h3><p>Total pedido menos estoque disponível, em unidades e caixas. Exporte para Excel, imprima ou salve a ordem e acompanhe o que já foi produzido.</p></div>
-      </div>
+<section class="marquee" aria-label="Todos os produtos ISA">
+  <div class="wrap marquee-head"><h2>Os 45 produtos da ISA, todos dentro do sistema.</h2><span>passe o mouse para pausar</span></div>
+  <div class="track" id="track1"></div>
+  <div class="track rev" id="track2" style="--t: 85s"></div>
+</section>
 
-      <div class="demo" role="img" aria-label="Exemplo da tela de necessidade de produção">
-        <div class="demo-top"><span class="dot"></span> Necessidade de produção · <b>10 pedidos, 45 produtos</b> · exemplo</div>
+<section class="journey" id="como-funciona">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>Três passos. A ordem de produção sai pronta.</h2>
+      <p>Nada de somar loja por loja na calculadora. O sistema soma os pedidos de todas as lojas, desconta o estoque dos locais 1 e 5 e entrega a necessidade por produto.</p>
+    </div>
+    <div class="steps">
+      <article class="step a reveal" data-delay="1">
+        <span class="num">1</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM4 9h16M4 14h16M9 4v16"/></svg></div>
+        <h3>Importe o estoque</h3>
+        <p>Solte a planilha <code>ESTOQUE ATUAL</code> do ERP. Só os locais 1 e 5 entram, linhas repetidas são somadas e a importação anterior é substituída.</p>
+        <div class="mini"><i></i> Leva menos de 5 segundos</div>
+      </article>
+      <article class="step b reveal" data-delay="2">
+        <span class="num">2</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></div>
+        <h3>Importe os pedidos</h3>
+        <p>Um PDF com todas as lojas. Cada item é reconhecido pela descrição; quando há dúvida entre dois produtos, o sistema pergunta uma vez e aprende para sempre.</p>
+        <div class="mini"><i></i> Cria a loja pelo CNPJ de entrega</div>
+      </article>
+      <article class="step c reveal" data-delay="3">
+        <span class="num">3</span>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
+        <h3>Veja o que produzir</h3>
+        <p>Total pedido menos estoque disponível, em unidades e caixas. Exporte para Excel, imprima ou salve a ordem e acompanhe o que já foi produzido.</p>
+        <div class="mini"><i></i> Saldo restante quando o estoque cobre</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="demo">
+  <div class="wrap reveal" id="demo">
+    <div class="screen">
+      <div class="screen-top"><i></i><i></i><i></i><span>app.isaindalimentos.com.br · Necessidade de produção</span></div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="stat"><small>Pedidos considerados</small><b data-count="10">0</b></div>
+          <div class="stat red"><small>Produtos a produzir</small><b data-count="19">0</b></div>
+          <div class="stat"><small>Total pedido (un)</small><b data-count="31680">0</b></div>
+          <div class="stat green"><small>Estoque disponível (un)</small><b data-count="68239">0</b></div>
+        </div>
         <table>
           <thead><tr><th>Produto</th><th class="r hide-sm">Estoque 1+5</th><th class="r">Pedido</th><th class="r">Produzir</th><th>Situação</th></tr></thead>
           <tbody>
-            <tr><td>Tempero Pega Marido 50g</td><td class="r hide-sm">1.707</td><td class="r">2.880</td><td class="r need">1.173</td><td><span class="tag go">Produzir</span></td></tr>
-            <tr><td>Chimichurri Pimenta 50g</td><td class="r hide-sm">311</td><td class="r">1.440</td><td class="r need">1.129</td><td><span class="tag go">Produzir</span></td></tr>
-            <tr><td>Tempero para Frango 80g</td><td class="r hide-sm">1.796</td><td class="r">2.400</td><td class="r need">604</td><td><span class="tag go">Produzir</span></td></tr>
-            <tr><td>Lemon Pepper 100g</td><td class="r hide-sm">5.609</td><td class="r">2.400</td><td class="r">—</td><td><span class="tag ok">Estoque atende</span></td></tr>
+            <tr><td><span class="prod"><img src="/brand/products/tempero-pega-marido.webp" alt="" width="34" height="34" loading="lazy" />Tempero Pega Marido 50g</span></td><td class="r hide-sm">1.707</td><td class="r">2.880</td><td class="r"><span class="need">1.173</span><span class="bar"><i style="--v:100%"></i></span></td><td><span class="pill go"><i></i>Produzir</span></td></tr>
+            <tr><td><span class="prod"><img src="/brand/products/chimichurri-pimenta.webp" alt="" width="34" height="34" loading="lazy" />Chimichurri Pimenta 50g</span></td><td class="r hide-sm">311</td><td class="r">1.440</td><td class="r"><span class="need">1.129</span><span class="bar"><i style="--v:96%"></i></span></td><td><span class="pill go"><i></i>Produzir</span></td></tr>
+            <tr><td><span class="prod"><img src="/brand/products/tempero-para-frango.webp" alt="" width="34" height="34" loading="lazy" />Tempero para Frango 80g</span></td><td class="r hide-sm">1.796</td><td class="r">2.400</td><td class="r"><span class="need">604</span><span class="bar"><i style="--v:52%"></i></span></td><td><span class="pill go"><i></i>Produzir</span></td></tr>
+            <tr><td><span class="prod"><img src="/brand/products/lemon-pepper.webp" alt="" width="34" height="34" loading="lazy" />Lemon Pepper 100g</span></td><td class="r hide-sm">5.609</td><td class="r">2.400</td><td class="r">—</td><td><span class="pill ok"><i></i>Estoque atende</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -210,41 +366,193 @@
   </div>
 </section>
 
-<section class="feat" id="recursos">
+<section class="products" id="produtos">
   <div class="wrap">
-    <h2>Feito para a rotina da fábrica e do comercial.</h2>
-    <p class="sub">Um sistema só, com as mesmas funções no navegador e no programa para Windows. Todo mundo vê o mesmo estoque, os mesmos pedidos e a mesma ordem de produção.</p>
-    <div class="grid">
-      <div class="card pop"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/></svg></div><h3>Estoque unificado</h3><p>Locais 1 e 5 somados por produto. Histórico de todas as importações, com a atual sempre marcada.</p></div>
-      <div class="card"><div class="ico d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></div><h3>Leitura de PDF que aprende</h3><p>Reconhece "HF.TEMPERO P/FRANGO ISA" como Tempero para Frango. Confirmou uma vez, nunca mais pergunta.</p></div>
-      <div class="card"><div class="ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div><h3>Ordem de produção</h3><p>Necessidade em unidades e caixas, saldo restante quando o estoque cobre, exportação para Excel e impressão.</p></div>
-      <div class="card"><div class="ico y"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><h3>Clientes por rede e loja</h3><p>Cada loja é criada pelo CNPJ de entrega do pedido. Pedidos, valores e histórico de contato por cliente.</p></div>
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Navegador e Windows</h3><p>Use no site ou instale o programa. Os dois falam com o mesmo banco, então nada fica desatualizado.</p></div>
-      <div class="card"><div class="ico d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg></div><h3>Atualização automática</h3><p>Quando sai uma versão nova, o programa avisa e instala com um clique. No site, basta atualizar a página.</p></div>
+    <div class="sec-head reveal">
+      <h2>Cada pote, com código e descrição, já cadastrado.</h2>
+      <p>O sistema nasce com os 45 produtos da linha ISA. Toque em uma linha para filtrar.</p>
+    </div>
+    <div class="filters reveal" id="filters" role="tablist" aria-label="Linhas de produto"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<section class="features" id="recursos">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>Feito para a rotina da fábrica e do comercial.</h2>
+      <p>Um sistema só, com as mesmas funções no navegador e no programa para Windows. Todo mundo vê o mesmo estoque, os mesmos pedidos e a mesma ordem de produção.</p>
+    </div>
+    <div class="bento">
+      <div class="b feature wide reveal">
+        <div class="ico" style="background:#fff;color:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
+        <div class="learn"><span>HF.TEMPERO P/FRANGO ISA</span><span class="k">= Tempero para Frango</span></div>
+        <h3>Leitura de PDF que aprende</h3>
+        <p>Reconhece a descrição da loja mesmo abreviada. Se houver dúvida entre dois produtos, ele não chuta: pergunta uma vez e nunca mais.</p>
+        <img src="/brand/products/tempero-para-frango.webp" alt="" width="420" height="420" loading="lazy" />
+      </div>
+      <div class="b yellow small reveal" data-delay="1"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/></svg></div><h3>Estoque unificado</h3><p>Locais 1 e 5 somados por produto, com histórico de cada importação.</p></div>
+      <div class="b green small reveal" data-delay="2"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div><h3>Ordem de produção</h3><p>Unidades e caixas, Excel, impressão e acompanhamento do produzido.</p></div>
+      <div class="b red small reveal" data-delay="1"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><h3>Clientes por rede e loja</h3><p>Cada loja nasce do CNPJ de entrega. Pedidos, valores e histórico de contato.</p></div>
+      <div class="b white small reveal" data-delay="2"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Navegador e Windows</h3><p>Site e programa falam com o mesmo banco. Nada fica desatualizado.</p></div>
+      <div class="b yellow small reveal" data-delay="3"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg></div><h3>Atualização automática</h3><p>Nova versão? O programa avisa e instala com um clique.</p></div>
     </div>
   </div>
 </section>
 
-<section class="dl" id="baixar">
-  <div class="wrap">
+<section class="cta-sec" id="baixar">
+  <div class="wrap reveal" id="ctaWrap">
     <div>
       <h2>Escolha como usar.</h2>
-      <p>O acesso é com e-mail e senha. Quem entra pelo site e quem usa o programa vê os mesmos dados, na hora.</p>
+      <p class="sub">O acesso é com e-mail e senha. Quem entra pelo site e quem usa o programa vê os mesmos dados, na hora.</p>
+      <div class="dl">
+        <a href="https://app.isaindalimentos.com.br"><span class="ico" style="background:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg></span><span><b>Usar no navegador</b><span>app.isaindalimentos.com.br</span></span><em>Abrir</em></a>
+        <a href="https://github.com/isaindustria/isaalimentos/releases/latest"><span class="ico" style="background:var(--cocoa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></span><span><b>Instalar no Windows</b><span>Instalador com atualização automática</span></span><em>Baixar</em></a>
+        <a href="https://github.com/isaindustria/isaalimentos/releases/latest"><span class="ico" style="background:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg></span><span><b>Versão portátil</b><span>Sem instalar, roda direto do arquivo</span></span><em>Baixar</em></a>
+      </div>
     </div>
-    <div class="dl-cards">
-      <a class="dl-card" href="https://app.isaindalimentos.com.br"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg></div><div><b>Usar no navegador</b><span>app.isaindalimentos.com.br</span></div><span class="go">Abrir</span></a>
-      <a class="dl-card" href="https://github.com/isaindustria/isaalimentos/releases/latest"><div class="ico d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div><div><b>Instalar no Windows</b><span>Instalador com atualização automática</span></div><span class="go">Baixar</span></a>
-      <a class="dl-card" href="https://github.com/isaindustria/isaalimentos/releases/latest"><div class="ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg></div><div><b>Versão portátil</b><span>Sem instalar, roda direto do arquivo</span></div><span class="go">Baixar</span></a>
+    <div class="mascot-wrap">
+      <div class="bubble">Mirei no pedido, acertei a produção.</div>
+      <img src="/brand/mascot.png" alt="Mascote da ISA, o cupido de óculos, mirando com arco e flecha" width="917" height="881" loading="lazy" />
     </div>
   </div>
 </section>
+</main>
 
 <footer>
-  <div class="wrap foot">
-    <a class="brand" href="/"><img src="/brand/logo.png" alt="" /> <span>ISA Indústria de Alimentos e Temperos<small>Itaquaquecetuba, SP · CNPJ 55.747.709/0001-47</small></span></a>
-    <a class="btn btn-dark" href="https://app.isaindalimentos.com.br" style="border:1px solid rgba(255,255,255,.2)">Entrar no sistema</a>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="/"><img src="/brand/logo.png" alt="" width="52" height="46" /> ISA Alimentos</a>
+        <small>ISA Indústria de Alimentos e Temperos Ltda<br />CNPJ 55.747.709/0001-47<br />Itaquaquecetuba, SP</small>
+      </div>
+      <div><h4>Sistema</h4><a href="https://app.isaindalimentos.com.br">Entrar</a><a href="#como-funciona">Como funciona</a><a href="#produtos">Produtos</a><a href="#recursos">Recursos</a></div>
+      <div><h4>Downloads</h4><a href="https://github.com/isaindustria/isaalimentos/releases/latest">Instalador Windows</a><a href="https://github.com/isaindustria/isaalimentos/releases/latest">Versão portátil</a><a href="mailto:noreply@isaindalimentos.com.br">Suporte</a></div>
+    </div>
+    <div class="copy"><span>© <span id="year"></span> ISA Indústria de Alimentos e Temperos</span><span>isaindalimentos.com.br</span></div>
   </div>
 </footer>
 
+<script>
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Headline: word by word entrance
+  var h = document.getElementById('headline');
+  var html = h.innerHTML, i = 0;
+  h.innerHTML = html.replace(/(<span class="hl">)?([^<\s]+)(<\/span>)?/g, function (m, open, word, close) {
+    var d = (i++ * 0.06).toFixed(2);
+    return (open || '') + '<span class="w" style="animation-delay:' + d + 's">' + word + '</span>' + (close || '');
+  });
+
+  // Header + progress
+  var header = document.getElementById('header'), prog = document.getElementById('progress');
+  var links = [].slice.call(document.querySelectorAll('nav.menu a'));
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+  var ticking = false;
+  function onScroll() {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(function () {
+      var y = window.scrollY, max = document.documentElement.scrollHeight - innerHeight;
+      header.classList.toggle('solid', y > 24);
+      prog.style.transform = 'scaleX(' + (max > 0 ? y / max : 0) + ')';
+      var cur = -1;
+      sections.forEach(function (s, idx) { if (s && s.getBoundingClientRect().top <= innerHeight * 0.4) cur = idx; });
+      links.forEach(function (a, idx) { a.classList.toggle('active', idx === cur); });
+      if (!reduce) document.querySelectorAll('.pot').forEach(function (p) {
+        var depth = parseFloat(p.dataset.depth || 0.5);
+        p.style.setProperty('transform', 'translateY(' + (-y * depth * 0.18) + 'px)');
+      });
+      ticking = false;
+    });
+  }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+  // Mouse parallax on hero stage
+  var stage = document.getElementById('stage');
+  if (stage && !reduce && matchMedia('(hover:hover)').matches) {
+    stage.addEventListener('mousemove', function (e) {
+      var r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+      stage.querySelectorAll('.pot img').forEach(function (img, idx) {
+        var d = parseFloat(img.parentNode.dataset.depth || .5) * 26;
+        img.style.translate = (x * d) + 'px ' + (y * d) + 'px';
+      });
+    });
+    stage.addEventListener('mouseleave', function () { stage.querySelectorAll('.pot img').forEach(function (img) { img.style.translate = '0 0'; }); });
+  }
+
+  // Mobile menu
+  var burger = document.getElementById('burger'), mobile = document.getElementById('mobile'), close = document.getElementById('close');
+  function toggle(open) { mobile.classList.toggle('open', open); mobile.setAttribute('aria-hidden', String(!open)); burger.setAttribute('aria-expanded', String(open)); document.body.style.overflow = open ? 'hidden' : ''; }
+  burger.addEventListener('click', function () { toggle(true); });
+  close.addEventListener('click', function () { toggle(false); });
+  mobile.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { toggle(false); }); });
+
+  // Reveal + counters
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      en.target.classList.add('in');
+      en.target.querySelectorAll('[data-count]').forEach(count);
+      if (en.target.hasAttribute('data-count')) count(en.target);
+      io.unobserve(en.target);
+    });
+  }, { threshold: 0.18 });
+  document.querySelectorAll('.reveal, .proof').forEach(function (el) { io.observe(el); });
+  function count(el) {
+    if (el.dataset.done) return; el.dataset.done = 1;
+    var end = parseInt(el.dataset.count, 10), start = performance.now(), dur = reduce ? 1 : 1400;
+    function tick(now) {
+      var p = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(end * e).toLocaleString('pt-BR');
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Products: marquee + filterable grid from manifest
+  fetch('/brand/products/index.json').then(function (r) { return r.json(); }).then(function (items) {
+    var t1 = document.getElementById('track1'), t2 = document.getElementById('track2');
+    function chip(p) { return '<span class="chip"><img src="' + p.img + '" alt="" width="56" height="56" loading="lazy" />' + p.name + '</span>'; }
+    var half = Math.ceil(items.length / 2);
+    var a = items.slice(0, half).map(chip).join(''), b = items.slice(half).map(chip).join('');
+    t1.innerHTML = a + a; t2.innerHTML = b + b;
+
+    var lines = ['Todas'].concat(items.map(function (p) { return p.line; }).filter(function (v, i, arr) { return arr.indexOf(v) === i; }));
+    var filters = document.getElementById('filters'), grid = document.getElementById('grid');
+    filters.innerHTML = lines.map(function (l, i) { return '<button role="tab" aria-selected="' + (i === 0) + '" class="' + (i === 0 ? 'on' : '') + '" data-line="' + l + '">' + l + '</button>'; }).join('');
+    grid.innerHTML = items.map(function (p) {
+      return '<article class="card" data-line="' + p.line + '"><img src="' + p.img + '" alt="' + p.name + '" width="420" height="420" loading="lazy" /><b>' + p.name + '</b><small>cód. ' + p.code + ' · ' + p.line + '</small></article>';
+    }).join('');
+    var cards = [].slice.call(grid.children);
+    var gio = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) { var idx = cards.indexOf(en.target); en.target.style.transitionDelay = (Math.min(idx % 10, 9) * 45) + 'ms'; en.target.classList.add('in'); gio.unobserve(en.target); } });
+    }, { threshold: 0.1 });
+    cards.forEach(function (c) { gio.observe(c); });
+
+    filters.addEventListener('click', function (e) {
+      var btn = e.target.closest('button'); if (!btn) return;
+      filters.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); b.setAttribute('aria-selected', String(b === btn)); });
+      var line = btn.dataset.line, n = 0;
+      cards.forEach(function (c) {
+        var show = line === 'Todas' || c.dataset.line === line;
+        c.classList.toggle('hidden', !show);
+        if (show) { c.classList.remove('in'); c.style.transitionDelay = (n++ * 35) + 'ms'; requestAnimationFrame(function () { requestAnimationFrame(function () { c.classList.add('in'); }); }); }
+      });
+    });
+
+    // 3D tilt on hover (pointer devices)
+    if (!reduce && matchMedia('(hover:hover)').matches) {
+      grid.addEventListener('mousemove', function (e) {
+        var c = e.target.closest('.card'); if (!c) return;
+        var r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+        c.style.transform = 'perspective(700px) rotateX(' + (-y * 10) + 'deg) rotateY(' + (x * 12) + 'deg) translateY(-4px)';
+      });
+      grid.addEventListener('mouseout', function (e) { var c = e.target.closest('.card'); if (c && !c.contains(e.relatedTarget)) c.style.transform = ''; });
+    }
+  });
+})();
+</script>
 </body>
 </html>
