@@ -10,6 +10,7 @@ import { listPendingItems } from '@/api/orders';
 import { getModules } from '@/api/v14';
 import { cn, initials } from '@/lib/utils';
 import { Button } from './primitives';
+import { PushPrompt } from './PushPrompt';
 import { NotificationsBell } from './Notifications';
 import { OnlineUsers } from './OnlineUsers';
 import { ROLE_LABEL } from '@/lib/types';
@@ -213,6 +214,7 @@ export default function AppShell() {
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto animate-fade-up">
+            <PushPrompt />
             <Outlet />
           </div>
         </main>
