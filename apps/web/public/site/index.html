@@ -349,7 +349,7 @@
       <div class="cta">
         <a class="btn btn-red" href="https://app.isaindalimentos.com.br">Acessar o sistema
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        <a class="btn btn-ghost" href="#baixar">Baixar para Windows</a>
+        <a class="btn btn-ghost" href="https://github.com/isaindustria/isaalimentos/releases/latest" data-dl="setup">Baixar para Windows</a>
       </div>
       <div class="proof">
         <div><b data-count="45">0</b><span>produtos cadastrados</span></div>
@@ -498,8 +498,8 @@
       <p class="sub">O acesso é com e-mail e senha. Quem entra pelo site, pelo celular ou pelo programa vê os mesmos dados, na hora.</p>
       <div class="dl">
         <a href="https://app.isaindalimentos.com.br"><span class="ico" style="background:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg></span><span><b>Usar no navegador ou no celular</b><span>app.isaindalimentos.com.br · instale como aplicativo</span></span><em>Abrir</em></a>
-        <a href="https://github.com/isaindustria/isaalimentos/releases/latest"><span class="ico" style="background:var(--cocoa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></span><span><b>Instalar no Windows</b><span>Instalador com atualização automática</span></span><em>Baixar</em></a>
-        <a href="https://github.com/isaindustria/isaalimentos/releases/latest"><span class="ico" style="background:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg></span><span><b>Versão portátil</b><span>Sem instalar, roda direto do arquivo</span></span><em>Baixar</em></a>
+        <a href="https://github.com/isaindustria/isaalimentos/releases/latest" data-dl="setup" download><span class="ico" style="background:var(--cocoa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></span><span><b>Instalar no Windows</b><span>Instalador com atualização automática</span></span><em>Baixar</em></a>
+        <a href="https://github.com/isaindustria/isaalimentos/releases/latest" data-dl="portable" download><span class="ico" style="background:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg></span><span><b>Versão portátil</b><span>Sem instalar, roda direto do arquivo</span></span><em>Baixar</em></a>
       </div>
     </div>
     <div class="mascot-card">
@@ -519,7 +519,7 @@
         <small>ISA Indústria de Alimentos e Temperos Ltda<br />CNPJ 55.747.709/0001-47<br />Itaquaquecetuba, SP</small>
       </div>
       <div><h4>Sistema</h4><a href="https://app.isaindalimentos.com.br">Entrar</a><a href="#como-funciona">Como funciona</a><a href="#produtos">Produtos</a><a href="#recursos">Recursos</a></div>
-      <div><h4>Contato e downloads</h4><a href="https://github.com/isaindustria/isaalimentos/releases/latest">Instalador Windows</a><a href="https://github.com/isaindustria/isaalimentos/releases/latest">Versão portátil</a><a href="mailto:faleconosco@isaalimentos.ind.br">faleconosco@isaalimentos.ind.br</a><a href="tel:+551151982994">(11) 5198-2994</a></div>
+      <div><h4>Contato e downloads</h4><a href="https://github.com/isaindustria/isaalimentos/releases/latest" data-dl="setup" download>Instalador Windows</a><a href="https://github.com/isaindustria/isaalimentos/releases/latest" data-dl="portable" download>Versão portátil</a><a href="mailto:faleconosco@isaalimentos.ind.br">faleconosco@isaalimentos.ind.br</a><a href="tel:+551151982994">(11) 5198-2994</a></div>
     </div>
     <div class="copy"><span>© <span id="year"></span> ISA Indústria de Alimentos e Temperos</span><span>isaindalimentos.com.br</span></div>
   </div>
@@ -527,6 +527,15 @@
 
 <script>
 (function () {
+  // Resolve o link direto do instalador (evita levar o usuario a pagina de releases do GitHub).
+  fetch('https://api.github.com/repos/isaindustria/isaalimentos/releases/latest').then(function (r) { return r.json(); }).then(function (rel) {
+    var assets = rel.assets || [];
+    var setup = assets.find(function (a) { return /Setup.*\.exe$/i.test(a.name); });
+    var portable = assets.find(function (a) { return /Portable.*\.exe$/i.test(a.name); });
+    document.querySelectorAll('[data-dl="setup"]').forEach(function (a) { if (setup) a.href = setup.browser_download_url; });
+    document.querySelectorAll('[data-dl="portable"]').forEach(function (a) { if (portable) a.href = portable.browser_download_url; });
+  }).catch(function () { /* mantem o link para a pagina de releases como reserva */ });
+
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.getElementById('year').textContent = new Date().getFullYear();
 
