@@ -18,12 +18,15 @@ Deno.serve(async (req) => {
   const body: string = record.body ?? '';
   const link: string = record.link ?? '/';
   const audience: string[] = record.audience ?? [];
-  if (payload.type === 'INSERT' && !IMPORTANT.test(title) && record.kind !== 'mensagem') return new Response(JSON.stringify({ skipped: true }), { headers: { 'Content-Type': 'application/json' } });
+  // Boas-vindas: disparado pelo trigger em push_subscriptions, vai so para o aparelho recem-cadastrado.
+  const onlySub: string | undefined = payload.subscription_id;
+  if (!onlySub && payload.type === 'INSERT' && !IMPORTANT.test(title) && record.kind !== 'mensagem') return new Response(JSON.stringify({ skipped: true }), { headers: { 'Content-Type': 'application/json' } });
 
   const admin = createClient(url, serviceKey);
   let q = admin.from('push_subscriptions').select('id, endpoint, p256dh, auth, user_id, profiles!inner(role, access, status)');
+  if (onlySub) q = q.eq('id', onlySub);
   const { data: subs } = await q;
-  const targets = (subs ?? []).filter((s: any) => s.profiles?.status === 'ativo' && (!audience.length || audience.includes(s.profiles.role) || (audience.includes('admin') && s.profiles.access === 'admin')) && s.user_id !== record.actor_id);
+  const targets = onlySub ? (subs ?? []) : (subs ?? []).filter((s: any) => s.profiles?.status === 'ativo' && (!audience.length || audience.includes(s.profiles.role) || (audience.includes('admin') && s.profiles.access === 'admin')) && s.user_id !== record.actor_id);
   let sent = 0;
   const dead: string[] = [];
   for (const s of targets) {
