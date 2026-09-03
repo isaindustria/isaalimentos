@@ -13,7 +13,7 @@ const empty: Partial<Product> = { code: '', description: '', reference: 'ISA POT
 
 export default function ProductsPage() {
   const qc = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canWrite } = useAuth();
   const [tab, setTab] = useState<'produtos' | 'apelidos'>('produtos');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
@@ -63,7 +63,7 @@ export default function ProductsPage() {
       <PageHeader
         title="Produtos"
         description="Cadastro dos produtos identificados pelo código da planilha de estoque. O código é o identificador principal."
-        actions={<Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ ...empty })}>Novo produto</Button>}
+        actions={canWrite && <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ ...empty })}>Novo produto</Button>}
       />
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <Tabs value={tab} onChange={setTab} items={[{ value: 'produtos', label: 'Produtos', count: products.data?.length }, { value: 'apelidos', label: 'Apelidos aprendidos', count: aliases.data?.length }]} />

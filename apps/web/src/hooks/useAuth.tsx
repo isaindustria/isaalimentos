@@ -8,6 +8,10 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
+  /** Conta aprovada e ativa. */
+  isActive: boolean;
+  /** Pode criar/alterar registros (editor ou admin). */
+  canWrite: boolean;
   signIn(email: string, password: string): Promise<void>;
   signUp(name: string, email: string, password: string): Promise<{ needsConfirmation: boolean }>;
   resetPassword(email: string): Promise<void>;
@@ -55,7 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       profile,
       loading,
-      isAdmin: profile?.role === 'admin',
+      isAdmin: profile?.status === 'ativo' && (profile?.access === 'admin' || profile?.is_superadmin === true),
+      isActive: profile?.status === 'ativo',
+      canWrite: profile?.status === 'ativo' && (profile?.access === 'admin' || profile?.access === 'editor'),
       async signIn(email, password) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw new Error(translateAuthError(error.message));
@@ -94,7 +100,10 @@ function translateAuthError(msg: string): string {
   if (m.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar.';
   if (m.includes('already registered')) return 'Este e-mail já está cadastrado.';
   if (m.includes('password should be')) return 'A senha deve ter pelo menos 6 caracteres.';
-  if (m.includes('rate limit')) return 'Muitas tentativas. Aguarde um instante.';
+  if (m.includes('rate limit') && m.includes('email')) return 'O envio de e-mails atingiu o limite por hora. Tente novamente mais tarde ou peça ao administrador para verificar o SMTP.';
+  if (m.includes('rate limit')) return 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.';
+  if (m.includes('email address') && m.includes('invalid')) return 'E-mail inválido.';
+  if (m.includes('same password')) return 'A nova senha precisa ser diferente da atual.';
   if (m.includes('fetch')) return 'Sem conexão com o servidor. Verifique a internet e a configuração do Supabase.';
   return msg;
 }

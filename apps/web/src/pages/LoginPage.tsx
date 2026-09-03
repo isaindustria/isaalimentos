@@ -32,7 +32,7 @@ export default function LoginPage() {
       } else if (mode === 'signup') {
         const r = await signUp(name, email, password);
         if (r.needsConfirmation) {
-          toast.success('Conta criada. Confirme o e-mail para entrar.');
+          toast.success('Conta criada. Confirme o e-mail; depois um administrador libera o acesso.', { duration: 9000 });
           setMode('login');
         } else navigate('/');
       } else {
@@ -86,7 +86,7 @@ export default function LoginPage() {
             {mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Recuperar senha'}
           </h1>
           <p className="text-sm text-muted mt-1 mb-6">
-            {mode === 'login' ? 'Use seu e-mail e senha cadastrados.' : mode === 'signup' ? 'O primeiro usuário cadastrado será o administrador.' : 'Informe o e-mail da conta.'}
+            {mode === 'login' ? 'Use seu e-mail e senha cadastrados.' : mode === 'signup' ? 'Depois de criar a conta, um administrador da ISA libera o seu acesso.' : 'Informe o e-mail da conta.'}
           </p>
           <div className="space-y-4">
             {mode === 'signup' && (

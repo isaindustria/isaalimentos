@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, RefreshCw, Users, SlidersHorizontal, Info, ExternalLink } from 'lucide-react';
-import { getSettings, listProfiles, setSetting, updateProfile, type Settings } from '@/api/settings';
-import { Badge, Button, Card, Field, Input, PageHeader, Select, Table } from '@/components/primitives';
+import { Save, RefreshCw, SlidersHorizontal, Info, ExternalLink } from 'lucide-react';
+import { getSettings, setSetting, type Settings } from '@/api/settings';
+import { MyProfile } from '@/components/MyProfile';
+import { UsersAdmin } from '@/components/UsersAdmin';
+import { Badge, Button, Card, Field, Input, PageHeader } from '@/components/primitives';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdates } from '@/hooks/useUpdates';
 import { RELEASES_URL, openExternal } from '@/lib/desktop';
 import { fmtDate } from '@/lib/utils';
-import { ROLE_LABEL, type Role } from '@/lib/types';
+import { ROLE_LABEL } from '@/lib/types';
 
 export default function SettingsPage() {
   const qc = useQueryClient();
   const { isAdmin, profile } = useAuth();
   const updates = useUpdates();
   const settings = useQuery({ queryKey: ['settings'], queryFn: getSettings });
-  const profiles = useQuery({ queryKey: ['profiles'], queryFn: listProfiles, enabled: isAdmin });
   const [form, setForm] = useState<Settings | null>(null);
   useEffect(() => {
     if (settings.data && !form) setForm(settings.data);
@@ -33,11 +34,6 @@ export default function SettingsPage() {
       toast.success('Configurações salvas.');
       qc.invalidateQueries({ queryKey: ['settings'] });
     },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const role = useMutation({
-    mutationFn: (v: { id: string; role: Role }) => updateProfile(v.id, { role: v.role }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -91,28 +87,8 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {isAdmin && (
-          <Card title={<span className="inline-flex items-center gap-2 font-display font-bold text-sm"><Users className="h-4 w-4 text-brand" /> Usuários</span>} padded={false} className="lg:col-span-2">
-            <Table>
-              <thead><tr><th className="th">Nome</th><th className="th">E-mail</th><th className="th">Perfil</th><th className="th">Desde</th></tr></thead>
-              <tbody>
-                {profiles.data?.map((p) => (
-                  <tr key={p.id}>
-                    <td className="td font-medium">{p.name}</td>
-                    <td className="td text-muted">{p.email}</td>
-                    <td className="td">
-                      <Select className="w-36 h-8" value={p.role} onChange={(e) => role.mutate({ id: p.id, role: e.target.value as Role })} disabled={p.id === profile?.id}>
-                        {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                      </Select>
-                    </td>
-                    <td className="td text-muted">{fmtDate(p.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-            <p className="text-xs text-muted px-5 py-3">Novos usuários criam a conta na tela de login. Administradores podem excluir produtos, clientes e importações. No celular, use "Adicionar à tela inicial" para instalar o aplicativo.</p>
-          </Card>
-        )}
+        <MyProfile />
+        {isAdmin && <UsersAdmin />}
       </div>
     </>
   );

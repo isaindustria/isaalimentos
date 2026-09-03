@@ -22,7 +22,7 @@ const KIND_LABEL: Record<MovementKind, { label: string; tone: 'ok' | 'danger' | 
 
 export default function StockMovements() {
   const qc = useQueryClient();
-  const { session, profile, isAdmin } = useAuth();
+  const { session, profile, isAdmin, canWrite } = useAuth();
   const [open, setOpen] = useState<null | 'mov' | 'inv'>(null);
   const [productCode, setProductCode] = useState('');
   const [location, setLocation] = useState(1);
@@ -87,9 +87,13 @@ export default function StockMovements() {
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <Button icon={<ArrowDownToLine className="h-4 w-4" />} onClick={() => { setKind('entrada'); setOpen('mov'); }}>Entrada</Button>
-        <Button variant="outline" icon={<ArrowUpFromLine className="h-4 w-4" />} onClick={() => { setKind('saida'); setOpen('mov'); }}>Saída</Button>
-        <Button variant="outline" icon={<ClipboardCheck className="h-4 w-4" />} onClick={() => setOpen('inv')}>Contagem de inventário</Button>
+        {canWrite && (
+          <>
+            <Button icon={<ArrowDownToLine className="h-4 w-4" />} onClick={() => { setKind('entrada'); setOpen('mov'); }}>Entrada</Button>
+            <Button variant="outline" icon={<ArrowUpFromLine className="h-4 w-4" />} onClick={() => { setKind('saida'); setOpen('mov'); }}>Saída</Button>
+            <Button variant="outline" icon={<ClipboardCheck className="h-4 w-4" />} onClick={() => setOpen('inv')}>Contagem de inventário</Button>
+          </>
+        )}
         <Select className="ml-auto w-full sm:w-72" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="">Todos os produtos</option>
           {products.data?.map((p) => <option key={p.code} value={p.code}>{p.code} · {p.description}</option>)}

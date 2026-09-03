@@ -11,11 +11,26 @@ export const ROLE_LABEL: Record<Role, string> = {
   operador: 'Operador',
 };
 
+export type ProfileStatus = 'pendente' | 'ativo' | 'bloqueado';
+export type Access = 'admin' | 'editor' | 'visualizador';
+
+export const ACCESS_LABEL: Record<Access, string> = {
+  admin: 'Administrador (tudo, inclusive usuários)',
+  editor: 'Editor (cria e altera)',
+  visualizador: 'Visualizador (só consulta)',
+};
+export const STATUS_LABEL_PROFILE: Record<ProfileStatus, string> = { pendente: 'Aguardando aprovação', ativo: 'Ativo', bloqueado: 'Bloqueado' };
+
 export interface Profile {
   id: string;
   name: string | null;
   email: string | null;
   role: Role;
+  access: Access;
+  status: ProfileStatus;
+  is_superadmin: boolean;
+  approved_by: string | null;
+  approved_at: string | null;
   created_at: string;
 }
 

@@ -7,6 +7,7 @@ import { customerStats, listCustomers, upsertCustomer } from '@/api/customers';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Textarea } from '@/components/primitives';
 import type { Customer } from '@/lib/types';
 import { fmtBRL, fmtDate, formatCnpj } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 export function CustomerForm({ value, onChange }: { value: Partial<Customer>; onChange: (v: Partial<Customer>) => void }) {
   const set = (k: keyof Customer) => (e: { target: { value: string } }) => onChange({ ...value, [k]: e.target.value });
@@ -33,6 +34,7 @@ export function CustomerForm({ value, onChange }: { value: Partial<Customer>; on
 export default function CustomersPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { canWrite } = useAuth();
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Partial<Customer> | null>(null);
   const customers = useQuery({ queryKey: ['customers'], queryFn: () => listCustomers() });
@@ -70,7 +72,7 @@ export default function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="Clientes" description="Lojas e redes atendidas. Clientes são criados automaticamente ao importar pedidos (pelo CNPJ de entrega)." actions={<Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ name: '' })}>Novo cliente</Button>} />
+      <PageHeader title="Clientes" description="Lojas e redes atendidas. Clientes são criados automaticamente ao importar pedidos (pelo CNPJ de entrega)." actions={canWrite && <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ name: '' })}>Novo cliente</Button>} />
       <div className="relative w-full sm:w-80 mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
         <Input className="pl-9" placeholder="Buscar por nome, CNPJ, cidade ou rede" value={search} onChange={(e) => setSearch(e.target.value)} />

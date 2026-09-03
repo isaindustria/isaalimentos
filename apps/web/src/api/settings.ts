@@ -1,5 +1,5 @@
 import { supabase, unwrap } from '@/lib/supabase';
-import type { AppSetting, Profile, Role } from '@/lib/types';
+import type { Access, AppSetting, Profile, ProfileStatus, Role } from '@/lib/types';
 
 export interface Settings {
   stock_locations: number[];
@@ -32,6 +32,28 @@ export async function listProfiles(): Promise<Profile[]> {
   return unwrap(await supabase.from('profiles').select('*').order('created_at'));
 }
 
-export async function updateProfile(id: string, patch: { name?: string; role?: Role }) {
+export async function updateProfile(id: string, patch: { name?: string; role?: Role; access?: Access; status?: ProfileStatus; approved_by?: string | null; approved_at?: string | null }) {
   unwrap(await supabase.from('profiles').update(patch).eq('id', id));
+}
+
+export async function approveProfile(id: string, by: string, role: Role, access: Access) {
+  unwrap(await supabase.from('profiles').update({ status: 'ativo', role, access, approved_by: by, approved_at: new Date().toISOString() }).eq('id', id));
+}
+
+export async function listPendingProfiles(): Promise<Profile[]> {
+  return unwrap(await supabase.from('profiles').select('*').eq('status', 'pendente').order('created_at'));
+}
+
+/** Own account: name, e-mail (sends confirmation to the new address) and password. */
+export async function updateMyName(id: string, name: string) {
+  unwrap(await supabase.from('profiles').update({ name }).eq('id', id));
+  await supabase.auth.updateUser({ data: { name } });
+}
+export async function updateMyEmail(email: string) {
+  const { error } = await supabase.auth.updateUser({ email });
+  if (error) throw new Error(error.message);
+}
+export async function updateMyPassword(password: string) {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw new Error(error.message);
 }

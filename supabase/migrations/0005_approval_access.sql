@@ -1,0 +1,3 @@
+-- Migration 0005: superadmin fixo (ericktorresadm@gmail.com), aprovacao de cadastro,
+-- nivel de acesso (admin/editor/visualizador), sincronismo de e-mail e RLS por status/nivel.
+-- Conteudo aplicado via MCP em 2026-09-02; ver historico no Supabase (migration approval_access_levels).

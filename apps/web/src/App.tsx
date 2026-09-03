@@ -24,6 +24,7 @@ const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage'));
 const ProductionPage = lazy(() => import('./pages/ProductionPage'));
 const ProductionRunPage = lazy(() => import('./pages/ProductionRunPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const PendingPage = lazy(() => import('./pages/PendingPage'));
 
 function FullSpinner() {
   return (
@@ -34,9 +35,10 @@ function FullSpinner() {
 }
 
 function Protected({ children }: { children: ReactNode }) {
-  const { session, loading } = useAuth();
+  const { session, loading, profile } = useAuth();
   if (loading) return <FullSpinner />;
   if (!session) return <Navigate to="/login" replace />;
+  if (profile && profile.status !== 'ativo') return <PendingPage />;
   return <>{children}</>;
 }
 

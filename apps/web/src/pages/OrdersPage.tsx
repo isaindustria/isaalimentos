@@ -21,7 +21,7 @@ export const STATUS_LABEL: Record<OrderStatus, { label: string; tone: 'info' | '
 export default function OrdersPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canWrite } = useAuth();
   const [tab, setTab] = useState<'pedidos' | 'importacoes'>('pedidos');
   const [filters, setFilters] = useState<OrderFilters>({ status: 'todos' });
 
@@ -55,12 +55,16 @@ export default function OrdersPage() {
                 <Button variant="outline" icon={<AlertTriangle className="h-4 w-4 text-warn" />}>Conferir {pending.data.length} item(ns)</Button>
               </Link>
             )}
-            <Link to="/pedidos/importar">
-              <Button variant="outline" icon={<FileText className="h-4 w-4" />}>Importar PDF</Button>
-            </Link>
-            <Link to="/pedidos/novo">
-              <Button icon={<Plus className="h-4 w-4" />}>Novo pedido</Button>
-            </Link>
+            {canWrite && (
+              <>
+                <Link to="/pedidos/importar">
+                  <Button variant="outline" icon={<FileText className="h-4 w-4" />}>Importar PDF</Button>
+                </Link>
+                <Link to="/pedidos/novo">
+                  <Button icon={<Plus className="h-4 w-4" />}>Novo pedido</Button>
+                </Link>
+              </>
+            )}
           </>
         }
       />

@@ -12,7 +12,7 @@ import StockMovements from '@/components/StockMovements';
 
 export default function StockPage() {
   const qc = useQueryClient();
-  const { session, isAdmin } = useAuth();
+  const { session, isAdmin, canWrite } = useAuth();
   const [tab, setTab] = useState<'atual' | 'lancamentos' | 'historico'>('atual');
   const [importOpen, setImportOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -94,7 +94,7 @@ export default function StockPage() {
         actions={
           <>
             <Button variant="outline" icon={<Download className="h-4 w-4" />} onClick={exportCsv} disabled={!stock.data?.length}>Exportar CSV</Button>
-            <Button icon={<Upload className="h-4 w-4" />} onClick={() => setImportOpen(true)}>Importar planilha</Button>
+            {canWrite && <Button icon={<Upload className="h-4 w-4" />} onClick={() => setImportOpen(true)}>Importar planilha</Button>}
           </>
         }
       />
