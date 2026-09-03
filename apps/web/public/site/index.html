@@ -141,6 +141,7 @@
   .scroll-hint i { width: 1px; height: 30px; background: linear-gradient(var(--red), transparent); animation: hint 1.6s ease-in-out infinite; }
   @keyframes hint { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
   @media (max-width: 960px) { .hero .wrap { grid-template-columns: 1fr; } .stage { max-width: 420px; margin: 0 auto; } .hero { padding-top: 6.2rem; } }
+  @media (max-width: 960px) { .scroll-hint, .marquee-head span { display: none; } }
 
   /* Marquee */
   .marquee { padding: 2.2rem 0; background: var(--cocoa); color: #fff; overflow: hidden; position: relative; }
