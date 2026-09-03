@@ -1,8 +1,12 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, Search, Pencil, Link2, Trash2 } from 'lucide-react';
+import { Plus, Search, Pencil, Link2, Trash2, Upload } from 'lucide-react';
+import { ImportSheetDialog } from '@/components/ImportSheetDialog';
+import { pick, toNumber } from '@/domain/parsers/sheet';
+import { bulkUpsertProducts, type ProductInput } from '@/api/products';
 import { deleteAlias, deleteProduct, listAliases, listProducts, upsertProduct } from '@/api/products';
+import { logActivity } from '@/api/activity';
 import { getCurrentStock } from '@/api/stock';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Tabs } from '@/components/primitives';
 import type { Product } from '@/lib/types';
@@ -13,7 +17,8 @@ const empty: Partial<Product> = { code: '', description: '', reference: 'ISA POT
 
 export default function ProductsPage() {
   const qc = useQueryClient();
-  const { isAdmin, canWrite } = useAuth();
+  const { isAdmin, canWrite, session, profile } = useAuth();
+  const [importOpen, setImportOpen] = useState(false);
   const [tab, setTab] = useState<'produtos' | 'apelidos'>('produtos');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
@@ -63,7 +68,12 @@ export default function ProductsPage() {
       <PageHeader
         title="Produtos"
         description="Cadastro dos produtos identificados pelo código da planilha de estoque. O código é o identificador principal."
-        actions={canWrite && <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ ...empty })}>Novo produto</Button>}
+        actions={canWrite && (
+          <>
+            <Button variant="outline" icon={<Upload className="h-4 w-4" />} onClick={() => setImportOpen(true)}>Importar planilha</Button>
+            <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ ...empty })}>Novo produto</Button>
+          </>
+        )}
       />
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <Tabs value={tab} onChange={setTab} items={[{ value: 'produtos', label: 'Produtos', count: products.data?.length }, { value: 'apelidos', label: 'Apelidos aprendidos', count: aliases.data?.length }]} />
@@ -152,6 +162,48 @@ export default function ProductsPage() {
           )}
         </Card>
       )}
+
+      <ImportSheetDialog<ProductInput>
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        title="Importar produtos por planilha"
+        description="Cria ou atualiza produtos pelo código. Serve para cadastrar a linha inteira de uma vez."
+        templateName="modelo-produtos.xlsx"
+        columns={[
+          { key: 'code', label: 'Código', example: '612', required: true },
+          { key: 'description', label: 'Descrição', example: 'TEMPERO NOVO - ISA - 60g - CX 48', required: true },
+          { key: 'reference', label: 'Referência', example: 'ISA POTE C/ST' },
+          { key: 'units_per_box', label: 'Unidades por caixa', example: '48' },
+          { key: 'weight_g', label: 'Peso (g)', example: '60' },
+          { key: 'category', label: 'Categoria', example: 'Temperos' },
+          { key: 'min_stock', label: 'Estoque mínimo', example: '200' },
+        ]}
+        mapRow={(row, line) => {
+          const code = pick(row, ['codigo', 'cod', 'code']);
+          const description = pick(row, ['descricao', 'descricao do produto', 'produto', 'nome']);
+          if (!code) return `Linha ${line}: sem código`;
+          if (!description) return `Linha ${line}: sem descrição`;
+          const upbRaw = pick(row, ['unidades por caixa', 'un caixa', 'un cx', 'unidades']);
+          const upbDesc = description.match(/CX\s*(\d+)/i)?.[1];
+          return {
+            code: String(code).replace(/\.0+$/, ''),
+            description,
+            reference: pick(row, ['referencia', 'ref']) || null,
+            units_per_box: toNumber(upbRaw, upbDesc ? Number(upbDesc) : 48) || 48,
+            weight_g: toNumber(pick(row, ['peso', 'peso g', 'gramas']), Number(description.match(/(\d+)\s*g\b/i)?.[1] ?? 0)) || null,
+            category: pick(row, ['categoria', 'linha']) || null,
+            min_stock: toNumber(pick(row, ['estoque minimo', 'minimo']), 0),
+          };
+        }}
+        preview={(r) => [r.code, r.description, r.reference ?? '—', String(r.units_per_box), r.weight_g ? `${r.weight_g}g` : '—', r.category ?? '—', String(r.min_stock ?? 0)]}
+        onImport={async (rows) => {
+          const n = await bulkUpsertProducts(rows);
+          await logActivity({ kind: 'sistema', title: `${n} produto(s) importados por planilha`, link: '/produtos', actor_id: session?.user.id, actor_name: profile?.name ?? null });
+          qc.invalidateQueries({ queryKey: ['products'] });
+          qc.invalidateQueries({ queryKey: ['current-stock'] });
+          return `${n} produto(s) criados ou atualizados.`;
+        }}
+      />
 
       <Dialog
         open={!!editing}

@@ -2,7 +2,11 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, Search, Building2 } from 'lucide-react';
+import { Plus, Search, Building2, Upload } from 'lucide-react';
+import { ImportSheetDialog } from '@/components/ImportSheetDialog';
+import { pick } from '@/domain/parsers/sheet';
+import { bulkUpsertCustomers, type CustomerInput } from '@/api/customers';
+import { logActivity } from '@/api/activity';
 import { customerStats, listCustomers, upsertCustomer } from '@/api/customers';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Textarea } from '@/components/primitives';
 import type { Customer } from '@/lib/types';
@@ -34,7 +38,8 @@ export function CustomerForm({ value, onChange }: { value: Partial<Customer>; on
 export default function CustomersPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { canWrite } = useAuth();
+  const { canWrite, session, profile } = useAuth();
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Partial<Customer> | null>(null);
   const customers = useQuery({ queryKey: ['customers'], queryFn: () => listCustomers() });
@@ -72,7 +77,7 @@ export default function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="Clientes" description="Lojas e redes atendidas. Clientes são criados automaticamente ao importar pedidos (pelo CNPJ de entrega)." actions={canWrite && <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ name: '' })}>Novo cliente</Button>} />
+      <PageHeader title="Clientes" description="Lojas e redes atendidas. Clientes são criados automaticamente ao importar pedidos (pelo CNPJ de entrega)." actions={canWrite && (<><Button variant="outline" icon={<Upload className="h-4 w-4" />} onClick={() => setImportOpen(true)}>Importar planilha</Button><Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ name: '' })}>Novo cliente</Button></>)} />
       <div className="relative w-full sm:w-80 mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
         <Input className="pl-9" placeholder="Buscar por nome, CNPJ, cidade ou rede" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -114,6 +119,51 @@ export default function CustomersPage() {
       ) : (
         <Card><EmptyState title="Nenhum cliente" description="Importe pedidos ou cadastre um cliente manualmente." /></Card>
       )}
+      <ImportSheetDialog<CustomerInput>
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        title="Importar clientes por planilha"
+        description="Cria ou atualiza lojas pelo CNPJ. Redes com várias lojas: use a coluna Rede para agrupar."
+        templateName="modelo-clientes.xlsx"
+        columns={[
+          { key: 'name', label: 'Nome', example: 'Supermercado Exemplo · Loja Centro', required: true },
+          { key: 'cnpj', label: 'CNPJ', example: '75.315.333/0046-00' },
+          { key: 'group_name', label: 'Rede', example: 'Supermercado Exemplo' },
+          { key: 'trade_name', label: 'Nome fantasia', example: 'Exemplo Centro' },
+          { key: 'address', label: 'Endereço', example: 'Av. Nossa Senhora de Fátima, 298' },
+          { key: 'city', label: 'Cidade', example: 'Santos' },
+          { key: 'state', label: 'UF', example: 'SP' },
+          { key: 'cep', label: 'CEP', example: '11085-202' },
+          { key: 'phone', label: 'Telefone', example: '(13) 99999-0000' },
+          { key: 'email', label: 'E-mail', example: 'compras@exemplo.com.br' },
+          { key: 'contact_name', label: 'Contato', example: 'Diego' },
+        ]}
+        mapRow={(row, line) => {
+          const name = pick(row, ['nome', 'razao social', 'cliente', 'loja']);
+          if (!name) return `Linha ${line}: sem nome`;
+          return {
+            name,
+            cnpj: pick(row, ['cnpj']) || null,
+            group_name: pick(row, ['rede', 'grupo']) || null,
+            trade_name: pick(row, ['nome fantasia', 'fantasia']) || null,
+            address: pick(row, ['endereco', 'logradouro']) || null,
+            city: pick(row, ['cidade', 'municipio']) || null,
+            state: (pick(row, ['uf', 'estado']) || '').toUpperCase().slice(0, 2) || null,
+            cep: pick(row, ['cep']) || null,
+            phone: pick(row, ['telefone', 'celular', 'whatsapp', 'fone']) || null,
+            email: pick(row, ['e mail', 'email']) || null,
+            contact_name: pick(row, ['contato', 'comprador', 'responsavel']) || null,
+          };
+        }}
+        preview={(r) => [r.name, r.cnpj ?? '—', r.group_name ?? '—', r.trade_name ?? '—', r.address ?? '—', r.city ?? '—', r.state ?? '—', r.cep ?? '—', r.phone ?? '—', r.email ?? '—', r.contact_name ?? '—']}
+        onImport={async (rows) => {
+          const n = await bulkUpsertCustomers(rows);
+          await logActivity({ kind: 'cliente', title: `${n} cliente(s) importados por planilha`, link: '/clientes', actor_id: session?.user.id, actor_name: profile?.name ?? null });
+          qc.invalidateQueries({ queryKey: ['customers'] });
+          qc.invalidateQueries({ queryKey: ['customer-stats'] });
+          return `${n} cliente(s) criados ou atualizados.`;
+        }}
+      />
       <Dialog open={!!editing} onClose={() => setEditing(null)} title="Novo cliente" wide footer={<><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={submit} loading={save.isPending}>Salvar</Button></>}>
         {editing && <form onSubmit={submit}><CustomerForm value={editing} onChange={setEditing} /></form>}
       </Dialog>

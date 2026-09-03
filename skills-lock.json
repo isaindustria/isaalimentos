@@ -18,6 +18,18 @@
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
       "computedHash": "9b5a0bc8d34287ac67d8e59a84ce3beb0cc29d2bfc50159804600d79cfc2a549"
+    },
+    "supabase-pentest": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "skillPath": "skills/orchestration/supabase-pentest/SKILL.md",
+      "computedHash": "cf53e79ad50403d471080df4d76380ab447e8fa07e3b31d5f074e37999d273e1"
+    },
+    "web-security": {
+      "source": "academind/ai-config",
+      "sourceType": "github",
+      "skillPath": "skills/web-security/SKILL.md",
+      "computedHash": "5b461f98a8cee3fa0954c4032e235277c4e9078f9ededa4a6dd728755bd304e2"
     }
   }
 }

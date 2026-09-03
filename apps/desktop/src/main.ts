@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu, session } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'node:path';
@@ -42,8 +42,16 @@ function createWindow() {
   else win.loadFile(path.join(__dirname, '../web/index.html'));
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    if (/^https:\/\//.test(url)) shell.openExternal(url);
     return { action: 'deny' };
+  });
+  // Nunca navega para fora do app (phishing/redirects); links externos abrem no navegador.
+  win.webContents.on('will-navigate', (event, url) => {
+    const allowed = url.startsWith('file://') || (devUrl ? url.startsWith(devUrl) : false);
+    if (!allowed) {
+      event.preventDefault();
+      if (/^https:\/\//.test(url)) shell.openExternal(url);
+    }
   });
   win.on('closed', () => {
     win = null;
@@ -83,6 +91,11 @@ function wireUpdater() {
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
+  // Content Security Policy para o renderer (mesma politica do site)
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const csp = "default-src 'self' file:; script-src 'self' 'unsafe-inline' file:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com file:; font-src 'self' https://fonts.gstatic.com data: file:; img-src 'self' data: blob: https: file:; connect-src 'self' https://exbhhwrutvzpwcjxqikp.supabase.co wss://exbhhwrutvzpwcjxqikp.supabase.co https://api.github.com https://github.com https://objects.githubusercontent.com; worker-src 'self' blob:; frame-ancestors 'none'";
+    callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [csp] } });
+  });
   wireUpdater();
   createWindow();
   // Check silently a few seconds after start, then every 6 hours.

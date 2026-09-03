@@ -49,3 +49,22 @@ export async function addAlias(input: { product_code: string; client_code?: stri
 export async function deleteAlias(id: string) {
   unwrap(await supabase.from('product_aliases').delete().eq('id', id));
 }
+
+/** Bulk upsert (spreadsheet import). Returns how many rows were written. */
+export async function bulkUpsertProducts(rows: ProductInput[]): Promise<number> {
+  const payload = rows.map((r) => ({
+    code: r.code.trim(),
+    description: r.description.trim(),
+    reference: r.reference ?? null,
+    units_per_box: r.units_per_box ?? 48,
+    weight_g: r.weight_g ?? null,
+    unit: r.unit ?? 'PT',
+    category: r.category ?? null,
+    min_stock: r.min_stock ?? 0,
+    active: r.active ?? true,
+  }));
+  for (let i = 0; i < payload.length; i += 200) {
+    unwrap(await supabase.from('products').upsert(payload.slice(i, i + 200), { onConflict: 'code' }));
+  }
+  return payload.length;
+}

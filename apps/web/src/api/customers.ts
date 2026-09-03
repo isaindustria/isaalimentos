@@ -80,3 +80,40 @@ export async function customerStats(): Promise<Record<string, CustomerStats>> {
   }
   return out;
 }
+
+/** Bulk upsert by CNPJ (or insert when no CNPJ). Returns how many rows were written. */
+export async function bulkUpsertCustomers(rows: CustomerInput[]): Promise<number> {
+  const withCnpj = rows.filter((r) => r.cnpj && onlyDigits(r.cnpj).length === 14).map((r) => ({
+    cnpj: onlyDigits(r.cnpj),
+    name: r.name.trim(),
+    trade_name: r.trade_name ?? null,
+    group_name: r.group_name ?? null,
+    address: r.address ?? null,
+    city: r.city ?? null,
+    state: r.state ?? null,
+    cep: r.cep ?? null,
+    phone: r.phone ?? null,
+    email: r.email ?? null,
+    contact_name: r.contact_name ?? null,
+    notes: r.notes ?? null,
+    active: true,
+  }));
+  const without = rows.filter((r) => !r.cnpj || onlyDigits(r.cnpj).length !== 14).map((r) => ({
+    cnpj: null,
+    name: r.name.trim(),
+    trade_name: r.trade_name ?? null,
+    group_name: r.group_name ?? null,
+    address: r.address ?? null,
+    city: r.city ?? null,
+    state: r.state ?? null,
+    cep: r.cep ?? null,
+    phone: r.phone ?? null,
+    email: r.email ?? null,
+    contact_name: r.contact_name ?? null,
+    notes: r.notes ?? null,
+    active: true,
+  }));
+  for (let i = 0; i < withCnpj.length; i += 200) unwrap(await supabase.from('customers').upsert(withCnpj.slice(i, i + 200), { onConflict: 'cnpj' }));
+  for (let i = 0; i < without.length; i += 200) unwrap(await supabase.from('customers').insert(without.slice(i, i + 200)));
+  return withCnpj.length + without.length;
+}
