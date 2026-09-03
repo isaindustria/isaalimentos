@@ -28,7 +28,7 @@ export default defineConfig({
     tailwindcss(),
     versionFile(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'icon-192.png', 'brand/logo-512.png'],
       manifest: {
         name: 'ISA Alimentos · Gestão',
@@ -53,6 +53,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,png,webp,svg,woff2}'],
         globIgnores: ['**/site/**', '**/brand/products/**', '**/push-sw.js'],
         navigateFallbackDenylist: [/^\/site/],

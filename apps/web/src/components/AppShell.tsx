@@ -99,7 +99,7 @@ function UpdateBanner() {
           Versão <b>{s.version}</b> pronta para instalar.
         </span>
         <Button size="sm" onClick={u.install} icon={<RefreshCw className="h-3.5 w-3.5" />}>
-          {u.isDesktop ? 'Reiniciar e atualizar' : 'Atualizar agora'}
+          {u.isDesktop ? 'Reiniciar e atualizar' : 'Atualizando…'}
         </Button>
       </div>
     );

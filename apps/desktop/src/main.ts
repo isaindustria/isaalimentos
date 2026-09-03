@@ -5,7 +5,7 @@ import path from 'node:path';
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
-autoUpdater.autoDownload = false;
+autoUpdater.autoDownload = true; // baixa sozinho; instala ao reiniciar (ou ao fechar o app)
 autoUpdater.autoInstallOnAppQuit = true;
 
 const isPortable = Boolean(process.env.PORTABLE_EXECUTABLE_DIR);

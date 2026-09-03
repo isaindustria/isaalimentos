@@ -7,7 +7,8 @@ import { AuthProvider } from './hooks/useAuth';
 import './index.css';
 import { registerSW } from 'virtual:pwa-register';
 
-registerSW({ immediate: true });
+const updateSW = registerSW({ immediate: true });
+(window as unknown as { __isaUpdateSW?: (reload?: boolean) => Promise<void> }).__isaUpdateSW = updateSW;
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
