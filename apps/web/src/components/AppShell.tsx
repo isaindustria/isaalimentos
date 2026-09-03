@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles,
+  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdates } from '@/hooks/useUpdates';
 import { listPendingItems } from '@/api/orders';
+import { getModules } from '@/api/v14';
 import { cn, initials } from '@/lib/utils';
 import { Button } from './primitives';
 import { NotificationsBell } from './Notifications';
@@ -20,6 +21,11 @@ const NAV = [
   { to: '/estoque', label: 'Estoque', icon: Boxes },
   { to: '/produtos', label: 'Produtos', icon: Package },
   { to: '/clientes', label: 'Clientes', icon: Users },
+  { to: '/precos', label: 'Preços', icon: Tag, module: 'precos' as const },
+  { to: '/insumos', label: 'Insumos e compras', icon: FlaskConical, module: 'compras' as const },
+  { to: '/rotas', label: 'Rotas de entrega', icon: Truck, module: 'rotas' as const },
+  { to: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' as const },
+  { to: '/auditoria', label: 'Auditoria', icon: History, module: 'auditoria' as const },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
@@ -116,6 +122,8 @@ export default function AppShell() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const pending = useQuery({ queryKey: ['pending-items'], queryFn: listPendingItems, refetchInterval: 60_000 });
+  const modules = useQuery({ queryKey: ['modules'], queryFn: getModules });
+  const nav = NAV.filter((n) => !('module' in n) || !n.module || modules.data?.[n.module] !== false);
   const pendingCount = pending.data?.length ?? 0;
 
   return (
@@ -135,7 +143,7 @@ export default function AppShell() {
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
-          {NAV.map((n) => (
+          {nav.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}

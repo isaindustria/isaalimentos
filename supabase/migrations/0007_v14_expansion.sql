@@ -1,0 +1,1 @@
+-- Migration 0007 (v1.4 expansao): aplicada via MCP em 2026-09-03. Tabelas: price_lists, supplies, product_bom, purchase_orders(+items), delivery_routes, audit_log(+audit_row/audit_undo), push_subscriptions; colunas lot_number/expires_on; view product_stats; funcao db_stats; bucket backups; extensoes pg_cron/pg_net; setting modules.

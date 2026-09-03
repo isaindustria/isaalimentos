@@ -237,3 +237,17 @@ export interface Activity {
   audience: string[];
   created_at: string;
 }
+
+/* ---- v1.4 ---- */
+export interface PriceList { id: string; product_code: string; customer_id: string | null; group_name: string | null; price_box: number; valid_from: string; notes: string | null; created_at: string; product?: Pick<Product, 'code' | 'description'> | null; customer?: Pick<Customer, 'id' | 'name'> | null }
+export interface Supply { id: string; name: string; unit: string; stock: number; min_stock: number; cost: number | null; supplier: string | null; active: boolean; created_at: string; updated_at: string }
+export interface ProductBom { id: string; product_code: string; supply_id: string; qty_per_unit: number; supply?: Supply | null }
+export type PurchaseStatus = 'rascunho' | 'enviado' | 'recebido' | 'cancelado';
+export interface PurchaseOrder { id: string; supplier: string | null; status: PurchaseStatus; notes: string | null; production_run_id: string | null; created_by: string | null; created_at: string; received_at: string | null; items?: PurchaseOrderItem[] }
+export interface PurchaseOrderItem { id: string; purchase_order_id: string; supply_id: string; qty: number; unit_cost: number | null; supply?: Supply | null }
+export type RouteStatus = 'planejada' | 'em_rota' | 'concluida';
+export interface DeliveryRoute { id: string; name: string; route_date: string; driver: string | null; vehicle: string | null; status: RouteStatus; order_ids: string[]; notes: string | null; created_at: string }
+export interface AuditEntry { id: string; table_name: string; row_id: string; action: 'INSERT' | 'UPDATE' | 'DELETE'; old_data: Record<string, unknown> | null; new_data: Record<string, unknown> | null; changed_by: string | null; changed_by_name: string | null; changed_at: string }
+export interface ProductStats { code: string; description: string; min_stock: number; weekly_avg_units: number; total_units_all: number; revenue_all: number }
+export interface DbStats { db_bytes: number; tables: Array<{ name: string; bytes: number; rows: number }>; audit_rows: number; activities_rows: number }
+export interface Modules { precos: boolean; compras: boolean; rotas: boolean; relatorios: boolean; auditoria: boolean; portal: boolean; push: boolean }

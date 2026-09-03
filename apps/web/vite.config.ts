@@ -54,9 +54,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,webp,svg,woff2}'],
-        globIgnores: ['**/site/**', '**/brand/products/**'],
+        globIgnores: ['**/site/**', '**/brand/products/**', '**/push-sw.js'],
         navigateFallbackDenylist: [/^\/site/],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        importScripts: ['push-sw.js'],
         runtimeCaching: [
           { urlPattern: /^https:\/\/fonts\.googleapis\.com\//, handler: 'StaleWhileRevalidate', options: { cacheName: 'google-fonts' } },
           { urlPattern: /^https:\/\/fonts\.gstatic\.com\//, handler: 'CacheFirst', options: { cacheName: 'google-fonts-files', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 } } },
