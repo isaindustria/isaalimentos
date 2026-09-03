@@ -25,6 +25,12 @@ const ProductionPage = lazy(() => import('./pages/ProductionPage'));
 const ProductionRunPage = lazy(() => import('./pages/ProductionRunPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const PendingPage = lazy(() => import('./pages/PendingPage'));
+const PricesPage = lazy(() => import('./pages/PricesPage'));
+const SuppliesPage = lazy(() => import('./pages/SuppliesPage'));
+const RoutesPage = lazy(() => import('./pages/RoutesPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const AuditPage = lazy(() => import('./pages/AuditPage'));
+const PortalPage = lazy(() => import('./pages/PortalPage'));
 
 function FullSpinner() {
   return (
@@ -55,6 +61,7 @@ export default function App() {
       <Suspense fallback={<FullSpinner />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/consulta" element={<PortalPage />} />
           <Route
             element={
               <Protected>
@@ -76,6 +83,11 @@ export default function App() {
             <Route path="producao" element={<ProductionPage />} />
             <Route path="producao/:id" element={<ProductionRunPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
+            <Route path="precos" element={<PricesPage />} />
+            <Route path="insumos" element={<SuppliesPage />} />
+            <Route path="rotas" element={<RoutesPage />} />
+            <Route path="relatorios" element={<ReportsPage />} />
+            <Route path="auditoria" element={<AuditPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

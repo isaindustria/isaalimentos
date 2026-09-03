@@ -77,7 +77,23 @@ Assets da marca (pasta `LOGOS E IMAGENS`) já aplicados:
 - Tempo real (Supabase Realtime): presença de quem está online no cabeçalho, aviso de "fulano está editando" no pedido, e atualização automática das listas quando outra pessoa altera pedidos, estoque, produção ou clientes.
 - Abertura animada: mostrada no programa Windows e no PWA instalado (no navegador comum, não).
 
-## 6. Fluxo de uso
+## 6. Versões e como voltar atrás
+
+Cada versão publicada tem tag no git (`v1.3.0`, `v1.4.0`…), instaladores nas Releases do GitHub e cópia em `backups/vX.Y.Z/`.
+Os módulos novos da 1.4 (Preços, Insumos, Rotas, Relatórios, Auditoria, Portal, Push) têm chave liga/desliga em Configurações → Módulos: desligar só esconde, nada é apagado.
+
+Para voltar o site e o app para uma versão anterior (ex.: 1.3.0):
+
+```bash
+git checkout main
+git revert -m 1 <hash do merge>       # ou: git reset --hard v1.3.0 && git push --force origin main
+git push origin main                  # Vercel republica a versão antiga
+```
+
+Desktop: quem instalou a versão nova pode reinstalar o `Setup` da versão anterior em `backups/` (ou nas Releases). O auto-update só avança para versões maiores, então republicar a antiga como `v1.4.1` é a forma de "forçar" o retorno em todos.
+Banco: as tabelas novas ficam vazias e não interferem nas telas antigas.
+
+## 7. Fluxo de uso
 
 1. **Estoque → Importar planilha**: lê o XLSX do ERP, considera só os locais 1 e 5, soma linhas repetidas e substitui o estoque anterior.
 2. **Pedidos → Importar PDF**: lê todos os pedidos de compra (uma loja por página), cria os clientes pelo CNPJ de entrega e identifica os produtos por aproximação de texto.

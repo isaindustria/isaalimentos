@@ -8,6 +8,7 @@ import { listCustomers } from '@/api/customers';
 import { listProducts } from '@/api/products';
 import { getCurrentStock } from '@/api/stock';
 import { logActivity } from '@/api/activity';
+import { listPrices, resolvePrice } from '@/api/v14';
 import { Button, Card, Field, Input, PageHeader, Select, Spinner, Table, Textarea } from '@/components/primitives';
 import { fmtBRL, fmtInt } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
@@ -32,6 +33,7 @@ export default function OrderFormPage() {
   const customers = useQuery({ queryKey: ['customers'], queryFn: () => listCustomers() });
   const products = useQuery({ queryKey: ['products', 'active'], queryFn: () => listProducts(false) });
   const stock = useQuery({ queryKey: ['current-stock'], queryFn: getCurrentStock });
+  const prices = useQuery({ queryKey: ['prices'], queryFn: listPrices });
   const existing = useQuery({ queryKey: ['order', id], queryFn: () => getOrder(id!), enabled: editing });
 
   const [customerId, setCustomerId] = useState('');
@@ -69,7 +71,9 @@ export default function OrderFormPage() {
   }
   function pickProduct(key: number, code: string) {
     const p = products.data?.find((x) => x.code === code);
-    update(key, { product_code: code, units_per_box: p?.units_per_box ?? 48 });
+    const cust = customers.data?.find((c) => c.id === customerId);
+    const price = resolvePrice(prices.data ?? [], code, customerId || null, cust?.group_name ?? null);
+    update(key, { product_code: code, units_per_box: p?.units_per_box ?? 48, ...(price != null ? { unit_price: price } : {}) });
   }
 
   const save = useMutation({

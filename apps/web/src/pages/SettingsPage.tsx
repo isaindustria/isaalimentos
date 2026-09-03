@@ -5,6 +5,8 @@ import { Save, RefreshCw, SlidersHorizontal, Info, ExternalLink } from 'lucide-r
 import { getSettings, setSetting, type Settings } from '@/api/settings';
 import { MyProfile } from '@/components/MyProfile';
 import { UsersAdmin } from '@/components/UsersAdmin';
+import { SystemAdmin } from '@/components/SystemAdmin';
+import { MfaSetup } from '@/components/MfaSetup';
 import { Badge, Button, Card, Field, Input, PageHeader } from '@/components/primitives';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdates } from '@/hooks/useUpdates';
@@ -88,6 +90,8 @@ export default function SettingsPage() {
         </Card>
 
         <MyProfile />
+        <MfaSetup />
+        <SystemAdmin />
         {isAdmin && <UsersAdmin />}
       </div>
     </>
