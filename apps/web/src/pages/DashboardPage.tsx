@@ -1,169 +1,187 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
-import { Boxes, ClipboardList, Factory, AlertTriangle, ArrowRight, Upload, FileText, Users } from 'lucide-react';
+import { Area, AreaChart, Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Boxes, ClipboardList, Factory, AlertTriangle, ArrowRight, Upload, FileText, Users, TrendingUp, Wallet, Truck, FlaskConical, Database, Target } from 'lucide-react';
 import { getCurrentStock, listStockImports } from '@/api/stock';
 import { demand, listOrders, listPendingItems } from '@/api/orders';
 import { listCustomers } from '@/api/customers';
+import { listRuns } from '@/api/production';
+import { dbStats, FREE_PLAN_DB_BYTES, getModules, listRoutes, listSupplies } from '@/api/v14';
 import { computeProduction, summarize } from '@/domain/production';
-import { Badge, Button, Card, PageHeader, Skeleton, Stat, Table } from '@/components/primitives';
-import { fmtAgo, fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
+import { Badge, Button, Card, PageHeader, ProgressBar, Skeleton, Table } from '@/components/primitives';
 import { ActivityList } from '@/components/Notifications';
+import { cn, fmtAgo, fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+
+const chartStyle = { borderRadius: 12, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 12 };
+type Tone = 'neutral' | 'brand' | 'ok' | 'warn' | 'danger' | 'info';
+const TONES: Record<Tone, string> = { neutral: 'bg-surface-2 text-muted', brand: 'bg-brand-soft text-brand', ok: 'bg-ok/10 text-ok', warn: 'bg-warn/10 text-warn', danger: 'bg-danger/10 text-danger', info: 'bg-info/10 text-info' };
+
+function Kpi({ label, value, sub, icon, tone = 'neutral', delta, to }: { label: string; value: ReactNode; sub?: ReactNode; icon: ReactNode; tone?: Tone; delta?: number | null; to?: string }) {
+  const body = (
+    <div className="card flex min-w-0 items-start gap-4 p-5 transition hover:shadow-pop">
+      <div className={cn('grid size-11 shrink-0 place-items-center rounded-xl', TONES[tone])}>{icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</div>
+        <div className={cn('font-display num mt-1 truncate font-bold tracking-tight', typeof value === 'string' && value.length > 11 ? 'text-xl' : 'text-2xl')}>{value}</div>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+          {delta != null && Number.isFinite(delta) && <span className={cn('rounded-full px-1.5 py-0.5 font-semibold', delta >= 0 ? 'bg-ok/10 text-ok' : 'bg-danger/10 text-danger')}>{delta >= 0 ? '+' : ''}{Math.round(delta * 100)}% vs 30 d antes</span>}
+          {sub}
+        </div>
+      </div>
+    </div>
+  );
+  return to ? <Link to={to} className="block">{body}</Link> : body;
+}
 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const stock = useQuery({ queryKey: ['current-stock'], queryFn: getCurrentStock });
   const imports = useQuery({ queryKey: ['stock-imports'], queryFn: () => listStockImports(1) });
-  const orders = useQuery({ queryKey: ['orders', { status: 'aberto' }], queryFn: () => listOrders({ status: 'aberto' }) });
+  const allOrders = useQuery({ queryKey: ['orders', { status: 'todos', dash: true }], queryFn: () => listOrders({ status: 'todos' }) });
   const dem = useQuery({ queryKey: ['demand', 'open'], queryFn: () => demand({ statuses: ['aberto', 'em_producao'] }) });
   const pending = useQuery({ queryKey: ['pending-items'], queryFn: listPendingItems });
   const customers = useQuery({ queryKey: ['customers'], queryFn: () => listCustomers() });
+  const runs = useQuery({ queryKey: ['runs'], queryFn: () => listRuns(50) });
+  const routes = useQuery({ queryKey: ['routes'], queryFn: listRoutes });
+  const supplies = useQuery({ queryKey: ['supplies'], queryFn: listSupplies });
+  const modules = useQuery({ queryKey: ['modules'], queryFn: getModules });
+  const db = useQuery({ queryKey: ['db-stats'], queryFn: dbStats, staleTime: 5 * 60_000 });
 
-  const rows = useMemo(() => (stock.data && dem.data ? computeProduction(stock.data, dem.data.rows) : []), [stock.data, dem.data]);
+  const rows = useMemo(() => (stock.data && dem.data ? computeProduction(stock.data, dem.data.rows, { includeMinStock: true }) : []), [stock.data, dem.data]);
   const summary = useMemo(() => summarize(rows), [rows]);
-  const top = rows.filter((r) => r.need > 0).slice(0, 8);
+  const top = rows.filter((r) => r.need > 0).slice(0, 7);
   const lowStock = (stock.data ?? []).filter((s) => s.total <= s.min_stock && s.min_stock > 0);
   const lastImport = imports.data?.[0];
+
+  const orders = allOrders.data ?? [];
+  const open = orders.filter((o) => o.status === 'aberto');
+  const now = Date.now();
+  const d30 = new Date(now - 30 * 864e5).toISOString().slice(0, 10);
+  const d60 = new Date(now - 60 * 864e5).toISOString().slice(0, 10);
+  const valid = orders.filter((o) => o.status !== 'cancelado' && o.order_date);
+  const last30 = valid.filter((o) => o.order_date! >= d30);
+  const prev30 = valid.filter((o) => o.order_date! >= d60 && o.order_date! < d30);
+  const rev30 = last30.reduce((s, o) => s + Number(o.total_value), 0);
+  const revPrev = prev30.reduce((s, o) => s + Number(o.total_value), 0);
+  const delta = revPrev ? (rev30 - revPrev) / revPrev : null;
+  const ticket = last30.length ? rev30 / last30.length : 0;
+  const served = valid.filter((o) => ['faturado', 'entregue'].includes(o.status)).length;
+  const serviceRate = valid.length ? served / valid.length : 0;
+  const activeCustomers30 = new Set(last30.map((o) => o.customer_id)).size;
+
+  const weekly = useMemo(() => {
+    const out: Array<{ w: string; valor: number; pedidos: number }> = [];
+    for (let i = 7; i >= 0; i--) {
+      const start = new Date(now - (i + 1) * 7 * 864e5).toISOString().slice(0, 10);
+      const end = new Date(now - i * 7 * 864e5).toISOString().slice(0, 10);
+      const set = valid.filter((o) => o.order_date! > start && o.order_date! <= end);
+      out.push({ w: fmtDate(end, 'dd/MM'), valor: set.reduce((s, o) => s + Number(o.total_value), 0), pedidos: set.length });
+    }
+    return out;
+  }, [valid, now]);
+  const topCustomers = useMemo(() => {
+    const m = new Map<string, { name: string; value: number; n: number }>();
+    for (const o of last30) { const k = o.customer?.name ?? 'Sem cliente'; const c = m.get(k) ?? { name: k, value: 0, n: 0 }; c.value += Number(o.total_value); c.n += 1; m.set(k, c); }
+    return [...m.values()].sort((a, b) => b.value - a.value).slice(0, 5);
+  }, [last30]);
+  const inProgress = (runs.data ?? []).filter((r) => r.status === 'em_andamento');
+  const routesOpen = (routes.data ?? []).filter((r) => r.status !== 'concluida');
+  const lowSupplies = (supplies.data ?? []).filter((s) => Number(s.stock) <= Number(s.min_stock) && Number(s.min_stock) > 0);
+  const dbPct = db.data ? Math.min(100, (db.data.db_bytes / FREE_PLAN_DB_BYTES) * 100) : 0;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+  const skel = <Skeleton className="h-7 w-16" />;
 
   return (
     <>
       <PageHeader
         eyebrow={fmtDate(new Date(), "EEEE, d 'de' MMMM")}
         title={`${greeting}, ${profile?.name?.split(' ')[0] ?? ''}`}
-        description="Visão geral de pedidos abertos, estoque atual e necessidade de produção."
-        actions={
-          <>
-            <Link to="/estoque">
-              <Button variant="outline" icon={<Upload className="h-4 w-4" />}>Importar estoque</Button>
-            </Link>
-            <Link to="/pedidos/importar">
-              <Button icon={<FileText className="h-4 w-4" />}>Importar pedidos</Button>
-            </Link>
-          </>
-        }
+        description="Indicadores do dia: pedidos, faturamento, produção, estoque e equipe."
+        actions={<><Link to="/estoque"><Button variant="outline" icon={<Upload className="size-4" />}>Importar estoque</Button></Link><Link to="/pedidos/importar"><Button icon={<FileText className="size-4" />}>Importar pedidos</Button></Link></>}
       />
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Stat label="Pedidos abertos" value={orders.data ? fmtInt(orders.data.length) : <Skeleton className="h-7 w-16" />} sub={orders.data ? fmtBRL(orders.data.reduce((s, o) => s + Number(o.total_value), 0) ) : undefined} tone="info" icon={<ClipboardList className="h-5 w-5" />} />
-        <Stat label="Produtos a produzir" value={dem.data && stock.data ? fmtInt(summary.toProduce) : <Skeleton className="h-7 w-16" />} sub={`${fmtInt(summary.totalNeedUnits)} unidades · ${fmtInt(summary.totalNeedBoxes)} caixas`} tone="brand" icon={<Factory className="h-5 w-5" />} />
-        <Stat label="Estoque (locais 1+5)" value={stock.data ? fmtInt(summary.totalStockUnits) : <Skeleton className="h-7 w-16" />} sub={lastImport ? `importado ${fmtAgo(lastImport.imported_at)}` : 'nenhuma importação'} tone="ok" icon={<Boxes className="h-5 w-5" />} />
-        <Stat label="Itens para conferir" value={pending.data ? fmtInt(pending.data.length) : <Skeleton className="h-7 w-16" />} sub={pending.data?.length ? 'descrições não reconhecidas' : 'tudo reconhecido'} tone={pending.data?.length ? 'warn' : 'neutral'} icon={<AlertTriangle className="h-5 w-5" />} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Kpi label="Faturamento 30 dias" value={allOrders.data ? fmtBRL(rev30) : skel} delta={delta} sub={`${last30.length} pedido(s) · ticket ${fmtBRL(ticket)}`} tone="ok" icon={<Wallet className="size-5" />} to="/relatorios" />
+        <Kpi label="Pedidos abertos" value={allOrders.data ? fmtInt(open.length) : skel} sub={fmtBRL(open.reduce((s, o) => s + Number(o.total_value), 0))} tone="info" icon={<ClipboardList className="size-5" />} to="/pedidos" />
+        <Kpi label="A produzir (JIT)" value={dem.data && stock.data ? fmtInt(summary.toProduce) : skel} sub={`${fmtInt(summary.totalNeedUnits)} un · ${fmtInt(summary.totalNeedBoxes)} caixas`} tone="brand" icon={<Factory className="size-5" />} to="/producao" />
+        <Kpi label="Itens para conferir" value={pending.data ? fmtInt(pending.data.length) : skel} sub={pending.data?.length ? 'descrições não reconhecidas' : 'tudo reconhecido'} tone={pending.data?.length ? 'warn' : 'neutral'} icon={<AlertTriangle className="size-5" />} to="/pedidos/conferencia" />
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Kpi label="Estoque (locais 1+5)" value={stock.data ? fmtInt(summary.totalStockUnits) : skel} sub={lastImport ? `atualizado ${fmtAgo(lastImport.imported_at)}` : 'sem importação'} tone="ok" icon={<Boxes className="size-5" />} to="/estoque" />
+        <Kpi label="Abaixo do mínimo" value={stock.data ? fmtInt(lowStock.length) : skel} sub={lowSupplies.length ? `+ ${lowSupplies.length} insumo(s)` : 'produtos'} tone={lowStock.length ? 'danger' : 'neutral'} icon={<Target className="size-5" />} to="/estoque" />
+        <Kpi label="Taxa de atendimento" value={allOrders.data ? `${Math.round(serviceRate * 100)}%` : skel} sub={`${served} de ${valid.length} faturados ou entregues`} tone="info" icon={<TrendingUp className="size-5" />} to="/relatorios" />
+        <Kpi label="Clientes ativos (30 d)" value={allOrders.data ? fmtInt(activeCustomers30) : skel} sub={`${customers.data?.length ?? 0} cadastrados`} tone="brand" icon={<Users className="size-5" />} to="/clientes" />
       </div>
 
-      <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 mt-4">
-        <Card
-          title="Maiores necessidades de produção"
-          action={
-            <Link to="/producao" className="text-xs font-semibold text-brand inline-flex items-center gap-1">
-              Ver cálculo completo <ArrowRight className="h-3 w-3" />
-            </Link>
-          }
-        >
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+        <Card title="Faturamento por semana (8 semanas)" action={<Badge tone="ok">{fmtBRL(weekly.reduce((s, w) => s + w.valor, 0))}</Badge>}>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={weekly} margin={{ left: 0, right: 8, top: 8 }}>
+                <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--brand)" stopOpacity={0.35} /><stop offset="100%" stopColor="var(--brand)" stopOpacity={0} /></linearGradient></defs>
+                <XAxis dataKey="w" tick={{ fontSize: 11, fill: 'var(--muted-ink)' }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip contentStyle={chartStyle} formatter={(v, n) => [n === 'valor' ? fmtBRL(v as number) : String(v), n === 'valor' ? 'Faturamento' : 'Pedidos']} />
+                <Area type="monotone" dataKey="valor" stroke="var(--brand)" strokeWidth={2.5} fill="url(#g)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+        <Card title="Maiores necessidades de produção" action={<Link to="/producao" className="inline-flex items-center gap-1 text-xs font-semibold text-brand">Ver cálculo <ArrowRight className="size-3" /></Link>}>
           {top.length ? (
-            <div className="h-64">
+            <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={top.map((r) => ({ name: r.description.split(' - ')[0], need: r.need }))} layout="vertical" margin={{ left: 8, right: 24 }}>
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11, fill: 'rgb(var(--muted))' }} axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: 'rgb(var(--surface-2))' }} contentStyle={{ borderRadius: 12, border: '1px solid rgb(var(--line))', background: 'rgb(var(--surface))', color: 'rgb(var(--ink))', fontSize: 12 }} formatter={(v) => [fmtInt(v as number), 'unidades']} />
-                  <Bar dataKey="need" radius={[0, 8, 8, 0]}>
-                    {top.map((_, i) => (
-                      <Cell key={i} fill={i === 0 ? 'rgb(var(--brand))' : 'rgb(var(--brand) / 0.55)'} />
-                    ))}
-                  </Bar>
+                  <XAxis type="number" hide /><YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: 'var(--muted-ink)' }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: 'var(--surface-2)' }} contentStyle={chartStyle} formatter={(v) => [fmtInt(v as number), 'unidades']} />
+                  <Bar dataKey="need" radius={[0, 8, 8, 0]}>{top.map((_, i) => <Cell key={i} fill={i === 0 ? 'var(--brand)' : 'color-mix(in srgb, var(--brand) 55%, transparent)'} />)}</Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          ) : (
-            <p className="text-sm text-muted py-8 text-center">Nenhuma necessidade de produção com os pedidos abertos.</p>
-          )}
-        </Card>
-
-        <Card title="Atalhos">
-          <div className="grid gap-2">
-            {[
-              { to: '/pedidos/importar', icon: FileText, label: 'Importar pedidos em PDF', hint: 'Lê todas as lojas de uma vez' },
-              { to: '/estoque', icon: Upload, label: 'Atualizar estoque (XLSX)', hint: 'Substitui o estoque anterior' },
-              { to: '/pedidos/conferencia', icon: AlertTriangle, label: 'Conferir itens pendentes', hint: `${pending.data?.length ?? 0} aguardando` },
-              { to: '/producao', icon: Factory, label: 'Gerar ordem de produção', hint: 'Pedidos − estoque' },
-              { to: '/clientes', icon: Users, label: 'Clientes', hint: `${customers.data?.length ?? 0} cadastrados` },
-            ].map((s) => (
-              <Link key={s.to} to={s.to} className="flex items-center gap-3 rounded-xl border border-line p-3 hover:border-brand/40 hover:bg-brand-soft/30 transition">
-                <div className="h-9 w-9 rounded-lg bg-surface-2 grid place-items-center text-brand">
-                  <s.icon className="h-4 w-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold">{s.label}</div>
-                  <div className="text-xs text-muted">{s.hint}</div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted" />
-              </Link>
-            ))}
-          </div>
+          ) : <p className="py-10 text-center text-sm text-muted">Estoque cobre todos os pedidos abertos.</p>}
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 mt-4">
-        <Card title="Atividades da equipe" action={<Badge tone="brand" dot>ao vivo</Badge>}>
-          <ActivityList limit={7} />
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <Card title="Top clientes (30 dias)" padded={false}>
+          {topCustomers.length ? (
+            <Table><thead><tr><th className="th">Cliente</th><th className="th text-right">Pedidos</th><th className="th text-right">Valor</th></tr></thead>
+              <tbody>{topCustomers.map((c) => <tr key={c.name}><td className="td max-w-[200px] truncate">{c.name}</td><td className="td num text-right">{c.n}</td><td className="td num text-right font-semibold">{fmtBRL(c.value)}</td></tr>)}</tbody></Table>
+          ) : <p className="py-8 text-center text-sm text-muted">Sem pedidos nos últimos 30 dias.</p>}
         </Card>
+        <Card title="Operação agora">
+          <div className="flex flex-col gap-3 text-sm">
+            <Link to="/producao" className="flex items-center gap-3 rounded-xl border border-line p-3 hover:border-brand/40"><Factory className="size-4 text-brand" /><span className="flex-1">Ordens em andamento</span><Badge tone={inProgress.length ? 'brand' : 'neutral'}>{inProgress.length}</Badge></Link>
+            {modules.data?.rotas !== false && <Link to="/rotas" className="flex items-center gap-3 rounded-xl border border-line p-3 hover:border-brand/40"><Truck className="size-4 text-brand-green" /><span className="flex-1">Rotas planejadas ou em rota</span><Badge tone={routesOpen.length ? 'info' : 'neutral'}>{routesOpen.length}</Badge></Link>}
+            {modules.data?.compras !== false && <Link to="/insumos" className="flex items-center gap-3 rounded-xl border border-line p-3 hover:border-brand/40"><FlaskConical className="size-4 text-warn" /><span className="flex-1">Insumos abaixo do mínimo</span><Badge tone={lowSupplies.length ? 'warn' : 'neutral'}>{lowSupplies.length}</Badge></Link>}
+            <Link to="/configuracoes" className="rounded-xl border border-line p-3 hover:border-brand/40">
+              <div className="mb-2 flex items-center gap-3"><Database className="size-4 text-muted" /><span className="flex-1">Banco de dados</span><span className="num text-xs text-muted">{db.data ? `${(db.data.db_bytes / 1048576).toFixed(1)} MB / 500 MB` : '…'}</span></div>
+              <ProgressBar value={dbPct} tone={dbPct > 85 ? 'danger' : dbPct > 60 ? 'warn' : 'ok'} />
+            </Link>
+          </div>
+        </Card>
+        <Card title="Atividades da equipe" action={<Badge tone="brand" dot>ao vivo</Badge>}>
+          <ActivityList limit={6} />
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card title="Últimos pedidos" padded={false} action={<Link to="/pedidos" className="text-xs font-semibold text-brand">Ver todos</Link>}>
-          <Table>
-            <thead>
-              <tr>
-                <th className="th">Pedido</th>
-                <th className="th">Cliente</th>
-                <th className="th">Data</th>
-                <th className="th text-right">Valor</th>
-              </tr>
-            </thead>
+          <Table><thead><tr><th className="th">Pedido</th><th className="th">Cliente</th><th className="th">Data</th><th className="th text-right">Valor</th></tr></thead>
             <tbody>
-              {(orders.data ?? []).slice(0, 6).map((o) => (
-                <tr key={o.id} className="hover:bg-surface-2/60">
-                  <td className="td font-semibold">
-                    <Link to={`/pedidos/${o.id}`} className="hover:text-brand">#{o.order_number}</Link>
-                  </td>
-                  <td className="td truncate max-w-[220px]">{o.customer?.name ?? '—'}</td>
-                  <td className="td text-muted">{fmtDate(o.order_date)}</td>
-                  <td className="td text-right num">{fmtBRL(o.total_value)}</td>
-                </tr>
-              ))}
-              {orders.data && !orders.data.length && (
-                <tr>
-                  <td className="td text-center text-muted py-8" colSpan={4}>Nenhum pedido aberto.</td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+              {orders.slice(0, 6).map((o) => <tr key={o.id} className="hover:bg-surface-2/60"><td className="td font-semibold"><Link to={`/pedidos/${o.id}`} className="hover:text-brand">#{o.order_number}</Link></td><td className="td max-w-[220px] truncate">{o.customer?.name ?? '—'}</td><td className="td text-muted">{fmtDate(o.order_date)}</td><td className="td num text-right">{fmtBRL(o.total_value)}</td></tr>)}
+              {allOrders.data && !orders.length && <tr><td className="td py-8 text-center text-muted" colSpan={4}>Nenhum pedido.</td></tr>}
+            </tbody></Table>
         </Card>
         <Card title="Estoque abaixo do mínimo" padded={false} action={<Badge tone={lowStock.length ? 'danger' : 'ok'}>{lowStock.length} produto(s)</Badge>}>
-          <Table>
-            <thead>
-              <tr>
-                <th className="th">Produto</th>
-                <th className="th text-right">Estoque</th>
-                <th className="th text-right">Mínimo</th>
-              </tr>
-            </thead>
+          <Table><thead><tr><th className="th">Produto</th><th className="th text-right">Estoque</th><th className="th text-right">Mínimo</th></tr></thead>
             <tbody>
-              {lowStock.slice(0, 6).map((s) => (
-                <tr key={s.code}>
-                  <td className="td">{s.description}</td>
-                  <td className="td text-right num text-danger font-semibold">{fmtInt(s.total)}</td>
-                  <td className="td text-right num text-muted">{fmtInt(s.min_stock)}</td>
-                </tr>
-              ))}
-              {!lowStock.length && (
-                <tr>
-                  <td className="td text-center text-muted py-8" colSpan={3}>Nenhum produto abaixo do mínimo. Defina mínimos em Produtos.</td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+              {lowStock.slice(0, 6).map((s) => <tr key={s.code}><td className="td">{s.description}</td><td className="td num text-right font-semibold text-danger">{fmtInt(s.total)}</td><td className="td num text-right text-muted">{fmtInt(s.min_stock)}</td></tr>)}
+              {!lowStock.length && <tr><td className="td py-8 text-center text-muted" colSpan={3}>Nenhum produto abaixo do mínimo. Defina mínimos em Produtos ou em Relatórios → Curva ABC.</td></tr>}
+            </tbody></Table>
         </Card>
       </div>
     </>
