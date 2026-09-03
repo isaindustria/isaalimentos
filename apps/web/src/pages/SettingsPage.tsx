@@ -51,7 +51,7 @@ export default function SettingsPage() {
               <Field label="Locais de estoque considerados" hint="Separe por vírgula. Padrão: 1, 5">
                 <Input value={form.stock_locations.join(', ')} onChange={(e) => setForm({ ...form, stock_locations: e.target.value.split(',').map((x) => Number(x.trim())).filter((n) => Number.isFinite(n) && n > 0) })} disabled={!isAdmin} />
               </Field>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Confiança mínima (%)" hint="Abaixo disso o item vai para conferência.">
                   <Input type="number" min={50} max={100} value={Math.round(form.match_threshold * 100)} onChange={(e) => setForm({ ...form, match_threshold: Number(e.target.value) / 100 })} disabled={!isAdmin} />
                 </Field>

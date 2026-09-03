@@ -222,7 +222,7 @@ export default function ProductsPage() {
         }
       >
         {editing && (
-          <form onSubmit={submit} className="grid grid-cols-2 gap-4">
+          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
             <Field label="Código" className="col-span-1">
               <Input value={editing.code ?? ''} onChange={(e) => setEditing({ ...editing, code: e.target.value })} disabled={!!editing.created_at} required />
             </Field>

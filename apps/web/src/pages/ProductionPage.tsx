@@ -109,7 +109,7 @@ export default function ProductionPage() {
               </Field>
               {scope === 'importacao' && (
                 <Field label="Importação">
-                  <Select className="w-72" value={importId} onChange={(e) => setImportId(e.target.value)}>
+                  <Select className="w-full sm:w-72" value={importId} onChange={(e) => setImportId(e.target.value)}>
                     <option value="">Selecione…</option>
                     {orderImports.data?.map((i) => <option key={i.id} value={i.id}>{fmtDateTime(i.imported_at)} · {i.file_name} ({i.orders_count} pedidos)</option>)}
                   </Select>

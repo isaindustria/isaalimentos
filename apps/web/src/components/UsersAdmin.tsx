@@ -51,7 +51,7 @@ export function UsersAdmin() {
   const others = (profiles.data ?? []).filter((p) => p.status !== 'pendente');
 
   return (
-    <div className="flex flex-col gap-4 lg:col-span-2">
+    <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
       <Card title={<span className="inline-flex items-center gap-2 font-display text-sm font-bold"><ShieldCheck className="size-4 text-brand" /> Pedidos de acesso</span>} action={pending.length ? <Badge tone="warn" dot>{pending.length} aguardando</Badge> : <Badge tone="ok">nenhum</Badge>}>
         {pending.length ? (
           <div className="flex flex-col gap-3">

@@ -227,7 +227,7 @@ export function Table({ children, className, dense }: { children: ReactNode; cla
 
 export function Tabs<T extends string>({ value, onChange, items }: { value: T; onChange: (v: T) => void; items: Array<{ value: T; label: ReactNode; count?: number }> }) {
   return (
-    <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-xl bg-surface-2 p-1" role="tablist">
+    <div className="inline-flex max-w-full flex-wrap gap-1 rounded-xl bg-surface-2 p-1 sm:flex-nowrap sm:overflow-x-auto" role="tablist">
       {items.map((it) => (
         <button
           key={it.value}

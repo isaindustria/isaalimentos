@@ -76,7 +76,7 @@ export default function RoutesPage() {
           <Card title="Nova rota">
             <div className="flex flex-col gap-3">
               <Field label="Nome"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Santos e Guarujá" /></Field>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Data"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
                 <Field label="Veículo"><Input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="Placa" /></Field>
               </div>

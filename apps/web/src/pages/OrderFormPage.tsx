@@ -133,7 +133,7 @@ export default function OrderFormPage() {
                 {customers.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </Select>
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Nº do pedido"><Input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} placeholder="opcional" /></Field>
               <Field label="Status">
                 <Select value={status} onChange={(e) => setStatus(e.target.value as OrderStatus)}>
@@ -144,7 +144,7 @@ export default function OrderFormPage() {
               <Field label="Entrega"><Input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} /></Field>
             </div>
             <Field label="Observações"><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-            <div className="rounded-xl bg-surface-2 p-3 text-sm grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-surface-2 p-3 text-sm grid grid-cols-2 sm:grid-cols-3 gap-2">
               <div><div className="text-xs text-muted">Caixas</div><b className="num">{fmtInt(totals.boxes)}</b></div>
               <div><div className="text-xs text-muted">Unidades</div><b className="num">{fmtInt(totals.units)}</b></div>
               <div><div className="text-xs text-muted">Valor</div><b className="num">{fmtBRL(totals.value)}</b></div>

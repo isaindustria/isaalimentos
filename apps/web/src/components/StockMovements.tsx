@@ -154,7 +154,7 @@ export default function StockMovements() {
               {products.data?.map((p) => <option key={p.code} value={p.code}>{p.code} · {p.description}</option>)}
             </Select>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Local de estoque">
               <Select value={location} onChange={(e) => setLocation(Number(e.target.value))}>
                 <option value={1}>Local 1</option>

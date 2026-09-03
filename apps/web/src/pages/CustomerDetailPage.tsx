@@ -101,7 +101,7 @@ export default function CustomerDetailPage() {
               {c.notes && <Row label="Observações"><span className="whitespace-pre-wrap">{c.notes}</span></Row>}
             </dl>
           </Card>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Pedidos</div><div className="font-display text-2xl font-bold num">{orders.data?.length ?? 0}</div></div>
             <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Total comprado</div><div className="font-display text-2xl font-bold num">{fmtBRL(total)}</div></div>
           </div>
