@@ -30,7 +30,7 @@ export default function ProductsPage() {
   const stockMap = useMemo(() => new Map((stock.data ?? []).map((s) => [s.code, s])), [stock.data]);
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (products.data ?? []).filter((p) => !q || p.code.includes(q) || p.description.toLowerCase().includes(q));
+    return (products.data ?? []).filter((p) => !q || p.code.includes(q) || p.description.toLowerCase().includes(q) || (p.reference ?? '').toLowerCase().includes(q));
   }, [products.data, search]);
 
   const save = useMutation({
@@ -80,7 +80,7 @@ export default function ProductsPage() {
         {tab === 'produtos' && (
           <div className="relative ml-auto w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
-            <Input className="pl-9" placeholder="Buscar por código ou descrição" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input className="pl-9" placeholder="Buscar por código, descrição ou referência" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         )}
       </div>

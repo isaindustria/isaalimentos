@@ -31,6 +31,7 @@ const RoutesPage = lazy(() => import('./pages/RoutesPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const AuditPage = lazy(() => import('./pages/AuditPage'));
 const PortalPage = lazy(() => import('./pages/PortalPage'));
+const DocsPage = lazy(() => import('./pages/DocsPage'));
 
 function FullSpinner() {
   return (
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="rotas" element={<RoutesPage />} />
             <Route path="relatorios" element={<ReportsPage />} />
             <Route path="auditoria" element={<AuditPage />} />
+            <Route path="documentacao" element={<DocsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
