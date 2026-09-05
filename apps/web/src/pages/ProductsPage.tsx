@@ -8,10 +8,25 @@ import { bulkUpsertProducts, type ProductInput } from '@/api/products';
 import { deleteAlias, deleteProduct, listAliases, listProducts, upsertProduct } from '@/api/products';
 import { logActivity } from '@/api/activity';
 import { getCurrentStock } from '@/api/stock';
-import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Tabs } from '@/components/primitives';
+import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Select, Table, Tabs } from '@/components/primitives';
 import type { Product } from '@/lib/types';
 import { fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+
+/** 60 -> "60 g"; 1500 -> "1,5 kg". */
+function fmtWeight(g: number | null | undefined) {
+  if (!g) return '—';
+  return g >= 1000 ? `${(g / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg` : `${g} g`;
+}
+
+/** "60", "60 g", "1,5 kg", "0.5kg" -> gramas. */
+function parseWeightG(raw: string): number | null {
+  const t = (raw ?? '').toString().trim().toLowerCase();
+  if (!t) return null;
+  const n = toNumber(t.replace(/[a-z\s]/g, ''), NaN);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(/kg|quilo/.test(t) ? n * 1000 : n);
+}
 
 const empty: Partial<Product> = { code: '', description: '', reference: 'ISA POTE', units_per_box: 48, weight_g: null, min_stock: 0, active: true, unit: 'PT' };
 
@@ -21,6 +36,7 @@ export default function ProductsPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [tab, setTab] = useState<'produtos' | 'apelidos'>('produtos');
   const [search, setSearch] = useState('');
+  const [weightUnit, setWeightUnit] = useState<'g' | 'kg'>('g');
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
 
   const products = useQuery({ queryKey: ['products', 'all'], queryFn: () => listProducts(true) });
@@ -111,7 +127,7 @@ export default function ProductsPage() {
                       <td className="td font-medium">{p.description}</td>
                       <td className="td text-muted text-xs">{p.reference ?? '—'}</td>
                       <td className="td text-right num">{p.units_per_box}</td>
-                      <td className="td text-right num text-muted">{p.weight_g ? `${p.weight_g}g` : '—'}</td>
+                      <td className="td text-right num text-muted">{fmtWeight(p.weight_g)}</td>
                       <td className="td text-right num font-semibold">{s ? fmtInt(s.total) : '—'}</td>
                       <td className="td text-right num text-muted">{fmtInt(p.min_stock)}</td>
                       <td className="td">{p.active ? <Badge tone="ok" dot>Ativo</Badge> : <Badge>Inativo</Badge>}</td>
@@ -174,7 +190,7 @@ export default function ProductsPage() {
           { key: 'description', label: 'Descrição', example: 'TEMPERO NOVO - ISA - 60g - CX 48', required: true },
           { key: 'reference', label: 'Referência', example: 'ISA POTE C/ST' },
           { key: 'units_per_box', label: 'Unidades por caixa', example: '48' },
-          { key: 'weight_g', label: 'Peso (g)', example: '60' },
+          { key: 'weight_g', label: 'Peso', example: '60 g ou 1,5 kg' },
           { key: 'category', label: 'Categoria', example: 'Temperos' },
           { key: 'min_stock', label: 'Estoque mínimo', example: '200' },
         ]}
@@ -190,12 +206,12 @@ export default function ProductsPage() {
             description,
             reference: pick(row, ['referencia', 'ref']) || null,
             units_per_box: toNumber(upbRaw, upbDesc ? Number(upbDesc) : 48) || 48,
-            weight_g: toNumber(pick(row, ['peso', 'peso g', 'gramas']), Number(description.match(/(\d+)\s*g\b/i)?.[1] ?? 0)) || null,
+            weight_g: parseWeightG(pick(row, ['peso', 'peso g', 'peso (g)', 'peso kg', 'peso (kg)', 'gramas', 'quilos'])) ?? (Number(description.match(/(\d+)\s*g/i)?.[1] ?? 0) || null),
             category: pick(row, ['categoria', 'linha']) || null,
             min_stock: toNumber(pick(row, ['estoque minimo', 'minimo']), 0),
           };
         }}
-        preview={(r) => [r.code, r.description, r.reference ?? '—', String(r.units_per_box), r.weight_g ? `${r.weight_g}g` : '—', r.category ?? '—', String(r.min_stock ?? 0)]}
+        preview={(r) => [r.code, r.description, r.reference ?? '—', String(r.units_per_box), fmtWeight(r.weight_g), r.category ?? '—', String(r.min_stock ?? 0)]}
         onImport={async (rows) => {
           const n = await bulkUpsertProducts(rows);
           await logActivity({ kind: 'sistema', title: `${n} produto(s) importados por planilha`, link: '/produtos', actor_id: session?.user.id, actor_name: profile?.name ?? null });
@@ -235,8 +251,11 @@ export default function ProductsPage() {
             <Field label="Unidades por caixa" hint="Usado para converter caixas do pedido em unidades.">
               <Input type="number" min={1} value={editing.units_per_box ?? 48} onChange={(e) => setEditing({ ...editing, units_per_box: Number(e.target.value) })} />
             </Field>
-            <Field label="Peso (g)">
-              <Input type="number" min={0} value={editing.weight_g ?? ''} onChange={(e) => setEditing({ ...editing, weight_g: e.target.value ? Number(e.target.value) : null })} />
+            <Field label="Peso" hint="Guardado em gramas; digite em g ou kg.">
+              <div className="flex gap-2">
+                <Input type="number" min={0} step="any" className="flex-1" value={weightUnit === 'kg' ? (editing.weight_g != null ? editing.weight_g / 1000 : '') : (editing.weight_g ?? '')} onChange={(e) => { const v = e.target.value === '' ? null : Number(e.target.value); setEditing({ ...editing, weight_g: v == null ? null : Math.round(weightUnit === 'kg' ? v * 1000 : v) }); }} />
+                <Select className="w-24" value={weightUnit} onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg')}><option value="g">g</option><option value="kg">kg</option></Select>
+              </div>
             </Field>
             <Field label="Estoque mínimo (un)">
               <Input type="number" min={0} value={editing.min_stock ?? 0} onChange={(e) => setEditing({ ...editing, min_stock: Number(e.target.value) })} />

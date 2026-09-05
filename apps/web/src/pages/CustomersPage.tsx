@@ -16,21 +16,22 @@ import { useAuth } from '@/hooks/useAuth';
 export function CustomerForm({ value, onChange }: { value: Partial<Customer>; onChange: (v: Partial<Customer>) => void }) {
   const set = (k: keyof Customer) => (e: { target: { value: string } }) => onChange({ ...value, [k]: e.target.value });
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <Field label="Razão social / nome" className="col-span-2"><Input value={value.name ?? ''} onChange={set('name')} required /></Field>
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Razão social / nome" className="sm:col-span-2"><Input value={value.name ?? ''} onChange={set('name')} required /></Field>
       <Field label="Nome fantasia"><Input value={value.trade_name ?? ''} onChange={set('trade_name')} /></Field>
       <Field label="Rede / grupo"><Input value={value.group_name ?? ''} onChange={set('group_name')} placeholder="Ex.: Rede Supermercados X" /></Field>
       <Field label="CNPJ"><Input value={value.cnpj ?? ''} onChange={set('cnpj')} placeholder="00.000.000/0000-00" /></Field>
       <Field label="Contato"><Input value={value.contact_name ?? ''} onChange={set('contact_name')} /></Field>
       <Field label="Telefone / WhatsApp"><Input value={value.phone ?? ''} onChange={set('phone')} /></Field>
       <Field label="E-mail"><Input type="email" value={value.email ?? ''} onChange={set('email')} /></Field>
-      <Field label="Endereço" className="col-span-2"><Input value={value.address ?? ''} onChange={set('address')} /></Field>
+      <Field label="Endereço" className="sm:col-span-2"><Input value={value.address ?? ''} onChange={set('address')} /></Field>
+      <Field label="Bairro"><Input value={value.district ?? ''} onChange={set('district')} /></Field>
       <Field label="Cidade"><Input value={value.city ?? ''} onChange={set('city')} /></Field>
       <div className="grid grid-cols-2 gap-4">
         <Field label="UF"><Input value={value.state ?? ''} onChange={set('state')} maxLength={2} /></Field>
         <Field label="CEP"><Input value={value.cep ?? ''} onChange={set('cep')} /></Field>
       </div>
-      <Field label="Observações" className="col-span-2"><Textarea value={value.notes ?? ''} onChange={set('notes')} /></Field>
+      <Field label="Observações" className="sm:col-span-2"><Textarea value={value.notes ?? ''} onChange={set('notes')} /></Field>
     </div>
   );
 }
@@ -47,7 +48,7 @@ export default function CustomersPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (customers.data ?? []).filter((c) => !q || c.name.toLowerCase().includes(q) || (c.cnpj ?? '').includes(q.replace(/\D/g, '') || '§') || (c.city ?? '').toLowerCase().includes(q) || (c.group_name ?? '').toLowerCase().includes(q));
+    return (customers.data ?? []).filter((c) => !q || c.name.toLowerCase().includes(q) || (c.cnpj ?? '').includes(q.replace(/\D/g, '') || '§') || (c.city ?? '').toLowerCase().includes(q) || (c.district ?? '').toLowerCase().includes(q) || (c.group_name ?? '').toLowerCase().includes(q));
   }, [customers.data, search]);
 
   const groups = useMemo(() => {
@@ -104,7 +105,7 @@ export default function CustomersPage() {
                       <tr key={c.id} className="hover:bg-surface-2/60 cursor-pointer" onClick={() => navigate(`/clientes/${c.id}`)}>
                         <td className="td font-medium">{c.name}{c.trade_name && <span className="text-muted text-xs ml-2">{c.trade_name}</span>}</td>
                         <td className="td font-mono text-xs">{formatCnpj(c.cnpj)}</td>
-                        <td className="td text-muted">{[c.city, c.state].filter(Boolean).join(' - ')}</td>
+                        <td className="td text-muted">{[c.district, c.city, c.state].filter(Boolean).join(' · ')}</td>
                         <td className="td text-right num">{s?.orders ?? 0}</td>
                         <td className="td text-right num font-semibold">{fmtBRL(s?.total_value ?? 0)}</td>
                         <td className="td text-muted">{fmtDate(s?.last_order)}</td>
@@ -131,6 +132,7 @@ export default function CustomersPage() {
           { key: 'group_name', label: 'Rede', example: 'Supermercado Exemplo' },
           { key: 'trade_name', label: 'Nome fantasia', example: 'Exemplo Centro' },
           { key: 'address', label: 'Endereço', example: 'Av. Nossa Senhora de Fátima, 298' },
+          { key: 'district', label: 'Bairro', example: 'Centro' },
           { key: 'city', label: 'Cidade', example: 'Santos' },
           { key: 'state', label: 'UF', example: 'SP' },
           { key: 'cep', label: 'CEP', example: '11085-202' },
@@ -147,6 +149,7 @@ export default function CustomersPage() {
             group_name: pick(row, ['rede', 'grupo']) || null,
             trade_name: pick(row, ['nome fantasia', 'fantasia']) || null,
             address: pick(row, ['endereco', 'logradouro']) || null,
+            district: pick(row, ['bairro']) || null,
             city: pick(row, ['cidade', 'municipio']) || null,
             state: (pick(row, ['uf', 'estado']) || '').toUpperCase().slice(0, 2) || null,
             cep: pick(row, ['cep']) || null,
@@ -155,7 +158,7 @@ export default function CustomersPage() {
             contact_name: pick(row, ['contato', 'comprador', 'responsavel']) || null,
           };
         }}
-        preview={(r) => [r.name, r.cnpj ?? '—', r.group_name ?? '—', r.trade_name ?? '—', r.address ?? '—', r.city ?? '—', r.state ?? '—', r.cep ?? '—', r.phone ?? '—', r.email ?? '—', r.contact_name ?? '—']}
+        preview={(r) => [r.name, r.cnpj ?? '—', r.group_name ?? '—', r.trade_name ?? '—', r.address ?? '—', r.district ?? '—', r.city ?? '—', r.state ?? '—', r.cep ?? '—', r.phone ?? '—', r.email ?? '—', r.contact_name ?? '—']}
         onImport={async (rows) => {
           const n = await bulkUpsertCustomers(rows);
           await logActivity({ kind: 'cliente', title: `${n} cliente(s) importados por planilha`, link: '/clientes', actor_id: session?.user.id, actor_name: profile?.name ?? null });

@@ -97,6 +97,7 @@ export interface Customer {
   group_name: string | null;
   address: string | null;
   city: string | null;
+  district: string | null;
   state: string | null;
   cep: string | null;
   phone: string | null;
