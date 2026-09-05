@@ -1,7 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Area, AreaChart, Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Boxes, ClipboardList, Factory, AlertTriangle, ArrowRight, Upload, FileText, Users, TrendingUp, Wallet, Truck, FlaskConical, Database, Target } from 'lucide-react';
 import { getCurrentStock, listStockImports } from '@/api/stock';
 import { demand, listOrders, listPendingItems } from '@/api/orders';
@@ -14,7 +13,6 @@ import { ActivityList } from '@/components/Notifications';
 import { cn, fmtAgo, fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
-const chartStyle = { borderRadius: 12, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 12 };
 type Tone = 'neutral' | 'brand' | 'ok' | 'warn' | 'danger' | 'info';
 const TONES: Record<Tone, string> = { neutral: 'bg-surface-2 text-muted', brand: 'bg-brand-soft text-brand', ok: 'bg-ok/10 text-ok', warn: 'bg-warn/10 text-warn', danger: 'bg-danger/10 text-danger', info: 'bg-info/10 text-info' };
 
@@ -71,16 +69,6 @@ export default function DashboardPage() {
   const serviceRate = valid.length ? served / valid.length : 0;
   const activeCustomers30 = new Set(last30.map((o) => o.customer_id)).size;
 
-  const weekly = useMemo(() => {
-    const out: Array<{ w: string; valor: number; pedidos: number }> = [];
-    for (let i = 7; i >= 0; i--) {
-      const start = new Date(now - (i + 1) * 7 * 864e5).toISOString().slice(0, 10);
-      const end = new Date(now - i * 7 * 864e5).toISOString().slice(0, 10);
-      const set = valid.filter((o) => o.order_date! > start && o.order_date! <= end);
-      out.push({ w: fmtDate(end, 'dd/MM'), valor: set.reduce((s, o) => s + Number(o.total_value), 0), pedidos: set.length });
-    }
-    return out;
-  }, [valid, now]);
   const topCustomers = useMemo(() => {
     const m = new Map<string, { name: string; value: number; n: number }>();
     for (const o of last30) { const k = o.customer?.name ?? 'Sem cliente'; const c = m.get(k) ?? { name: k, value: 0, n: 0 }; c.value += Number(o.total_value); c.n += 1; m.set(k, c); }
@@ -116,34 +104,14 @@ export default function DashboardPage() {
         <Kpi label="Clientes ativos (30 d)" value={allOrders.data ? fmtInt(activeCustomers30) : skel} sub={`${customers.data?.length ?? 0} cadastrados`} tone="brand" icon={<Users className="size-5" />} to="/clientes" />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-        <Card title="Faturamento por semana (8 semanas)" action={<Badge tone="ok">{fmtBRL(weekly.reduce((s, w) => s + w.valor, 0))}</Badge>}>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weekly} margin={{ left: 0, right: 8, top: 8 }}>
-                <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--brand)" stopOpacity={0.35} /><stop offset="100%" stopColor="var(--brand)" stopOpacity={0} /></linearGradient></defs>
-                <XAxis dataKey="w" tick={{ fontSize: 11, fill: 'var(--muted-ink)' }} axisLine={false} tickLine={false} />
-                <YAxis hide />
-                <Tooltip contentStyle={chartStyle} formatter={(v, n) => [n === 'valor' ? fmtBRL(v as number) : String(v), n === 'valor' ? 'Faturamento' : 'Pedidos']} />
-                <Area type="monotone" dataKey="valor" stroke="var(--brand)" strokeWidth={2.5} fill="url(#g)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-        <Card title="Maiores necessidades de produção" action={<Link to="/producao" className="inline-flex items-center gap-1 text-xs font-semibold text-brand">Ver cálculo <ArrowRight className="size-3" /></Link>}>
-          {top.length ? (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={top.map((r) => ({ name: r.description.split(' - ')[0], need: r.need }))} layout="vertical" margin={{ left: 8, right: 24 }}>
-                  <XAxis type="number" hide /><YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: 'var(--muted-ink)' }} axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: 'var(--surface-2)' }} contentStyle={chartStyle} formatter={(v) => [fmtInt(v as number), 'unidades']} />
-                  <Bar dataKey="need" radius={[0, 8, 8, 0]}>{top.map((_, i) => <Cell key={i} fill={i === 0 ? 'var(--brand)' : 'color-mix(in srgb, var(--brand) 55%, transparent)'} />)}</Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : <p className="py-10 text-center text-sm text-muted">Estoque cobre todos os pedidos abertos.</p>}
-        </Card>
-      </div>
+      <Card className="mt-4" title="Maiores necessidades de produção" padded={false} action={<Link to="/producao" className="inline-flex items-center gap-1 text-xs font-semibold text-brand">Ver cálculo <ArrowRight className="size-3" /></Link>}>
+        {top.length ? (
+          <Table dense>
+            <thead><tr><th className="th">Produto</th><th className="th text-right">Pedido</th><th className="th text-right">Estoque</th><th className="th text-right">Produzir</th><th className="th text-right">Caixas</th></tr></thead>
+            <tbody>{top.map((r, i) => <tr key={r.code} className={i === 0 ? 'bg-brand-soft/30' : ''}><td className="td font-medium">{r.description}</td><td className="td num text-right text-muted">{fmtInt(r.ordered)}</td><td className="td num text-right text-muted">{fmtInt(r.stock)}</td><td className="td num text-right font-bold text-brand">{fmtInt(r.need)}</td><td className="td num text-right">{fmtInt(Math.ceil(r.need / (r.units_per_box || 48)))}</td></tr>)}</tbody>
+          </Table>
+        ) : <p className="py-10 text-center text-sm text-muted">Estoque cobre todos os pedidos abertos.</p>}
+      </Card>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card title="Top clientes (30 dias)" padded={false}>

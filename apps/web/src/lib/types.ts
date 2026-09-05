@@ -11,12 +11,17 @@ export const ROLE_LABEL: Record<Role, string> = {
   operador: 'Operador',
 };
 
+/** Areas de escrita (item 6 do v1.3): cada papel so altera as telas da propria area; gestor e admin alteram tudo. */
+export type Area = 'compras' | 'estoque' | 'producao';
+export const AREA_LABEL: Record<Area, string> = { compras: 'Comercial / Compras (insumos, pedidos, clientes, preços, rotas)', estoque: 'Estoque (estoque e produtos)', producao: 'Produção (ordens de produção)' };
+export const ROLE_AREAS: Record<Role, Area[]> = { admin: ['compras', 'estoque', 'producao'], gestor: ['compras', 'estoque', 'producao'], comercial: ['compras'], estoque: ['estoque'], producao: ['producao'], operador: [] };
+
 export type ProfileStatus = 'pendente' | 'ativo' | 'bloqueado';
 export type Access = 'admin' | 'editor' | 'visualizador';
 
 export const ACCESS_LABEL: Record<Access, string> = {
   admin: 'Administrador (tudo, inclusive usuários)',
-  editor: 'Editor (cria e altera)',
+  editor: 'Editor (cria e altera na própria área)',
   visualizador: 'Visualizador (só consulta)',
 };
 export const STATUS_LABEL_PROFILE: Record<ProfileStatus, string> = { pendente: 'Aguardando aprovação', ativo: 'Ativo', bloqueado: 'Bloqueado' };

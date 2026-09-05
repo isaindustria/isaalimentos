@@ -19,7 +19,7 @@ function CodeLabel({ text }: { text: string }) {
 
 export default function RoutesPage() {
   const qc = useQueryClient();
-  const { canWrite, session, profile } = useAuth();
+  const { canWriteArea, session, profile } = useAuth();
   const [tab, setTab] = useState<'montar' | 'rotas'>('rotas');
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [name, setName] = useState('');
@@ -82,7 +82,7 @@ export default function RoutesPage() {
               </div>
               <Field label="Motorista"><Input value={driver} onChange={(e) => setDriver(e.target.value)} /></Field>
               <div className="rounded-xl bg-surface-2 p-3 text-sm"><b>{sel.size}</b> pedido(s) · {fmtBRL(selectedTotal.reduce((s, o) => s + Number(o.total_value), 0))}</div>
-              {canWrite && <Button icon={<Plus className="size-4" />} disabled={!sel.size} loading={create.isPending} onClick={() => create.mutate()}>Criar rota</Button>}
+              {canWriteArea('compras') && <Button icon={<Plus className="size-4" />} disabled={!sel.size} loading={create.isPending} onClick={() => create.mutate()}>Criar rota</Button>}
             </div>
           </Card>
         </div>
@@ -95,9 +95,9 @@ export default function RoutesPage() {
                   <td className="td"><Badge tone={RSTATUS[r.status].tone} dot>{RSTATUS[r.status].label}</Badge></td>
                   <td className="td whitespace-nowrap text-right">
                     <Button size="sm" variant="outline" icon={<Printer className="size-3.5" />} onClick={() => openPrint.mutate(r)}>Romaneio e etiquetas</Button>
-                    {canWrite && r.status === 'planejada' && <Button size="sm" variant="ghost" onClick={() => status.mutate({ id: r.id, status: 'em_rota' })}>Saiu</Button>}
-                    {canWrite && r.status === 'em_rota' && <Button size="sm" variant="ghost" onClick={() => status.mutate({ id: r.id, status: 'concluida' })}>Entregue</Button>}
-                    {canWrite && <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-3.5" />} onClick={() => confirm('Excluir rota?') && remove.mutate(r.id)} />}
+                    {canWriteArea('compras') && r.status === 'planejada' && <Button size="sm" variant="ghost" onClick={() => status.mutate({ id: r.id, status: 'em_rota' })}>Saiu</Button>}
+                    {canWriteArea('compras') && r.status === 'em_rota' && <Button size="sm" variant="ghost" onClick={() => status.mutate({ id: r.id, status: 'concluida' })}>Entregue</Button>}
+                    {canWriteArea('compras') && <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-3.5" />} onClick={() => confirm('Excluir rota?') && remove.mutate(r.id)} />}
                   </td></tr>
               ))}</tbody></Table>
           ) : <EmptyState icon={<Truck className="size-5" />} title="Nenhuma rota" description="Monte a primeira rota agrupando pedidos por cidade." action={<Button onClick={() => setTab('montar')}>Montar rota</Button>} />}

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import type { Profile } from '@/lib/types';
+import { ROLE_AREAS, type Area, type Profile } from '@/lib/types';
 
 interface AuthContextValue {
   session: Session | null;
@@ -12,6 +12,8 @@ interface AuthContextValue {
   isActive: boolean;
   /** Pode criar/alterar registros (editor ou admin). */
   canWrite: boolean;
+  /** Pode alterar registros da area: admin/gestor sempre; editor so na propria area. Espelha can_write_area() do banco. */
+  canWriteArea(area: Area): boolean;
   signIn(email: string, password: string): Promise<void>;
   signUp(name: string, email: string, password: string): Promise<{ needsConfirmation: boolean }>;
   resetPassword(email: string): Promise<void>;
@@ -62,6 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: profile?.status === 'ativo' && (profile?.access === 'admin' || profile?.is_superadmin === true),
       isActive: profile?.status === 'ativo',
       canWrite: profile?.status === 'ativo' && (profile?.access === 'admin' || profile?.access === 'editor'),
+      canWriteArea(area) {
+        if (!profile || profile.status !== 'ativo') return false;
+        if (profile.access === 'admin' || profile.is_superadmin) return true;
+        return profile.access === 'editor' && ROLE_AREAS[profile.role].includes(area);
+      },
       async signIn(email, password) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw new Error(translateAuthError(error.message));

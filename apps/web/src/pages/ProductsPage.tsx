@@ -32,7 +32,7 @@ const empty: Partial<Product> = { code: '', description: '', reference: 'ISA POT
 
 export default function ProductsPage() {
   const qc = useQueryClient();
-  const { isAdmin, canWrite, session, profile } = useAuth();
+  const { isAdmin, canWriteArea, session, profile } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
   const [tab, setTab] = useState<'produtos' | 'apelidos'>('produtos');
   const [search, setSearch] = useState('');
@@ -84,7 +84,7 @@ export default function ProductsPage() {
       <PageHeader
         title="Produtos"
         description="Cadastro dos produtos identificados pelo código da planilha de estoque. O código é o identificador principal."
-        actions={canWrite && (
+        actions={canWriteArea('estoque') && (
           <>
             <Button variant="outline" icon={<Upload className="h-4 w-4" />} onClick={() => setImportOpen(true)}>Importar planilha</Button>
             <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ ...empty })}>Novo produto</Button>

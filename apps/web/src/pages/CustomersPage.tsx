@@ -39,7 +39,7 @@ export function CustomerForm({ value, onChange }: { value: Partial<Customer>; on
 export default function CustomersPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { canWrite, session, profile } = useAuth();
+  const { canWriteArea, session, profile } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Partial<Customer> | null>(null);
@@ -78,7 +78,7 @@ export default function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="Clientes" description="Lojas e redes atendidas. Clientes são criados automaticamente ao importar pedidos (pelo CNPJ de entrega)." actions={canWrite && (<><Button variant="outline" icon={<Upload className="h-4 w-4" />} onClick={() => setImportOpen(true)}>Importar planilha</Button><Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ name: '' })}>Novo cliente</Button></>)} />
+      <PageHeader title="Clientes" description="Lojas e redes atendidas. Clientes são criados automaticamente ao importar pedidos (pelo CNPJ de entrega)." actions={canWriteArea('compras') && (<><Button variant="outline" icon={<Upload className="h-4 w-4" />} onClick={() => setImportOpen(true)}>Importar planilha</Button><Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ name: '' })}>Novo cliente</Button></>)} />
       <div className="relative w-full sm:w-80 mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
         <Input className="pl-9" placeholder="Buscar por nome, CNPJ, cidade ou rede" value={search} onChange={(e) => setSearch(e.target.value)} />

@@ -12,7 +12,7 @@ import type { PriceList } from '@/lib/types';
 
 export default function PricesPage() {
   const qc = useQueryClient();
-  const { canWrite } = useAuth();
+  const { canWriteArea } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<PriceList>>({ valid_from: new Date().toISOString().slice(0, 10) });
   const [filter, setFilter] = useState('');
@@ -35,7 +35,7 @@ export default function PricesPage() {
 
   return (
     <>
-      <PageHeader title="Tabela de preços" description="Preço por caixa: geral, por rede ou por loja. O mais específico vence; o histórico fica guardado pela data de vigência." actions={canWrite && <Button icon={<Plus className="size-4" />} onClick={() => { setForm({ valid_from: new Date().toISOString().slice(0, 10) }); setOpen(true); }}>Novo preço</Button>} />
+      <PageHeader title="Tabela de preços" description="Preço por caixa: geral, por rede ou por loja. O mais específico vence; o histórico fica guardado pela data de vigência." actions={canWriteArea('compras') && <Button icon={<Plus className="size-4" />} onClick={() => { setForm({ valid_from: new Date().toISOString().slice(0, 10) }); setOpen(true); }}>Novo preço</Button>} />
       <div className="mb-4 flex flex-wrap gap-3">
         <Select className="w-full sm:w-80" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="">Todos os produtos</option>
@@ -54,7 +54,7 @@ export default function PricesPage() {
                   <td className="td num text-right font-semibold">{fmtBRL(p.price_box)}</td>
                   <td className="td text-muted">{fmtDate(p.valid_from)}</td>
                   <td className="td text-xs text-muted">{p.notes ?? '—'}</td>
-                  <td className="td text-right">{canWrite && <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-3.5" />} onClick={() => confirm('Remover este preço?') && remove.mutate(p.id)} />}</td>
+                  <td className="td text-right">{canWriteArea('compras') && <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-3.5" />} onClick={() => confirm('Remover este preço?') && remove.mutate(p.id)} />}</td>
                 </tr>
               ))}
             </tbody>

@@ -22,7 +22,7 @@ const KIND_LABEL: Record<MovementKind, { label: string; tone: 'ok' | 'danger' | 
 
 export default function StockMovements() {
   const qc = useQueryClient();
-  const { session, profile, isAdmin, canWrite } = useAuth();
+  const { session, profile, isAdmin, canWriteArea } = useAuth();
   const [open, setOpen] = useState<null | 'mov' | 'inv'>(null);
   const [productCode, setProductCode] = useState('');
   const [location, setLocation] = useState(1);
@@ -87,7 +87,7 @@ export default function StockMovements() {
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        {canWrite && (
+        {canWriteArea('estoque') && (
           <>
             <Button icon={<ArrowDownToLine className="h-4 w-4" />} onClick={() => { setKind('entrada'); setOpen('mov'); }}>Entrada</Button>
             <Button variant="outline" icon={<ArrowUpFromLine className="h-4 w-4" />} onClick={() => { setKind('saida'); setOpen('mov'); }}>Saída</Button>

@@ -49,7 +49,7 @@ const PSTATUS: Record<string, { label: string; tone: 'neutral' | 'info' | 'ok' |
 
 export default function SuppliesPage() {
   const qc = useQueryClient();
-  const { canWrite, session, profile } = useAuth();
+  const { canWriteArea, session, profile } = useAuth();
   const [tab, setTab] = useState<'insumos' | 'ficha' | 'compras'>('insumos');
   const [editing, setEditing] = useState<Partial<Supply> | null>(null);
   const [bomProduct, setBomProduct] = useState('');
@@ -95,7 +95,7 @@ export default function SuppliesPage() {
 
   return (
     <>
-      <PageHeader title="Insumos e compras" description="Matéria-prima e embalagem por produto (ficha técnica). O sistema calcula o que comprar a partir da ordem de produção." actions={canWrite && tab === 'insumos' && <><Button variant="outline" icon={<Upload className="size-4" />} onClick={() => setImporting('insumos')}>Importar matéria-prima</Button><Button variant="outline" icon={<Upload className="size-4" />} onClick={() => setImporting('consumo')}>Importar consumo</Button><Button icon={<Plus className="size-4" />} onClick={() => setEditing({ name: '', unit: 'kg', stock: 0, min_stock: 0, reference: 'insumo', code: '' })}>Novo insumo</Button></>} />
+      <PageHeader title="Insumos e compras" description="Matéria-prima e embalagem por produto (ficha técnica). O sistema calcula o que comprar a partir da ordem de produção." actions={canWriteArea('compras') && tab === 'insumos' && <><Button variant="outline" icon={<Upload className="size-4" />} onClick={() => setImporting('insumos')}>Importar matéria-prima</Button><Button variant="outline" icon={<Upload className="size-4" />} onClick={() => setImporting('consumo')}>Importar consumo</Button><Button icon={<Plus className="size-4" />} onClick={() => setEditing({ name: '', unit: 'kg', stock: 0, min_stock: 0, reference: 'insumo', code: '' })}>Novo insumo</Button></>} />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Tabs value={tab} onChange={setTab} items={[{ value: 'insumos', label: 'Insumos', count: supplies.data?.length }, { value: 'ficha', label: 'Ficha técnica', count: bom.data?.length }, { value: 'compras', label: 'Pedidos de compra', count: purchases.data?.length }]} />
         {low.length > 0 && <Badge tone="warn" dot>{low.length} insumo(s) abaixo do mínimo</Badge>}
@@ -117,7 +117,7 @@ export default function SuppliesPage() {
                   <td className="td num text-right text-muted">{p ? <>{fmtDec(p.avgMonthly)} <span className="text-xs">({p.months} {p.months === 1 ? 'mês' : 'meses'})</span></> : '—'}</td>
                   <td className="td num text-right">{p ? <span className={`inline-flex items-center justify-end gap-1 font-bold ${p.suggestion > 0 ? 'text-brand' : 'text-muted'}`}>{p.needsReview && <AlertTriangle className="size-3.5 text-danger" title={`Oscilou ${Math.round(p.maxSwing * 100)}% entre meses: conferir manualmente`} />}{p.suggestion > 0 ? `${fmtDec(p.suggestion)} ${s.unit}` : '0'}</span> : <span className="text-xs text-muted">sem consumo</span>}</td>
                   <td className="td num text-right">{s.cost != null ? fmtBRL(s.cost) : '—'}</td>
-                  <td className="td text-right whitespace-nowrap">{canWrite && <><Button size="sm" variant="ghost" onClick={() => setEditing(s)}>Editar</Button><Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-3.5" />} onClick={() => confirm('Remover insumo?') && remove.mutate(s.id)} /></>}</td>
+                  <td className="td text-right whitespace-nowrap">{canWriteArea('compras') && <><Button size="sm" variant="ghost" onClick={() => setEditing(s)}>Editar</Button><Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-3.5" />} onClick={() => confirm('Remover insumo?') && remove.mutate(s.id)} /></>}</td>
                 </tr>); })}</tbody>
             </Table>
           ) : <EmptyState icon={<FlaskConical className="size-5" />} title="Nenhum insumo" description="Cadastre matéria-prima e embalagens (ex.: sal, páprica, potes 100g, tampas)." />}
@@ -131,14 +131,14 @@ export default function SuppliesPage() {
               <Field label="Produto"><Select value={bomProduct} onChange={(e) => setBomProduct(e.target.value)}><option value="">Selecione…</option>{products.data?.map((p) => <option key={p.code} value={p.code}>{p.code} · {p.description}</option>)}</Select></Field>
               <Field label="Insumo"><Select value={bomSupply} onChange={(e) => setBomSupply(e.target.value)}><option value="">Selecione…</option>{supplies.data?.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.unit})</option>)}</Select></Field>
               <Field label="Quantidade por unidade produzida" hint="Ex.: 0,05 kg de sal por pote"><Input type="number" step="0.0001" min={0} value={bomQty || ''} onChange={(e) => setBomQty(Number(e.target.value))} /></Field>
-              {canWrite && <Button onClick={() => addBom.mutate()} disabled={!bomProduct || !bomSupply || !bomQty} loading={addBom.isPending}>Salvar na ficha</Button>}
+              {canWriteArea('compras') && <Button onClick={() => addBom.mutate()} disabled={!bomProduct || !bomSupply || !bomQty} loading={addBom.isPending}>Salvar na ficha</Button>}
             </div>
           </Card>
           <Card title="Fichas cadastradas" padded={false}>
             {bom.data?.length ? (
               <Table><thead><tr><th className="th">Produto</th><th className="th">Insumo</th><th className="th text-right">Qtd / unidade</th><th className="th" /></tr></thead>
                 <tbody>{[...bomByProduct.entries()].map(([code, items]) => (items ?? []).map((b, i) => (
-                  <tr key={b.id}><td className="td font-medium">{i === 0 ? products.data?.find((p) => p.code === code)?.description ?? code : ''}</td><td className="td">{b.supply?.name}</td><td className="td num text-right">{fmtDec(b.qty_per_unit)} {b.supply?.unit}</td><td className="td text-right">{canWrite && <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-3.5" />} onClick={() => removeBom.mutate(b.id)} />}</td></tr>
+                  <tr key={b.id}><td className="td font-medium">{i === 0 ? products.data?.find((p) => p.code === code)?.description ?? code : ''}</td><td className="td">{b.supply?.name}</td><td className="td num text-right">{fmtDec(b.qty_per_unit)} {b.supply?.unit}</td><td className="td text-right">{canWriteArea('compras') && <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-3.5" />} onClick={() => removeBom.mutate(b.id)} />}</td></tr>
                 )))}</tbody></Table>
             ) : <EmptyState title="Nenhuma ficha técnica" description="Sem ficha, o sistema não consegue calcular insumos." />}
           </Card>
@@ -151,7 +151,7 @@ export default function SuppliesPage() {
             <div className="flex flex-wrap items-end gap-3">
               <Field label="Ordem de produção" className="min-w-64 flex-1"><Select value={runId} onChange={(e) => setRunId(e.target.value)}><option value="">Selecione…</option>{runs.data?.map((r) => <option key={r.id} value={r.id}>{r.name} · {fmtDateTime(r.created_at)}</option>)}</Select></Field>
               <Button variant="outline" onClick={() => calc.mutate()} disabled={!runId} loading={calc.isPending}>Calcular insumos</Button>
-              {canWrite && needs.some((n) => n.toBuy > 0) && <Button icon={<ShoppingCart className="size-4" />} onClick={() => createPO.mutate()} loading={createPO.isPending}>Gerar pedido de compra</Button>}
+              {canWriteArea('compras') && needs.some((n) => n.toBuy > 0) && <Button icon={<ShoppingCart className="size-4" />} onClick={() => createPO.mutate()} loading={createPO.isPending}>Gerar pedido de compra</Button>}
             </div>
             {needs.length > 0 && (
               <div className="mt-4"><Table dense><thead><tr><th className="th">Insumo</th><th className="th text-right">Necessário</th><th className="th text-right">Em estoque</th><th className="th text-right">Comprar</th><th className="th text-right">Custo est.</th></tr></thead>
@@ -165,7 +165,7 @@ export default function SuppliesPage() {
                   <tr key={po.id}><td className="td text-muted">{fmtDateTime(po.created_at)}</td><td className="td">{po.supplier ?? '—'}</td>
                     <td className="td text-xs">{(po.items ?? []).map((i) => `${i.supply?.name} ${fmtDec(i.qty)} ${i.supply?.unit ?? ''}`).join(' · ')}</td>
                     <td className="td"><Badge tone={PSTATUS[po.status].tone} dot>{PSTATUS[po.status].label}</Badge></td>
-                    <td className="td whitespace-nowrap text-right">{canWrite && po.status === 'rascunho' && <Button size="sm" variant="outline" onClick={() => status.mutate({ id: po.id, status: 'enviado' })}>Marcar enviado</Button>}{canWrite && po.status === 'enviado' && <Button size="sm" icon={<PackageCheck className="size-4" />} onClick={() => confirm('Confirmar recebimento e dar entrada nos insumos?') && status.mutate({ id: po.id, status: 'recebido', items: po.items })}>Receber</Button>}{canWrite && po.status !== 'recebido' && po.status !== 'cancelado' && <Button size="sm" variant="ghost" className="text-danger" onClick={() => status.mutate({ id: po.id, status: 'cancelado' })}>Cancelar</Button>}</td></tr>
+                    <td className="td whitespace-nowrap text-right">{canWriteArea('compras') && po.status === 'rascunho' && <Button size="sm" variant="outline" onClick={() => status.mutate({ id: po.id, status: 'enviado' })}>Marcar enviado</Button>}{canWriteArea('compras') && po.status === 'enviado' && <Button size="sm" icon={<PackageCheck className="size-4" />} onClick={() => confirm('Confirmar recebimento e dar entrada nos insumos?') && status.mutate({ id: po.id, status: 'recebido', items: po.items })}>Receber</Button>}{canWriteArea('compras') && po.status !== 'recebido' && po.status !== 'cancelado' && <Button size="sm" variant="ghost" className="text-danger" onClick={() => status.mutate({ id: po.id, status: 'cancelado' })}>Cancelar</Button>}</td></tr>
                 ))}</tbody></Table>
             ) : <EmptyState icon={<ShoppingCart className="size-5" />} title="Nenhum pedido de compra" />}
           </Card>

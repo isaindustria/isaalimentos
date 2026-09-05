@@ -103,6 +103,8 @@
       <li>Colunas novas na tela: Referência (matéria-prima, insumo, embalagem, tampa, pote, etiqueta), Código, Estoque atual, Média de consumo/mês, Sugestão de compra; filtro por referência.</li>
       <li><b>Produtos</b>: peso aceita <b>g ou kg</b> no cadastro e na planilha ("1,5 kg", "60 g"); guardado em gramas e mostrado em kg quando passa de 1.000 g. Busca também por referência.</li>
       <li><b>Clientes</b>: campo <b>Bairro</b> no cadastro, na planilha, na lista e na busca.</li>
+      <li><b>Permissões por área</b>: quem é Editor só altera as telas da própria área — Comercial/Compras (insumos, pedidos, clientes, preços, rotas), Estoque (estoque e produtos), Produção (ordens). O resto fica só para consulta. Gestor e Administrador alteram tudo. Vale na tela e no banco de dados.</li>
+      <li><b>Painel</b>: gráficos removidos, conforme o documento v1.3; as maiores necessidades de produção agora aparecem em tabela, com pedido, estoque, a produzir e caixas.</li>
     </ul>
   </div>
 
@@ -244,7 +246,8 @@
   <div class="card">
     <ul>
       <li>Quem cria conta pela primeira vez fica pendente até um administrador aprovar em <b>Configurações → Pedidos de acesso</b>.</li>
-      <li>Cada pessoa tem uma área (onde trabalha) e um nível: visualizador só vê, editor lança e importa, administrador também gerencia usuários e configurações.</li>
+      <li>Cada pessoa tem uma área (onde trabalha) e um nível: visualizador só vê, editor lança e importa <b>na própria área</b>, administrador também gerencia usuários e configurações.</li>
+      <li>Áreas e o que cada uma altera: <b>Comercial/Compras</b> → Insumos e compras, Pedidos, Clientes, Preços, Rotas · <b>Estoque</b> → Estoque, Produtos · <b>Produção</b> → Ordens de produção · <b>Operador</b> → só consulta · <b>Gestor</b> → tudo. As outras telas aparecem para todos, mas sem botões de editar.</li>
       <li>O superadmin não pode ser rebaixado nem removido por ninguém.</li>
       <li>Cada usuário troca o próprio e-mail e senha em <b>Configurações → Minha conta</b>.</li>
     </ul>

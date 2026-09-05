@@ -118,7 +118,7 @@ function UpdateBanner() {
 }
 
 export default function AppShell() {
-  const { profile, session, signOut, canWrite } = useAuth();
+  const { profile, session, signOut, canWriteArea } = useAuth();
   const { dark, toggle } = useTheme();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -206,7 +206,7 @@ export default function AppShell() {
             </button>
           )}
           <OnlineUsers meId={session?.user.id} />
-          {canWrite && <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>}
+          {canWriteArea('compras') && <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>}
           <NotificationsBell />
           <button className="h-9 w-9 rounded-xl grid place-items-center text-muted hover:bg-surface-2" onClick={toggle} title="Alternar tema">
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
