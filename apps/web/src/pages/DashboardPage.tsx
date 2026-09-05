@@ -108,7 +108,7 @@ export default function DashboardPage() {
         {top.length ? (
           <Table dense>
             <thead><tr><th className="th">Produto</th><th className="th text-right">Pedido</th><th className="th text-right">Estoque</th><th className="th text-right">Produzir</th><th className="th text-right">Caixas</th></tr></thead>
-            <tbody>{top.map((r, i) => <tr key={r.code} className={i === 0 ? 'bg-brand-soft/30' : ''}><td className="td font-medium">{r.description}</td><td className="td num text-right text-muted">{fmtInt(r.ordered)}</td><td className="td num text-right text-muted">{fmtInt(r.stock)}</td><td className="td num text-right font-bold text-brand">{fmtInt(r.need)}</td><td className="td num text-right">{fmtInt(Math.ceil(r.need / (r.units_per_box || 48)))}</td></tr>)}</tbody>
+            <tbody>{top.map((r, i) => <tr key={r.code} className={i === 0 ? 'bg-brand-soft/30' : ''}><td className="td font-medium">{r.description}</td><td className="td num text-right text-muted">{fmtInt(r.ordered)}</td><td className="td num text-right text-muted">{fmtInt(r.stockTotal)}</td><td className="td num text-right font-bold text-brand">{fmtInt(r.need)}</td><td className="td num text-right">{fmtInt(r.needBoxes)}</td></tr>)}</tbody>
           </Table>
         ) : <p className="py-10 text-center text-sm text-muted">Estoque cobre todos os pedidos abertos.</p>}
       </Card>
