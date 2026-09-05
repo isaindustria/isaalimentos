@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Documentação · ISA Alimentos</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Rubik:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --red: #e21420; --yellow: #f5d000; --green: #3fa33f;
+    --ink: #1f1615; --text: #3a2f2c; --mute: #5f5350; --line: #e8dfda; --paper: #fff; --soft: #faf6f3; --blush: #fdeeee; --mint: #eaf6ea;
+    --w: 880px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: Rubik, system-ui, sans-serif; font-size: 16px; line-height: 1.65; color: var(--text); background: var(--soft); -webkit-font-smoothing: antialiased; }
+  a { color: var(--red); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1, h2, h3 { font-family: Outfit, Rubik, sans-serif; color: var(--ink); line-height: 1.15; letter-spacing: -0.01em; }
+  .wrap { width: min(var(--w), calc(100% - 2.5rem)); margin-inline: auto; }
+  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+  header.top { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .topbar { display: flex; align-items: center; gap: 1.5rem; padding: .9rem 0; }
+  .brand { display: flex; align-items: center; gap: .6rem; font-family: Outfit; font-weight: 800; font-size: 1.05rem; color: var(--ink); flex-shrink: 0; }
+  .brand img { height: 32px; width: auto; }
+  nav.tabs { display: flex; gap: .3rem; overflow-x: auto; flex: 1; }
+  nav.tabs a { flex-shrink: 0; padding: .5rem .9rem; border-radius: 999px; font-size: .88rem; font-weight: 600; color: var(--mute); white-space: nowrap; }
+  nav.tabs a:hover { background: var(--blush); color: var(--red); text-decoration: none; }
+  nav.tabs a.on { background: var(--red); color: #fff; }
+  .backlink { font-size: .82rem; color: var(--mute); flex-shrink: 0; }
+
+  .hero { padding: 3rem 0 1.5rem; }
+  .hero .eyebrow { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--red); background: var(--blush); padding: .3rem .7rem; border-radius: 999px; margin-bottom: .9rem; }
+  .hero h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 900; }
+  .hero p { margin-top: .7rem; color: var(--mute); font-size: 1.05rem; max-width: 60ch; }
+
+  section { padding: 2.2rem 0; border-top: 1px solid var(--line); }
+  section > h2 { font-size: 1.5rem; font-weight: 800; display: flex; align-items: baseline; gap: .6rem; }
+  section > h2 span.n { font-size: 1rem; color: #fff; background: var(--ink); width: 1.8rem; height: 1.8rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 1.3rem 1.5rem; margin-top: 1.1rem; }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .5rem; }
+  .card h3 .ver { color: var(--red); font-variant-numeric: tabular-nums; }
+  .card .date { float: right; font-size: .8rem; color: var(--mute); font-weight: 500; }
+  .card ul, .card ol { margin: .3rem 0 0; padding-left: 1.25rem; }
+  .card li { margin: .35rem 0; }
+  .tag { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--mint); color: #1f6b1f; padding: .15rem .5rem; border-radius: 6px; margin-left: .5rem; }
+
+  .tip { background: var(--blush); border-radius: 14px; padding: 1rem 1.2rem; margin-top: 1rem; font-size: .95rem; }
+  .tip b { color: var(--red); }
+
+  footer.bottom { padding: 2.5rem 0 4rem; text-align: center; color: var(--mute); font-size: .85rem; }
+
+  @media (max-width: 720px) {
+    .topbar { flex-direction: column; align-items: flex-start; gap: .6rem; padding-bottom: .7rem; }
+    nav.tabs a.on { order: -1; }
+    .card .date { float: none; display: block; margin-bottom: .3rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap topbar">
+    <a class="brand" href="/site/"><img src="/brand/logo.png" alt="" /> ISA Alimentos</a>
+    <nav class="tabs">
+      <a href="#novidades" class="on">Novidades</a>
+      <a href="#importar">Importar dados</a>
+      <a href="#producao">Produção</a>
+      <a href="#cadastros">Cadastros</a>
+      <a href="#insumos">Insumos e compras</a>
+      <a href="#notificacoes">Notificações</a>
+      <a href="#usuarios">Usuários</a>
+      <a href="#backup">Backup</a>
+    </nav>
+    <a class="backlink" href="https://app.isaindalimentos.com.br">Entrar no sistema →</a>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <span class="eyebrow">Documentação interna</span>
+  <h1>Como o sistema funciona, por dentro.</h1>
+  <p>O que muda em cada versão e o passo a passo de cada tela — pra você e o gestor não precisarem me perguntar toda vez.</p>
+</div>
+
+<section id="novidades" class="wrap">
+  <h2><span class="n">1</span> Novidades por versão</h2>
+
+  <div class="card">
+    <span class="date">03/09/2026</span>
+    <h3><span class="ver">v1.4.4</span> <span class="tag">atual</span></h3>
+    <ul>
+      <li>Documentação separada do sistema, nesta página, sem ocupar espaço no menu.</li>
+      <li>Lista completa de quem está online (clique nos avatares), não só os 5 primeiros.</li>
+      <li>Busca de produtos também encontra por referência.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="date">03/09/2026</span>
+    <h3><span class="ver">v1.4.3</span></h3>
+    <ul>
+      <li>Botões "Baixar" da landing page já iniciam o download do instalador, sem passar pela página do GitHub.</li>
+      <li>Landing page corrigida no celular: dicas feitas para computador não ficam mais soltas por cima dos produtos.</li>
+      <li>Telas do sistema não cortam mais no celular (Configurações, formulários, abas que quebram linha).</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="date">03/09/2026</span>
+    <h3><span class="ver">v1.4.2</span></h3>
+    <ul>
+      <li>Mensagem de boas-vindas por notificação assim que o usuário ativa os avisos no aparelho.</li>
+      <li>Pedido de permissão de notificação ao entrar no app, com instrução de instalação no iPhone.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="date">03/09/2026</span>
+    <h3><span class="ver">v1.4.1</span></h3>
+    <ul>
+      <li>Web e PWA atualizam sozinhos ao detectar versão nova.</li>
+      <li>Versão do Windows passa a baixar a atualização sozinha em segundo plano.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="date">03/09/2026</span>
+    <h3><span class="ver">v1.4.0</span></h3>
+    <ul>
+      <li>Painel com KPIs: faturamento 30 dias e variação, ticket médio, taxa de atendimento, clientes ativos, gráfico semanal, maiores necessidades de produção, top clientes e tamanho do banco.</li>
+      <li>Tabela de preços por cliente, rede/grupo ou geral.</li>
+      <li>Insumos e compras: ficha técnica por produto e cálculo automático do que comprar.</li>
+      <li>Curva ABC de produtos e sugestão automática de estoque mínimo.</li>
+      <li>Lote e validade no controle de estoque.</li>
+      <li>Notificações push, rotas de entrega, portal público de consulta por CNPJ.</li>
+      <li>Relatórios e auditoria com opção de desfazer, verificação em duas etapas (2FA).</li>
+      <li>Backup diário automático e indicador de uso do banco de dados.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="date">02–03/09/2026</span>
+    <h3><span class="ver">v1.0 – v1.3</span></h3>
+    <ul>
+      <li>Primeira versão: estoque, importação de pedido por PDF, cálculo de necessidade de produção e CRM.</li>
+      <li>Lançamento manual de estoque e pedido, feed de atividades em tempo real, PWA, papéis por área.</li>
+      <li>Interface em shadcn/ui + Tailwind, presença em tempo real, animação de abertura.</li>
+      <li>Superadmin fixo, aprovação de cadastro, níveis de acesso, troca de e-mail/senha.</li>
+      <li>Importação de produtos e clientes por planilha, endurecimento de segurança.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="importar" class="wrap">
+  <h2><span class="n">2</span> Importar estoque e pedidos</h2>
+  <div class="card">
+    <ol>
+      <li>Vá em <b>Estoque → Importar planilha</b> e escolha o arquivo de estoque atual. Uma nova importação substitui a anterior.</li>
+      <li>Vá em <b>Pedidos → Importar</b> e escolha o(s) PDF(s) de pedido das lojas. O sistema reconhece cada produto pela descrição.</li>
+      <li>Itens com dúvida (confiança baixa ou dois candidatos parecidos) vão para <b>Pedidos → Conferência</b>: escolha o produto certo manualmente.</li>
+      <li>Depois de importado, o pedido aparece em Pedidos com a loja, os itens e as quantidades em unidades e caixas de 48.</li>
+    </ol>
+    <div class="tip"><b>Dica:</b> não precisa importar planilha toda vez — Clientes, Produtos e Insumos têm botão "Novo" pra cadastrar direto.</div>
+  </div>
+</section>
+
+<section id="producao" class="wrap">
+  <h2><span class="n">3</span> Calcular o que produzir</h2>
+  <div class="card">
+    <ol>
+      <li>Vá em <b>Produção</b>. O sistema soma todos os pedidos em aberto e subtrai o estoque atual (locais 1 e 5 somados).</li>
+      <li>Ligue <b>"Repor estoque mínimo"</b> se quiser que a meta também cubra o mínimo cadastrado (lógica just-in-time).</li>
+      <li>Confira "Produtos a produzir": mostra quanto falta em unidades e em caixas de 48.</li>
+      <li>Exporte para Excel ou imprima a ordem para levar para a linha de produção.</li>
+      <li>Ao concluir a ordem, o produzido entra automaticamente no estoque — não precisa lançar de novo.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="cadastros" class="wrap">
+  <h2><span class="n">4</span> Clientes, produtos e preços</h2>
+  <div class="card">
+    <h3>Cadastro na mão</h3>
+    <ul>
+      <li>O CNPJ é o identificador do cliente — evita duplicar quando o nome vier escrito diferente.</li>
+      <li>Em Produtos, o campo peso aceita gramas ou quilos; a caixa padrão é de 48 unidades.</li>
+    </ul>
+    <h3 style="margin-top:1.1rem">Preços por cliente ou por rede</h3>
+    <ol>
+      <li>Vá em <b>Preços → Novo preço</b>.</li>
+      <li>Cadastre um preço geral, por rede/grupo, ou específico para um cliente.</li>
+      <li>O sistema usa sempre o mais específico: cliente &gt; rede &gt; geral.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="insumos" class="wrap">
+  <h2><span class="n">5</span> Insumos, ficha técnica e compras</h2>
+  <div class="card">
+    <ol>
+      <li>Cadastre os insumos (matéria-prima, embalagem, tampa, pote, etiqueta) em <b>Insumos e compras</b>.</li>
+      <li>Na aba Ficha técnica, informe quanto de cada insumo um produto consome por unidade.</li>
+      <li>Escolha uma ordem de produção salva e clique em <b>Calcular</b>: o sistema mostra quanto insumo falta comprar.</li>
+      <li>Gere o pedido de compra direto da tela e acompanhe até "Recebido" — o estoque do insumo atualiza sozinho.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="notificacoes" class="wrap">
+  <h2><span class="n">6</span> Notificações no celular</h2>
+  <div class="card">
+    <ol>
+      <li>Instale o app: "Adicionar à tela de início" (iPhone) ou o aviso de instalar (Android/Chrome).</li>
+      <li>Abra pelo ícone instalado e toque em "Ativar" no cartão de notificações.</li>
+      <li>Avisos de: pedido de acesso, item para conferir, estoque abaixo do mínimo, produção concluída, backup — mesmo com o app fechado.</li>
+      <li>Pra desativar: <b>Configurações → Notificações neste aparelho</b>.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="usuarios" class="wrap">
+  <h2><span class="n">7</span> Usuários e permissões</h2>
+  <div class="card">
+    <ul>
+      <li>Quem cria conta pela primeira vez fica pendente até um administrador aprovar em <b>Configurações → Pedidos de acesso</b>.</li>
+      <li>Cada pessoa tem uma área (onde trabalha) e um nível: visualizador só vê, editor lança e importa, administrador também gerencia usuários e configurações.</li>
+      <li>O superadmin não pode ser rebaixado nem removido por ninguém.</li>
+      <li>Cada usuário troca o próprio e-mail e senha em <b>Configurações → Minha conta</b>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="backup" class="wrap">
+  <h2><span class="n">8</span> Backup e tamanho do banco</h2>
+  <div class="card">
+    <ul>
+      <li>Todo dia às 3h da manhã o sistema salva uma cópia de tudo automaticamente.</li>
+      <li><b>Configurações → Backups do banco</b>: gere um backup na hora e baixe qualquer um dos últimos 10 dias.</li>
+      <li>A barra de "Banco de dados" mostra o uso do plano gratuito (500 MB) — fique de olho perto de 60%.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="bottom wrap">
+  Documentação de uso interno · ISA Alimentos · não indexada
+</footer>
+
+<script>
+  document.querySelectorAll('nav.tabs a').forEach((a) => {
+    a.addEventListener('click', () => { document.querySelectorAll('nav.tabs a').forEach((x) => x.classList.remove('on')); a.classList.add('on'); });
+  });
+</script>
+</body>
+</html>

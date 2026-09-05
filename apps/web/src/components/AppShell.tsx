@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, BookOpen,
+  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdates } from '@/hooks/useUpdates';
@@ -27,7 +27,6 @@ const NAV = [
   { to: '/rotas', label: 'Rotas de entrega', icon: Truck, module: 'rotas' as const },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' as const },
   { to: '/auditoria', label: 'Auditoria', icon: History, module: 'auditoria' as const },
-  { to: '/documentacao', label: 'Documentação', icon: BookOpen },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 

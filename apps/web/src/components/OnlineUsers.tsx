@@ -24,7 +24,6 @@ const PATH_LABEL: Array<[RegExp, string]> = [
   [/^\/rotas/, 'em Rotas de entrega'],
   [/^\/relatorios/, 'em Relatórios'],
   [/^\/auditoria/, 'em Auditoria'],
-  [/^\/documentacao/, 'na Documentação'],
   [/^\/configuracoes/, 'em Configurações'],
   [/^\/$/, 'no Painel'],
 ];
