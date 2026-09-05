@@ -92,8 +92,21 @@
   <h2><span class="n">1</span> Novidades por versão</h2>
 
   <div class="card">
+    <span class="date">05/09/2026</span>
+    <h3><span class="ver">v1.4.6</span> <span class="tag">atual</span></h3>
+    <ul>
+      <li><b>Insumos e compras</b>: botão <b>Importar matéria-prima</b> — identifica pelo código (ou referência + nome), cadastra os novos e atualiza os existentes; códigos fora da planilha não são mexidos.</li>
+      <li>Botão <b>Importar consumo</b>: agrupa por produto e mês, calcula a média mensal e a <b>sugestão de compra = média − estoque atual</b> (nunca negativa).</li>
+      <li>Se o consumo oscilou mais de 20% entre um mês e outro no último ano, a sugestão vem com alerta vermelho de conferência manual.</li>
+      <li>Toda importação exige escolher <b>Incluir planilha</b> (atualiza e acrescenta; quantidade substitui, não soma) ou <b>Substituir planilha</b> (apaga a categoria e regrava).</li>
+      <li>Resumo ao final: quantos cadastrados, atualizados, removidos e quais produtos não foram encontrados.</li>
+      <li>Colunas novas na tela: Referência (matéria-prima, insumo, embalagem, tampa, pote, etiqueta), Código, Estoque atual, Média de consumo/mês, Sugestão de compra; filtro por referência.</li>
+    </ul>
+  </div>
+
+  <div class="card">
     <span class="date">03/09/2026</span>
-    <h3><span class="ver">v1.4.4</span> <span class="tag">atual</span></h3>
+    <h3><span class="ver">v1.4.4 – v1.4.5</span></h3>
     <ul>
       <li>Documentação separada do sistema, nesta página, sem ocupar espaço no menu.</li>
       <li>Lista completa de quem está online (clique nos avatares), não só os 5 primeiros.</li>

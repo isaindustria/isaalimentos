@@ -1,5 +1,5 @@
 import { supabase, unwrap } from '@/lib/supabase';
-import type { AuditEntry, DbStats, DeliveryRoute, Modules, PriceList, ProductBom, ProductStats, PurchaseOrder, PurchaseOrderItem, RouteStatus, Supply } from '@/lib/types';
+import type { AuditEntry, DbStats, DeliveryRoute, Modules, PriceList, ProductBom, ProductStats, PurchaseOrder, PurchaseOrderItem, RouteStatus, Supply, SupplyConsumption, SupplyReference } from '@/lib/types';
 
 /* ---------------- Modulos (liga/desliga sem apagar) ---------------- */
 export const DEFAULT_MODULES: Modules = { precos: true, compras: true, rotas: true, relatorios: true, auditoria: true, portal: true, push: true };
@@ -39,9 +39,97 @@ export async function listSupplies(): Promise<Supply[]> {
   return unwrap(await supabase.from('supplies').select('*').order('name'));
 }
 export async function saveSupply(s: Partial<Supply> & { name: string }) {
-  const payload = { name: s.name, unit: s.unit ?? 'kg', stock: s.stock ?? 0, min_stock: s.min_stock ?? 0, cost: s.cost ?? null, supplier: s.supplier ?? null, active: s.active ?? true };
+  const payload = { name: s.name, code: s.code?.trim() || null, reference: s.reference ?? 'insumo', unit: s.unit ?? 'kg', stock: s.stock ?? 0, min_stock: s.min_stock ?? 0, cost: s.cost ?? null, supplier: s.supplier ?? null, active: s.active ?? true };
   if (s.id) unwrap(await supabase.from('supplies').update(payload).eq('id', s.id));
   else unwrap(await supabase.from('supplies').insert(payload));
+}
+
+/* ---------------- Importacao de insumos e consumo (v1.3 do gestor) ---------------- */
+export type ImportMode = 'incluir' | 'substituir';
+export interface SupplyImportRow { code: string | null; reference: SupplyReference; name: string; unit: string; stock: number; cost: number | null; supplier: string | null }
+export interface ImportSummary { created: number; updated: number; removed: number; unmatched: string[] }
+
+/** Localiza o insumo pelo codigo; sem codigo, pela referencia + nome (sem acento/caixa). */
+function supplyKey(code: string | null | undefined, reference: string, name: string) {
+  return code ? `c:${code.toLowerCase()}` : `n:${reference}:${name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()}`;
+}
+
+/** Incluir: atualiza quem existe (quantidade substitui, nao soma) e cria os novos. Substituir: apaga os insumos das referencias importadas e regrava. */
+export async function importSupplies(mode: ImportMode, rows: SupplyImportRow[]): Promise<ImportSummary> {
+  const existing = (await listSupplies()) as Supply[];
+  const byKey = new Map(existing.map((s) => [supplyKey(s.code, s.reference, s.name), s]));
+  let created = 0, updated = 0, removed = 0;
+  if (mode === 'substituir') {
+    const refs = [...new Set(rows.map((r) => r.reference))];
+    const ids = existing.filter((s) => refs.includes(s.reference)).map((s) => s.id);
+    if (ids.length) { unwrap(await supabase.from('supplies').delete().in('id', ids)); removed = ids.length; }
+    byKey.clear();
+  }
+  const toInsert: Array<Omit<SupplyImportRow, 'code'> & { code: string | null; min_stock: number; active: boolean }> = [];
+  for (const r of rows) {
+    const hit = byKey.get(supplyKey(r.code, r.reference, r.name));
+    if (hit) {
+      unwrap(await supabase.from('supplies').update({ name: r.name, unit: r.unit, stock: r.stock, cost: r.cost ?? hit.cost, supplier: r.supplier ?? hit.supplier, reference: r.reference, code: r.code ?? hit.code }).eq('id', hit.id));
+      updated++;
+    } else {
+      toInsert.push({ ...r, min_stock: 0, active: true });
+    }
+  }
+  for (let i = 0; i < toInsert.length; i += 200) { unwrap(await supabase.from('supplies').insert(toInsert.slice(i, i + 200))); }
+  created = toInsert.length;
+  return { created, updated, removed, unmatched: [] };
+}
+
+export async function listConsumption(): Promise<SupplyConsumption[]> {
+  return unwrap(await supabase.from('supply_consumption').select('*').order('period'));
+}
+
+export interface ConsumptionImportRow { code: string | null; name: string; period: string; qty: number }
+
+/** Agrupa por insumo + mes. Incluir: grava por cima do mes; Substituir: apaga o historico dos insumos da planilha antes. */
+export async function importConsumption(mode: ImportMode, rows: ConsumptionImportRow[]): Promise<ImportSummary> {
+  const supplies = (await listSupplies()) as Supply[];
+  const byCode = new Map(supplies.filter((s) => s.code).map((s) => [s.code!.toLowerCase(), s]));
+  const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const byName = new Map(supplies.map((s) => [norm(s.name), s]));
+  const grouped = new Map<string, { supply_id: string; period: string; qty: number }>();
+  const unmatched = new Set<string>();
+  for (const r of rows) {
+    const s = (r.code && byCode.get(r.code.toLowerCase())) || byName.get(norm(r.name));
+    if (!s) { unmatched.add(r.code ? `${r.code} ${r.name}`.trim() : r.name); continue; }
+    const key = `${s.id}|${r.period}`;
+    const g = grouped.get(key) ?? { supply_id: s.id, period: r.period, qty: 0 };
+    g.qty += r.qty;
+    grouped.set(key, g);
+  }
+  const payload = [...grouped.values()];
+  let removed = 0;
+  if (mode === 'substituir') {
+    const ids = [...new Set(payload.map((p) => p.supply_id))];
+    if (ids.length) { const { count } = await supabase.from('supply_consumption').delete({ count: 'exact' }).in('supply_id', ids); removed = count ?? 0; }
+  }
+  for (let i = 0; i < payload.length; i += 200) unwrap(await supabase.from('supply_consumption').upsert(payload.slice(i, i + 200), { onConflict: 'supply_id,period' }));
+  return { created: payload.length, updated: 0, removed, unmatched: [...unmatched] };
+}
+
+export interface PurchasePlanRow { supply_id: string; months: number; avgMonthly: number; suggestion: number; needsReview: boolean; maxSwing: number }
+
+/** Media mensal dos ultimos 12 meses; sugestao = media - estoque (nunca negativa); revisao manual se algum mes oscilou mais de 20% contra o anterior. */
+export function computePurchasePlan(supplies: Supply[], consumption: SupplyConsumption[]): Map<string, PurchasePlanRow> {
+  const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 12);
+  const out = new Map<string, PurchasePlanRow>();
+  for (const s of supplies) {
+    const rows = consumption.filter((c) => c.supply_id === s.id && new Date(c.period) >= cutoff).sort((a, b) => a.period.localeCompare(b.period));
+    if (!rows.length) continue;
+    const avg = rows.reduce((t, r) => t + Number(r.qty), 0) / rows.length;
+    let maxSwing = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const prev = Number(rows[i - 1].qty), cur = Number(rows[i].qty);
+      if (prev > 0) maxSwing = Math.max(maxSwing, Math.abs(cur - prev) / prev);
+    }
+    out.set(s.id, { supply_id: s.id, months: rows.length, avgMonthly: avg, suggestion: Math.max(0, avg - Number(s.stock)), needsReview: maxSwing > 0.2, maxSwing });
+  }
+  return out;
 }
 export async function deleteSupply(id: string) {
   unwrap(await supabase.from('supplies').delete().eq('id', id));

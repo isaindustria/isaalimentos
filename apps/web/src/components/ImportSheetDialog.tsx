@@ -12,6 +12,8 @@ export interface ImportColumn {
   required?: boolean;
 }
 
+export interface ImportModeOption { value: string; label: string; description: string }
+
 interface Props<T> {
   open: boolean;
   onClose: () => void;
@@ -20,23 +22,27 @@ interface Props<T> {
   columns: ImportColumn[];
   /** Converts a raw spreadsheet row into a typed record, or returns a string error. */
   mapRow: (row: Record<string, string>, index: number) => T | string;
-  /** Persists the valid records; returns a summary message. */
-  onImport: (records: T[]) => Promise<string>;
+  /** Persists the valid records; returns a summary message. Receives the chosen mode when `modes` is given. */
+  onImport: (records: T[], mode: string) => Promise<string>;
   preview: (r: T) => ReactNode[];
   templateName: string;
+  /** Mutually exclusive import modes; when present, one must be chosen before importing. */
+  modes?: ImportModeOption[];
 }
 
 /** Generic "import from spreadsheet" flow: template, drop file, preview with errors, confirm. */
-export function ImportSheetDialog<T>({ open, onClose, title, description, columns, mapRow, onImport, preview, templateName }: Props<T>) {
+export function ImportSheetDialog<T>({ open, onClose, title, description, columns, mapRow, onImport, preview, templateName, modes }: Props<T>) {
   const [file, setFile] = useState<File | null>(null);
   const [records, setRecords] = useState<T[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState('');
 
   function reset() {
     setFile(null);
     setRecords([]);
     setErrors([]);
+    setMode('');
     onClose();
   }
 
@@ -62,8 +68,8 @@ export function ImportSheetDialog<T>({ open, onClose, title, description, column
   async function confirm() {
     setBusy(true);
     try {
-      const msg = await onImport(records);
-      toast.success(msg);
+      const msg = await onImport(records, mode);
+      toast.success(msg, { duration: 8000 });
       reset();
     } catch (e) {
       toast.error(`Falha na importação: ${(e as Error).message}`);
@@ -82,13 +88,24 @@ export function ImportSheetDialog<T>({ open, onClose, title, description, column
       footer={
         <>
           <Button variant="outline" onClick={reset}>Cancelar</Button>
-          <Button onClick={confirm} loading={busy} disabled={!records.length} icon={<CheckCircle2 className="size-4" />}>
+          <Button onClick={confirm} loading={busy} disabled={!records.length || (!!modes && !mode)} icon={<CheckCircle2 className="size-4" />}>
             Importar {records.length ? `${records.length} registro(s)` : ''}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
+        {modes && (
+          <fieldset className="grid gap-2 sm:grid-cols-2">
+            <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Como importar? <span className="text-danger">*</span></legend>
+            {modes.map((m) => (
+              <label key={m.value} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${mode === m.value ? 'border-brand bg-brand-soft/40' : 'border-line hover:bg-surface-2'}`}>
+                <input type="radio" name="import-mode" className="mt-1 accent-brand" value={m.value} checked={mode === m.value} onChange={() => setMode(m.value)} />
+                <span><b>{m.label}</b><span className="mt-0.5 block text-xs text-muted">{m.description}</span></span>
+              </label>
+            ))}
+          </fieldset>
+        )}
         <div className="flex flex-wrap items-center gap-3 rounded-xl bg-surface-2 p-3 text-sm">
           <span className="flex-1 text-muted">
             Colunas aceitas: {columns.map((c) => c.label + (c.required ? '*' : '')).join(', ')}. Baixe o modelo, preencha e solte aqui (XLSX ou CSV).

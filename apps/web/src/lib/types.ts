@@ -240,7 +240,11 @@ export interface Activity {
 
 /* ---- v1.4 ---- */
 export interface PriceList { id: string; product_code: string; customer_id: string | null; group_name: string | null; price_box: number; valid_from: string; notes: string | null; created_at: string; product?: Pick<Product, 'code' | 'description'> | null; customer?: Pick<Customer, 'id' | 'name'> | null }
-export interface Supply { id: string; name: string; unit: string; stock: number; min_stock: number; cost: number | null; supplier: string | null; active: boolean; created_at: string; updated_at: string }
+export type SupplyReference = 'materia_prima' | 'insumo' | 'embalagem' | 'tampa' | 'pote' | 'etiqueta';
+export const SUPPLY_REFERENCE_LABEL: Record<SupplyReference, string> = { materia_prima: 'Matéria-prima', insumo: 'Insumo', embalagem: 'Embalagem', tampa: 'Tampa', pote: 'Pote', etiqueta: 'Etiqueta' };
+export interface Supply { id: string; code: string | null; reference: SupplyReference; name: string; unit: string; stock: number; min_stock: number; cost: number | null; supplier: string | null; active: boolean; created_at: string; updated_at: string }
+/** Consumo de um insumo em um mes (period = primeiro dia do mes). */
+export interface SupplyConsumption { id: string; supply_id: string; period: string; qty: number; created_at: string }
 export interface ProductBom { id: string; product_code: string; supply_id: string; qty_per_unit: number; supply?: Supply | null }
 export type PurchaseStatus = 'rascunho' | 'enviado' | 'recebido' | 'cancelado';
 export interface PurchaseOrder { id: string; supplier: string | null; status: PurchaseStatus; notes: string | null; production_run_id: string | null; created_by: string | null; created_at: string; received_at: string | null; items?: PurchaseOrderItem[] }
