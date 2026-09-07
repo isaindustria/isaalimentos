@@ -248,7 +248,7 @@ export interface Activity {
 export interface PriceList { id: string; product_code: string; customer_id: string | null; group_name: string | null; price_box: number; valid_from: string; notes: string | null; created_at: string; product?: Pick<Product, 'code' | 'description'> | null; customer?: Pick<Customer, 'id' | 'name'> | null }
 export type SupplyReference = 'materia_prima' | 'insumo' | 'embalagem' | 'tampa' | 'pote' | 'etiqueta';
 export const SUPPLY_REFERENCE_LABEL: Record<SupplyReference, string> = { materia_prima: 'Matéria-prima', insumo: 'Insumo', embalagem: 'Embalagem', tampa: 'Tampa', pote: 'Pote', etiqueta: 'Etiqueta' };
-export interface Supply { id: string; code: string | null; reference: SupplyReference; name: string; unit: string; stock: number; min_stock: number; cost: number | null; supplier: string | null; active: boolean; created_at: string; updated_at: string }
+export interface Supply { id: string; code: string | null; reference: SupplyReference; name: string; unit: string; stock: number; stock2: number; stock6: number; min_stock: number; cost: number | null; supplier: string | null; active: boolean; created_at: string; updated_at: string }
 /** Consumo de um insumo em um mes (period = primeiro dia do mes). */
 export interface SupplyConsumption { id: string; supply_id: string; period: string; qty: number; created_at: string }
 export interface ProductBom { id: string; product_code: string; supply_id: string; qty_per_unit: number; supply?: Supply | null }

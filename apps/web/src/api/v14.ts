@@ -44,9 +44,8 @@ export async function saveSupply(s: Partial<Supply> & { name: string }) {
   else unwrap(await supabase.from('supplies').insert(payload));
 }
 
-/* ---------------- Importacao de insumos e consumo (v1.3 do gestor) ---------------- */
+/* ---------------- Importacao de insumos (v1.4 comandos revisados) ---------------- */
 export type ImportMode = 'incluir' | 'substituir';
-export interface SupplyImportRow { code: string | null; reference: SupplyReference; name: string; unit: string; stock: number; cost: number | null; supplier: string | null }
 export interface ImportSummary { created: number; updated: number; removed: number; unmatched: string[] }
 
 /** Localiza o insumo pelo codigo; sem codigo, pela referencia + nome (sem acento/caixa). */
@@ -54,8 +53,9 @@ function supplyKey(code: string | null | undefined, reference: string, name: str
   return code ? `c:${code.toLowerCase()}` : `n:${reference}:${name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()}`;
 }
 
-/** Incluir: atualiza quem existe (quantidade substitui, nao soma) e cria os novos. Substituir: apaga os insumos das referencias importadas e regrava. */
-export async function importSupplies(mode: ImportMode, rows: SupplyImportRow[]): Promise<ImportSummary> {
+/** Importar cadastro: grava so a identificacao (referencia, codigo, nome). Nunca mexe no estoque. */
+export interface SupplyCatalogImportRow { code: string | null; reference: SupplyReference; name: string; unit: string; cost: number | null; supplier: string | null }
+export async function importSupplyCatalog(mode: ImportMode, rows: SupplyCatalogImportRow[]): Promise<ImportSummary> {
   const existing = (await listSupplies()) as Supply[];
   const byKey = new Map(existing.map((s) => [supplyKey(s.code, s.reference, s.name), s]));
   let created = 0, updated = 0, removed = 0;
@@ -65,19 +65,49 @@ export async function importSupplies(mode: ImportMode, rows: SupplyImportRow[]):
     if (ids.length) { unwrap(await supabase.from('supplies').delete().in('id', ids)); removed = ids.length; }
     byKey.clear();
   }
-  const toInsert: Array<Omit<SupplyImportRow, 'code'> & { code: string | null; min_stock: number; active: boolean }> = [];
+  const toInsert: Array<SupplyCatalogImportRow & { stock: number; stock2: number; stock6: number; min_stock: number; active: boolean }> = [];
   for (const r of rows) {
     const hit = byKey.get(supplyKey(r.code, r.reference, r.name));
     if (hit) {
-      unwrap(await supabase.from('supplies').update({ name: r.name, unit: r.unit, stock: r.stock, cost: r.cost ?? hit.cost, supplier: r.supplier ?? hit.supplier, reference: r.reference, code: r.code ?? hit.code }).eq('id', hit.id));
+      unwrap(await supabase.from('supplies').update({ name: r.name, unit: r.unit, cost: r.cost ?? hit.cost, supplier: r.supplier ?? hit.supplier, reference: r.reference, code: r.code ?? hit.code }).eq('id', hit.id));
       updated++;
     } else {
-      toInsert.push({ ...r, min_stock: 0, active: true });
+      toInsert.push({ ...r, stock: 0, stock2: 0, stock6: 0, min_stock: 0, active: true });
     }
   }
   for (let i = 0; i < toInsert.length; i += 200) { unwrap(await supabase.from('supplies').insert(toInsert.slice(i, i + 200))); }
   created = toInsert.length;
   return { created, updated, removed, unmatched: [] };
+}
+
+/** Importar estoque atual: soma os locais 2 e 6 por codigo. So atualiza quem ja existe no cadastro pelo codigo;
+ * codigo sem correspondencia no cadastro nunca e associado por nome (fica em "unmatched" para conferencia). */
+export interface SupplyStockImportRow { code: string; name: string; location: number; qty: number }
+export async function importSupplyStock(mode: ImportMode, rows: SupplyStockImportRow[]): Promise<ImportSummary> {
+  const existing = (await listSupplies()) as Supply[];
+  const byCode = new Map(existing.filter((s) => s.code).map((s) => [s.code!.toLowerCase(), s]));
+  const totals = new Map<string, { stock2: number; stock6: number; name: string }>();
+  const unmatched = new Set<string>();
+  for (const r of rows) {
+    if (r.location !== 2 && r.location !== 6) continue;
+    const code = r.code.toLowerCase();
+    if (!byCode.has(code)) { unmatched.add(`${r.code} ${r.name}`.trim()); continue; }
+    const t = totals.get(code) ?? { stock2: 0, stock6: 0, name: r.name };
+    if (r.location === 2) t.stock2 += r.qty; else t.stock6 += r.qty;
+    totals.set(code, t);
+  }
+  let removed = 0;
+  if (mode === 'substituir') {
+    const ids = existing.filter((s) => s.code).map((s) => s.id);
+    if (ids.length) { unwrap(await supabase.from('supplies').update({ stock: 0, stock2: 0, stock6: 0 }).in('id', ids)); removed = ids.length; }
+  }
+  let updated = 0;
+  for (const [code, t] of totals) {
+    const hit = byCode.get(code)!;
+    unwrap(await supabase.from('supplies').update({ stock2: t.stock2, stock6: t.stock6, stock: t.stock2 + t.stock6 }).eq('id', hit.id));
+    updated++;
+  }
+  return { created: 0, updated, removed, unmatched: [...unmatched] };
 }
 
 export async function listConsumption(): Promise<SupplyConsumption[]> {
