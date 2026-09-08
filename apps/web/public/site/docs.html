@@ -120,7 +120,7 @@
       <h1 class="title">Como usar o sistema ISA</h1>
       <p class="lede">Guia direto pra quem opera o dia a dia: do pedido da loja à ordem de produção, sem planilha na mão. O que muda em cada versão fica registrado aqui.</p>
       <div class="meta">
-        <span class="pill">versão atual <b>1.5.2</b></span>
+        <span class="pill">versão atual <b>1.5.3</b></span>
         <span class="pill">web · celular (PWA) · Windows</span>
         <span class="pill">uso interno</span>
       </div>
@@ -131,7 +131,17 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.5.1 – v1.5.2</span><span class="d">08/09/2026</span><span class="tag">atual</span>
+        <span class="v">v1.5.3</span><span class="d">08/09/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Produção virou um módulo independente</strong>, com cadastro, estoque e pedido próprios (não usa mais os dados de Produtos/Estoque/Pedidos).</li>
+          <li>Botões <strong>Importar cadastro</strong> (por código; diferença vai para ajuste manual), <strong>Importar estoque atual</strong> (locais 1 + 5), <strong>Importar pedido</strong> (PDF das lojas ou planilha), <strong>Exportar produzir</strong> e <strong>Imprimir</strong>.</li>
+          <li>Cartões Cadastro de produtos · Estoque/Pedido · Produzir, tabela de necessidade com gr de uso, saldo restante, conversão para quilos e situação, e o cartão informativo (pedido, atendido, a produzir em un. e em kg).</li>
+          <li>Peso sai da descrição do ERP para uma coluna própria; <strong>gr de uso = peso + 1 g</strong> (orégano, cravo e bicarbonato sem margem).</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.5.1 – v1.5.2</span><span class="d">08/09/2026</span>
         <ul>
           <li><strong>Programa do Windows</strong>: quando a atualização termina de baixar, abre uma janela moderna com a versão nova, o que mudou e os botões <strong>Reiniciar e atualizar agora</strong> / <strong>Depois</strong>. As notas de cada versão passam a ser geradas automaticamente na publicação.</li>
           <li><strong>Importar consumo</strong> lê a exportação da fábrica como ela sai (CONSUMO FABRICA MP): cabeçalho na 2ª linha, uma linha por nota, colunas Data Emissão / Código Produto / Descrição do Produto / Quantidade Estoque. A linha de total no rodapé é ignorada.</li>
@@ -236,17 +246,25 @@
     </section>
 
     <section class="doc" id="producao">
-      <h2>4. Produção (just-in-time)</h2>
-      <p>A ordem de produção sai pronta: <strong>total pedido por todas as lojas − estoque disponível</strong>.</p>
+      <h2>4. Produção (módulo independente)</h2>
+      <p>A Produção tem <strong>cadastro, estoque e pedido próprios</strong>. Nada aqui depende das outras telas: o que entra é o que você importa neste módulo.</p>
+      <h3>Os três cartões</h3>
+      <ul>
+        <li><strong>Cadastro de produtos</strong>: código, referência, nome do produto, gr de uso, estoque 1, estoque 5, estoque disponível.</li>
+        <li><strong>Estoque / Pedido</strong>: as linhas do pedido importado (loja, código, produto, caixas, unidades) e os itens que precisam de ajuste manual.</li>
+        <li><strong>Produzir</strong>: código, nome, gr de uso, estoque disponível, total pedido, necessidade, saldo restante, conversão para quilos e situação — mais o cartão informativo com quantidade pedida, atendida pelo estoque, a produzir em unidades e em quilos.</li>
+      </ul>
+      <h3>Passo a passo</h3>
       <ol>
-        <li>Em <strong>Produção</strong>, escolha quais pedidos entram (padrão: todos abertos ou em produção).</li>
-        <li>Ligue <strong>Repor estoque mínimo</strong> se a meta também deve cobrir o mínimo cadastrado de cada produto.</li>
-        <li>Confira "Produtos a produzir" em unidades e caixas. Exporte pra Excel ou imprima.</li>
-        <li>Salve como ordem; ao <strong>concluir</strong>, o produzido entra no estoque sozinho.</li>
+        <li><strong>Importar cadastro</strong>: solte a exportação do ERP (Código, Referência, Descrição do Produto). O peso sai da descrição ("60g", "10 KG") para a coluna própria. Código novo cadastra; igual ignora; <strong>diferente vai para ajuste manual</strong> — você escolhe "Usar planilha" ou "Manter".</li>
+        <li><strong>Importar estoque atual</strong>: a mesma exportação, agora lendo Local de Estoque e Saldo. Soma os locais <strong>1 e 5</strong> por código; não mexe na base de cálculo.</li>
+        <li><strong>Importar pedido</strong>: o PDF das lojas (uma loja por página) ou uma planilha com Código e Caixas. Item reconhecido entra na necessidade; item sem produto vai para <strong>ajuste manual</strong>, e o sistema aprende a descrição pra próxima vez.</li>
+        <li>Confira em <strong>Produzir</strong>. <strong>Exportar produzir</strong> baixa a tabela em Excel; <strong>Imprimir</strong> manda direto pra impressora, só o conteúdo.</li>
+        <li>Pedido novo? <strong>Zerar pedido</strong> em Estoque/Pedido e importe de novo.</li>
       </ol>
       <div class="card ok">
-        <div class="lbl">Regra</div>
-        Se o estoque cobre o pedido, o produto nem aparece na ordem. Nada de produzir o que já tem.
+        <div class="lbl">Cálculo</div>
+        Necessidade = total pedido − estoque disponível (1 + 5), nunca negativa; a sobra é o saldo restante. Quilos = necessidade × gr de uso. <strong>Gr de uso = peso + 1 g de margem</strong> para todos os produtos, exceto orégano, cravo e bicarbonato (sem margem). Situação: <strong>Produzir</strong> ou <strong>Atendido pelo estoque</strong>.
       </div>
     </section>
 

@@ -153,6 +153,14 @@
   *::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
   /* Tabelas e cards nunca estouram a largura no celular */
   main { overflow-x: hidden; }
+
+  /* Impressao: so o conteudo da tela, sem menu, cabecalho e botoes */
+  @media print {
+    aside, header, .no-print, [data-sonner-toaster] { display: none !important; }
+    main { overflow: visible !important; padding: 0 !important; }
+    .card { box-shadow: none !important; border-color: #ccc !important; break-inside: avoid; }
+    body { background: #fff !important; color: #000 !important; }
+  }
   /* Filhos de grid/flex nunca forcam a coluna a crescer alem da tela (tabelas largas rolam dentro do card) */
   main .grid > *, main .flex > * { min-width: 0; }
 }

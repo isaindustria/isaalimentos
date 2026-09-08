@@ -244,6 +244,14 @@ export interface Activity {
   created_at: string;
 }
 
+/* ---- Modulo Producao (independente: cadastro, estoque e pedido proprios) ---- */
+export interface ProdProduct { code: string; reference: string | null; name: string; description: string; brand: string | null; weight_g: number | null; use_g: number | null; units_per_box: number; no_margin: boolean; active: boolean; created_at: string; updated_at: string }
+export interface ProdStock { code: string; stock1: number; stock5: number; updated_at: string }
+export interface ProdDemand { id: string; code: string; raw_description: string | null; store: string | null; boxes: number; units: number; source: string | null; imported_at: string }
+export interface ProdPendingCandidate { code: string; description: string; score: number }
+export interface ProdPending { id: string; raw_description: string; client_code: string | null; store: string | null; boxes: number; units: number; candidates: ProdPendingCandidate[]; source: string | null; created_at: string }
+export interface ProdAlias { id: string; raw: string; client_code: string | null; code: string; created_at: string }
+
 /* ---- v1.4 ---- */
 export interface PriceList { id: string; product_code: string; customer_id: string | null; group_name: string | null; price_box: number; valid_from: string; notes: string | null; created_at: string; product?: Pick<Product, 'code' | 'description'> | null; customer?: Pick<Customer, 'id' | 'name'> | null }
 export type SupplyReference = 'materia_prima' | 'insumo' | 'embalagem' | 'tampa' | 'pote' | 'etiqueta';
