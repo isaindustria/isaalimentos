@@ -11,6 +11,7 @@ import { getModules } from '@/api/v14';
 import { cn, initials } from '@/lib/utils';
 import { Button } from './primitives';
 import { PushPrompt } from './PushPrompt';
+import { UpdateDialog } from './UpdateDialog';
 import { NotificationsBell } from './Notifications';
 import { OnlineUsers } from './OnlineUsers';
 import { ROLE_LABEL } from '@/lib/types';
@@ -190,6 +191,7 @@ export default function AppShell() {
       {/* Main */}
       <div className="flex-1 min-w-0 flex flex-col">
         <UpdateBanner />
+        <UpdateDialog />
         <header className="h-14 flex items-center gap-3 px-4 md:px-8 border-b border-line bg-surface/70 backdrop-blur sticky top-0 z-20">
           <button className="md:hidden text-muted" onClick={() => setOpen(true)}>
             <Menu className="h-5 w-5" />
