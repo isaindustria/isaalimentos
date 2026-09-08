@@ -13,6 +13,9 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 
 export const fmtInt = (n: number | null | undefined) => intFmt.format(Number(n ?? 0));
 export const fmtDec = (n: number | null | undefined) => decFmt.format(Number(n ?? 0));
+const kgFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+/** Quilos com 3 casas: 83,940 kg. */
+export const fmtKg = (n: number | null | undefined) => kgFmt.format(Number(n ?? 0));
 export const fmtBRL = (n: number | null | undefined) => brl.format(Number(n ?? 0));
 export const fmtPct = (n: number | null | undefined) => `${Math.round(Number(n ?? 0) * 100)}%`;
 

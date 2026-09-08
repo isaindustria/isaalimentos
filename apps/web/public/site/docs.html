@@ -120,7 +120,7 @@
       <h1 class="title">Como usar o sistema ISA</h1>
       <p class="lede">Guia direto pra quem opera o dia a dia: do pedido da loja à ordem de produção, sem planilha na mão. O que muda em cada versão fica registrado aqui.</p>
       <div class="meta">
-        <span class="pill">versão atual <b>1.5.0</b></span>
+        <span class="pill">versão atual <b>1.5.1</b></span>
         <span class="pill">web · celular (PWA) · Windows</span>
         <span class="pill">uso interno</span>
       </div>
@@ -131,7 +131,19 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.5.0</span><span class="d">05/09/2026</span><span class="tag">atual</span>
+        <span class="v">v1.5.1</span><span class="d">08/09/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Importar consumo</strong> lê a exportação da fábrica como ela sai (CONSUMO FABRICA MP): cabeçalho na 2ª linha, uma linha por nota, colunas Data Emissão / Código Produto / Descrição do Produto / Quantidade Estoque. A linha de total no rodapé é ignorada.</li>
+          <li><strong>Média mensal corrigida</strong>: soma da Quantidade Estoque do código ÷ meses distintos da Data Emissão no período importado. Ex.: código 16 → 241 linhas, 1.848,908 kg, 12 meses = 154,075 kg/mês.</li>
+          <li><strong>Sugestão de compra agora é em meses</strong>: quantos meses o estoque total ainda cobre (296,799 ÷ 154,075 = 1). Zero = comprar agora, em vermelho.</li>
+          <li>Nova coluna <strong>Consumo do último mês</strong> antes da sugestão de compra.</li>
+          <li>Botão <strong>Exportar planilha</strong> logo após Importar consumo: baixa o Controle de estoque em Excel.</li>
+          <li>Tudo em <strong>quilos com 3 casas</strong> (83,940 kg). Consumo identifica só pelo código, nunca por nome.</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.5.0</span><span class="d">05/09/2026</span>
         <ul>
           <li><strong>Insumos e compras</strong>: botões <strong>Importar matéria-prima</strong> e <strong>Importar consumo</strong>. Identifica pelo código (ou referência + nome); códigos fora da planilha não são mexidos.</li>
           <li>Média de consumo mensal e <strong>sugestão de compra = média − estoque atual</strong> (nunca negativa). Oscilação acima de 20% entre meses gera alerta de conferência manual.</li>
@@ -266,10 +278,13 @@
       </ol>
       <h3>Importar consumo</h3>
       <ol>
-        <li><strong>Importar consumo</strong>: uma linha por saída ou por mês (data, código, produto, quantidade).</li>
-        <li>O sistema agrupa por produto e mês e calcula a <strong>média mensal</strong> dos últimos 12 meses.</li>
-        <li><strong>Sugestão de compra = média mensal − estoque atual</strong>. Negativo vira zero.</li>
-        <li>Se algum mês oscilou mais de <strong>20%</strong> contra o anterior, a sugestão vem com alerta vermelho: confira antes de comprar.</li>
+        <li><strong>Importar consumo</strong>: solte a exportação da fábrica (CONSUMO FABRICA MP) do jeito que ela sai — uma linha por nota, com Data Emissão, Código Produto, Descrição do Produto e Quantidade Estoque. Tudo em kg.</li>
+        <li>O sistema identifica o produto <strong>só pelo código</strong> (código que não está no cadastro fica sinalizado, nunca é associado por nome).</li>
+        <li><strong>Média mensal = soma da Quantidade Estoque do código ÷ meses distintos da Data Emissão</strong> no período importado. Ex.: código 16 → 1.848,908 kg em 12 meses = 154,075 kg/mês.</li>
+        <li><strong>Consumo do último mês</strong>: quanto saiu no mês mais recente da planilha.</li>
+        <li><strong>Sugestão de compra = estoque total ÷ média mensal</strong>, em meses inteiros: 296,799 ÷ 154,075 = <strong>1</strong> mês de cobertura; 600,520 ÷ 154,075 = 3; 120,330 ÷ 154,075 = <strong>0 = comprar agora</strong>.</li>
+        <li>Se algum mês oscilou mais de <strong>20%</strong> contra o anterior, a linha vem com alerta: confira antes de comprar.</li>
+        <li><strong>Exportar planilha</strong> baixa a tabela do Controle de estoque em Excel, com o filtro de referência aplicado.</li>
       </ol>
       <h3>Incluir ou Substituir</h3>
       <p>Antes de qualquer importação você escolhe um dos dois modos — o sistema não importa sem essa escolha.</p>

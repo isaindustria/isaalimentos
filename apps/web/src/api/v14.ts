@@ -116,16 +116,14 @@ export async function listConsumption(): Promise<SupplyConsumption[]> {
 
 export interface ConsumptionImportRow { code: string | null; name: string; period: string; qty: number }
 
-/** Agrupa por insumo + mes. Incluir: grava por cima do mes; Substituir: apaga o historico dos insumos da planilha antes. */
+/** Agrupa por insumo + mes, identificando SO pelo codigo (nunca por nome). Incluir: grava por cima do mes; Substituir: apaga o historico dos insumos da planilha antes. */
 export async function importConsumption(mode: ImportMode, rows: ConsumptionImportRow[]): Promise<ImportSummary> {
   const supplies = (await listSupplies()) as Supply[];
   const byCode = new Map(supplies.filter((s) => s.code).map((s) => [s.code!.toLowerCase(), s]));
-  const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-  const byName = new Map(supplies.map((s) => [norm(s.name), s]));
   const grouped = new Map<string, { supply_id: string; period: string; qty: number }>();
   const unmatched = new Set<string>();
   for (const r of rows) {
-    const s = (r.code && byCode.get(r.code.toLowerCase())) || byName.get(norm(r.name));
+    const s = r.code ? byCode.get(r.code.toLowerCase()) : undefined;
     if (!s) { unmatched.add(r.code ? `${r.code} ${r.name}`.trim() : r.name); continue; }
     const key = `${s.id}|${r.period}`;
     const g = grouped.get(key) ?? { supply_id: s.id, period: r.period, qty: 0 };
@@ -142,22 +140,39 @@ export async function importConsumption(mode: ImportMode, rows: ConsumptionImpor
   return { created: payload.length, updated: 0, removed, unmatched: [...unmatched] };
 }
 
-export interface PurchasePlanRow { supply_id: string; months: number; avgMonthly: number; suggestion: number; needsReview: boolean; maxSwing: number }
+export interface PurchasePlanRow {
+  supply_id: string;
+  /** Meses distintos com movimentacao no periodo importado (global, vale para todos os produtos). */
+  months: number;
+  /** Consumo total do produto / meses distintos do periodo. */
+  avgMonthly: number;
+  lastMonth: string | null;
+  lastMonthQty: number;
+  /** Meses que o estoque atual ainda cobre: floor(estoque total / media). 0 = comprar agora. */
+  coverageMonths: number | null;
+  needsReview: boolean;
+  maxSwing: number;
+}
 
-/** Media mensal dos ultimos 12 meses; sugestao = media - estoque (nunca negativa); revisao manual se algum mes oscilou mais de 20% contra o anterior. */
+/** v1.5 do gestor: media mensal = soma do consumo do codigo / quantidade de meses distintos do periodo importado.
+ * Sugestao de compra = quantos meses o estoque total cobre (296,799 / 154,075 = 1). Revisao manual se um mes oscilou >20% contra o anterior. */
 export function computePurchasePlan(supplies: Supply[], consumption: SupplyConsumption[]): Map<string, PurchasePlanRow> {
-  const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 12);
+  const periods = [...new Set(consumption.map((c) => c.period))].sort();
+  const months = periods.length;
+  const lastMonth = periods[periods.length - 1] ?? null;
   const out = new Map<string, PurchasePlanRow>();
   for (const s of supplies) {
-    const rows = consumption.filter((c) => c.supply_id === s.id && new Date(c.period) >= cutoff).sort((a, b) => a.period.localeCompare(b.period));
-    if (!rows.length) continue;
-    const avg = rows.reduce((t, r) => t + Number(r.qty), 0) / rows.length;
+    const rows = consumption.filter((c) => c.supply_id === s.id).sort((a, b) => a.period.localeCompare(b.period));
+    if (!rows.length || !months) continue;
+    const total = rows.reduce((t, r) => t + Number(r.qty), 0);
+    const avg = total / months;
     let maxSwing = 0;
     for (let i = 1; i < rows.length; i++) {
       const prev = Number(rows[i - 1].qty), cur = Number(rows[i].qty);
       if (prev > 0) maxSwing = Math.max(maxSwing, Math.abs(cur - prev) / prev);
     }
-    out.set(s.id, { supply_id: s.id, months: rows.length, avgMonthly: avg, suggestion: Math.max(0, avg - Number(s.stock)), needsReview: maxSwing > 0.2, maxSwing });
+    const lastMonthQty = Number(rows.find((r) => r.period === lastMonth)?.qty ?? 0);
+    out.set(s.id, { supply_id: s.id, months, avgMonthly: avg, lastMonth, lastMonthQty, coverageMonths: avg > 0 ? Math.floor(Number(s.stock) / avg) : null, needsReview: maxSwing > 0.2, maxSwing });
   }
   return out;
 }

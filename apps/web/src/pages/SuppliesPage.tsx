@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Trash2, FlaskConical, Upload, Boxes, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Trash2, FlaskConical, Upload, Boxes, TrendingUp, AlertTriangle, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { computePurchasePlan, deleteSupply, importConsumption, importSupplyCatalog, importSupplyStock, listConsumption, listSupplies, saveSupply, type ConsumptionImportRow, type ImportMode, type SupplyCatalogImportRow, type SupplyStockImportRow } from '@/api/v14';
 import { logActivity } from '@/api/activity';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Select, Table, Tabs } from '@/components/primitives';
 import { ImportSheetDialog } from '@/components/ImportSheetDialog';
 import { pick, toNumber } from '@/domain/parsers/sheet';
-import { fmtBRL, fmtDec } from '@/lib/utils';
+import { downloadBlob, fmtBRL, fmtDec, fmtKg } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { SUPPLY_REFERENCE_LABEL, type Supply, type SupplyReference } from '@/lib/types';
 
@@ -87,6 +88,29 @@ export default function SuppliesPage() {
 
   const canWrite = canWriteArea('compras');
 
+  function exportXlsx() {
+    const monthLabel = (p: string | null) => (p ? p.slice(0, 7).split('-').reverse().join('/') : '');
+    const data = visible.map((s) => {
+      const p = plan.get(s.id);
+      return {
+        'Referência': SUPPLY_REFERENCE_LABEL[s.reference],
+        'Código': s.code ?? '',
+        'Nome do produto': s.name,
+        'Estoque 2 (kg)': Number(s.stock2),
+        'Estoque 6 (kg)': Number(s.stock6),
+        'Estoque total (kg)': Number(s.stock),
+        'Média de consumo mensal (kg)': p ? Number(p.avgMonthly.toFixed(3)) : '',
+        [`Consumo do último mês (kg)${plan.size ? ` · ${monthLabel([...plan.values()][0].lastMonth)}` : ''}`]: p ? Number(p.lastMonthQty.toFixed(3)) : '',
+        'Sugestão de compra (meses)': p?.coverageMonths ?? '',
+        'Conferir': p?.needsReview ? 'sim' : '',
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Controle de estoque');
+    downloadBlob(new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `controle-de-estoque-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
   return (
     <>
       <PageHeader
@@ -97,6 +121,7 @@ export default function SuppliesPage() {
             <Button variant="outline" icon={<Upload className="size-4" />} onClick={() => setImporting('cadastro')}>Importar cadastro</Button>
             <Button variant="outline" icon={<Boxes className="size-4" />} onClick={() => setImporting('estoque')}>Importar estoque atual</Button>
             <Button variant="outline" icon={<TrendingUp className="size-4" />} onClick={() => setImporting('consumo')}>Importar consumo</Button>
+            <Button variant="outline" icon={<Download className="size-4" />} onClick={exportXlsx} disabled={!visible.length}>Exportar planilha</Button>
           </>
         )}
       />
@@ -133,17 +158,18 @@ export default function SuppliesPage() {
         <Card padded={false}>
           {visible.length ? (
             <Table>
-              <thead><tr><th className="th">Referência</th><th className="th">Código</th><th className="th">Nome do produto</th><th className="th text-right">Estoque 2</th><th className="th text-right">Estoque 6</th><th className="th text-right">Estoque total</th><th className="th text-right">Média consumo/mês</th><th className="th text-right">Sugestão de compra</th></tr></thead>
+              <thead><tr><th className="th">Referência</th><th className="th">Código</th><th className="th">Nome do produto</th><th className="th text-right">Estoque 2 (kg)</th><th className="th text-right">Estoque 6 (kg)</th><th className="th text-right">Estoque total (kg)</th><th className="th text-right">Média consumo/mês (kg)</th><th className="th text-right">Consumo último mês (kg)</th><th className="th text-right">Sugestão de compra (meses)</th></tr></thead>
               <tbody>{visible.map((s) => { const p = plan.get(s.id); return (
-                <tr key={s.id} className={Number(s.stock) <= Number(s.min_stock) && Number(s.min_stock) > 0 ? 'bg-warn/5' : ''}>
+                <tr key={s.id} className={p?.coverageMonths === 0 ? 'bg-danger/5' : ''}>
                   <td className="td"><Badge tone={s.reference === 'materia_prima' ? 'brand' : 'neutral'}>{SUPPLY_REFERENCE_LABEL[s.reference]}</Badge></td>
                   <td className="td font-mono text-xs text-muted">{s.code ?? '—'}</td>
                   <td className="td font-medium">{s.name}</td>
-                  <td className="td num text-right text-muted">{fmtDec(s.stock2)}</td>
-                  <td className="td num text-right text-muted">{fmtDec(s.stock6)}</td>
-                  <td className="td num text-right font-semibold">{fmtDec(s.stock)} <span className="text-xs font-normal text-muted">{s.unit}</span></td>
-                  <td className="td num text-right text-muted">{p ? <>{fmtDec(p.avgMonthly)} <span className="text-xs">({p.months} {p.months === 1 ? 'mês' : 'meses'})</span></> : '—'}</td>
-                  <td className="td num text-right">{p ? <span className={`inline-flex items-center justify-end gap-1 font-bold ${p.suggestion > 0 ? 'text-brand' : 'text-muted'}`}>{p.needsReview && <span title={`Oscilou ${Math.round(p.maxSwing * 100)}% entre meses: conferir manualmente`}><AlertTriangle className="size-3.5 text-danger" /></span>}{p.suggestion > 0 ? `${fmtDec(p.suggestion)} ${s.unit}` : '0'}</span> : <span className="text-xs text-muted">sem consumo</span>}</td>
+                  <td className="td num text-right text-muted">{fmtKg(s.stock2)}</td>
+                  <td className="td num text-right text-muted">{fmtKg(s.stock6)}</td>
+                  <td className="td num text-right font-semibold">{fmtKg(s.stock)}</td>
+                  <td className="td num text-right text-muted">{p ? <>{fmtKg(p.avgMonthly)} <span className="text-xs">({p.months} {p.months === 1 ? 'mês' : 'meses'})</span></> : '—'}</td>
+                  <td className="td num text-right text-muted">{p ? <>{fmtKg(p.lastMonthQty)} <span className="text-xs">({p.lastMonth?.slice(0, 7).split('-').reverse().join('/')})</span></> : '—'}</td>
+                  <td className="td num text-right">{p && p.coverageMonths != null ? <span className={`inline-flex items-center justify-end gap-1 font-bold ${p.coverageMonths === 0 ? 'text-danger' : p.coverageMonths <= 1 ? 'text-brand' : 'text-ok'}`}>{p.needsReview && <span title={`Oscilou ${Math.round(p.maxSwing * 100)}% entre meses: conferir manualmente`}><AlertTriangle className="size-3.5 text-danger" /></span>}{p.coverageMonths === 0 ? '0 · comprar agora' : `${p.coverageMonths} ${p.coverageMonths === 1 ? 'mês' : 'meses'}`}</span> : <span className="text-xs text-muted">sem consumo</span>}</td>
                 </tr>); })}</tbody>
             </Table>
           ) : <EmptyState icon={<Boxes className="size-5" />} title="Nenhum estoque calculado" description="Use Importar estoque atual para somar os locais 2 e 6 por código." />}
@@ -238,31 +264,31 @@ export default function SuppliesPage() {
         open={importing === 'consumo'}
         onClose={() => setImporting(null)}
         title="Importar consumo"
-        description="Uma linha por saída ou por mês. O sistema agrupa por produto e mês, calcula a média mensal e a sugestão de compra (média − estoque atual)."
+        description="Aceita a exportação da fábrica (CONSUMO FABRICA MP): uma linha por nota. O sistema soma a Quantidade Estoque por Código Produto, conta os meses distintos da Data Emissão e calcula a média mensal (total ÷ meses). Identifica só pelo código."
         templateName="modelo-consumo.xlsx"
         modes={IMPORT_MODES}
         columns={[
-          { key: 'period', label: 'Data', example: '09/2026', required: true },
-          { key: 'code', label: 'Código', example: 'MP-001' },
-          { key: 'name', label: 'Produto', example: 'Sal refinado', required: true },
-          { key: 'qty', label: 'Quantidade consumida', example: '180', required: true },
+          { key: 'period', label: 'Data Emissão', example: '03/09/2025', required: true },
+          { key: 'code', label: 'Código Produto', example: '16', required: true },
+          { key: 'name', label: 'Descrição do Produto', example: 'MP ACIDO CITRICO' },
+          { key: 'qty', label: 'Quantidade Estoque', example: '0,155', required: true },
         ]}
         mapRow={(row, line) => {
-          const rawDate = pick(row, ['data', 'mes', 'periodo', 'competencia']);
+          const rawDate = pick(row, ['data emissao', 'data', 'mes', 'periodo', 'competencia']);
           const period = rawDate ? parsePeriod(rawDate) : null;
           if (!period) return `Linha ${line}: data inválida (${rawDate || 'vazia'})`;
-          const name = pick(row, ['produto', 'nome', 'descricao', 'insumo', 'materia-prima', 'materia prima']);
-          const code = pick(row, ['codigo', 'cod', 'code']);
-          if (!name && !code) return `Linha ${line}: sem produto nem código`;
-          const qty = toNumber(pick(row, ['quantidade consumida', 'quantidade', 'qtd', 'consumo', 'saida']), NaN);
+          const code = pick(row, ['codigo produto', 'codigo', 'cod', 'code']);
+          if (!code) return `Linha ${line}: sem código do produto`;
+          const name = pick(row, ['descricao do produto', 'descricao', 'nome do produto', 'nome', 'insumo', 'materia-prima', 'materia prima', 'produto']);
+          const qty = toNumber(pick(row, ['quantidade estoque', 'quantidade consumida', 'quantidade', 'qtd', 'consumo', 'saida']), NaN);
           if (!Number.isFinite(qty)) return `Linha ${line}: quantidade inválida (${name || code})`;
-          return { code: code ? String(code).replace(/\.0+$/, '') : null, name: name || '', period, qty };
+          return { code: String(code).replace(/\.0+$/, ''), name: name || '', period, qty };
         }}
-        preview={(r) => [r.period.slice(0, 7).split('-').reverse().join('/'), r.code ?? '—', r.name || '—', fmtDec(r.qty)]}
+        preview={(r) => [r.period.slice(0, 7).split('-').reverse().join('/'), r.code ?? '—', r.name || '—', fmtKg(r.qty)]}
         onImport={async (rows, mode) => {
           const r = await importConsumption(mode as ImportMode, rows);
           invalidate();
-          const miss = r.unmatched.length ? ` ${r.unmatched.length} produto(s) não encontrado(s) no cadastro e ignorado(s): ${r.unmatched.slice(0, 5).join(', ')}${r.unmatched.length > 5 ? '…' : ''}.` : '';
+          const miss = r.unmatched.length ? ` ${r.unmatched.length} código(s) não encontrado(s) no cadastro e ignorado(s) (nunca associado por nome): ${r.unmatched.slice(0, 5).join(', ')}${r.unmatched.length > 5 ? '…' : ''}.` : '';
           return `Consumo importado: ${r.created} mês(es) de produto gravado(s)${r.removed ? `, ${r.removed} registro(s) anteriores apagados` : ''}.${miss}`;
         }}
       />
