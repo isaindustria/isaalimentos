@@ -101,11 +101,11 @@ app.whenReady().then(() => {
   // Verifica em silencio poucos segundos depois de abrir; depois a cada 10 min e ao voltar o foco.
   if (!isDev) {
     setTimeout(() => autoUpdater.checkForUpdates().catch(() => undefined), 5000);
-    // Verifica a cada 10 min e sempre que a janela volta ao foco (no maximo 1x a cada 2 min): nao precisa fechar e abrir.
-    setInterval(() => autoUpdater.checkForUpdates().catch(() => undefined), 10 * 60 * 1000);
+    // Verifica a cada 3 min e sempre que a janela volta ao foco (no maximo 1x por minuto): nao precisa fechar e abrir.
+    setInterval(() => autoUpdater.checkForUpdates().catch(() => undefined), 3 * 60 * 1000);
     let lastFocusCheck = 0;
     win?.on('focus', () => {
-      if (Date.now() - lastFocusCheck < 2 * 60 * 1000) return;
+      if (Date.now() - lastFocusCheck < 60 * 1000) return;
       lastFocusCheck = Date.now();
       autoUpdater.checkForUpdates().catch(() => undefined);
     });
