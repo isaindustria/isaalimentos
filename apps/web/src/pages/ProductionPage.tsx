@@ -188,8 +188,9 @@ export default function ProductionPage() {
           </div>
           <Card title={<span className="font-display text-sm font-bold">Pedido / Necessidade de produção</span>} action={<label className="no-print inline-flex items-center gap-2 text-xs text-muted"><input type="checkbox" className="accent-brand" checked={onlyOrdered} onChange={(e) => setOnlyOrdered(e.target.checked)} /> só produtos com pedido</label>} padded={false}>
             {needRows.length ? (
-              <Table dense>
-                <thead><tr><th className="th">Código</th><th className="th">Referência</th><th className="th">Nome do produto</th><th className="th text-right hidden xl:table-cell">Gr de uso</th><th className="th text-right">Estoque disp.</th><th className="th text-right">Total pedido</th><th className="th text-right">Necessidade</th><th className="th text-right hidden xl:table-cell">Saldo restante</th><th className="th text-right">Quilos</th><th className="th">Situação</th></tr></thead>
+              <Table dense className="[&_table]:table-fixed [&_table]:min-w-0 [&_.th]:whitespace-normal [&_.th]:px-2 [&_.th]:py-2 [&_.th]:text-[10px] [&_.th]:leading-tight [&_.td]:px-2 [&_.td]:py-1.5 [&_.td]:text-xs [&_.td]:leading-tight">
+                <colgroup><col className="w-[5%]" /><col className="w-[12%]" /><col className="w-[19%]" /><col className="w-[7%]" /><col className="w-[8%]" /><col className="w-[10%]" /><col className="w-[10%]" /><col className="w-[7%]" /><col className="w-[11%]" /><col className="w-[11%]" /></colgroup>
+                <thead><tr><th className="th">Cód.</th><th className="th">Referência</th><th className="th">Nome do produto</th><th className="th text-right">Gr de uso</th><th className="th text-right">Estoque disp.</th><th className="th text-right">Total pedido</th><th className="th text-right">Necessidade</th><th className="th text-right">Saldo rest.</th><th className="th text-right">Quilos</th><th className="th">Situação</th></tr></thead>
                 <tbody>{needRows.map((r) => <NeedTr key={r.code} r={r} />)}</tbody>
               </Table>
             ) : <EmptyState icon={<Factory className="size-5" />} title="Nada a calcular" description="Importe o cadastro, o estoque atual e o pedido." />}
@@ -323,16 +324,16 @@ const STATUS: Record<NeedRow['status'], string> = { produzir: 'Produzir', atendi
 function NeedTr({ r }: { r: NeedRow }) {
   return (
     <tr className={r.status === 'produzir' ? 'bg-brand-soft/30' : ''}>
-      <td className="td font-mono text-xs text-muted">{r.code}</td>
-      <td className="td"><Badge tone={/POTE/i.test(r.reference ?? '') ? 'brand' : 'neutral'}>{r.reference ?? '—'}</Badge></td>
-      <td className="td font-medium" title={r.description}>{r.name}{r.brand && <span className="ml-1 text-xs font-normal text-muted">{r.brand}</span>}</td>
-      <td className="td num text-right text-muted hidden xl:table-cell">{r.useG != null ? fmtUse(r.useG) : '—'}</td>
+      <td className="td font-mono text-muted">{r.code}</td>
+      <td className="td"><span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-tight ${/POTE/i.test(r.reference ?? '') ? 'bg-brand-soft text-brand' : 'bg-surface-2 text-muted'}`}>{r.reference ?? '—'}</span></td>
+      <td className="td font-medium break-words" title={r.description}>{r.name}{r.brand && <span className="ml-1 font-normal text-muted">{r.brand}</span>}</td>
+      <td className="td num text-right text-muted">{r.useG != null ? fmtUse(r.useG) : '—'}</td>
       <td className="td num text-right">{fmtInt(r.available)}</td>
       <td className="td num text-right whitespace-nowrap">{fmtInt(r.ordered)}<span className="block text-[11px] text-muted">{fmtDec(r.orderedBoxes)} cx</span></td>
       <td className={`td num text-right whitespace-nowrap font-bold ${r.need > 0 ? 'text-brand' : 'text-muted'}`}>{r.need > 0 ? <>{fmtInt(r.need)}<span className="block text-[11px] font-normal">{fmtDec(r.needBoxes)} cx</span></> : '0'}</td>
-      <td className="td num text-right text-muted hidden xl:table-cell">{fmtInt(r.remaining)}</td>
+      <td className="td num text-right text-muted">{fmtInt(r.remaining)}</td>
       <td className="td num text-right font-semibold whitespace-nowrap">{r.need > 0 ? `${fmtKg(r.kg)} kg` : '—'}</td>
-      <td className="td whitespace-nowrap"><Badge tone={r.status === 'produzir' ? 'brand' : r.status === 'atendido' ? 'ok' : 'neutral'} dot>{STATUS[r.status]}</Badge></td>
+      <td className="td"><span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${r.status === 'produzir' ? 'text-brand' : r.status === 'atendido' ? 'text-ok' : 'text-muted'}`}><span className="size-1.5 shrink-0 rounded-full bg-current" />{r.status === 'atendido' ? 'Atendido' : STATUS[r.status]}</span></td>
     </tr>
   );
 }
