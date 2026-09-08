@@ -217,19 +217,25 @@ export default function ProductionPage() {
         templateName="modelo-estoque-producao.xlsx"
         columns={[
           { key: 'code', label: 'Código', example: '612', required: true },
-          { key: 'location', label: 'Local de Estoque', example: '1', required: true },
-          { key: 'qty', label: 'Saldo [Und Estoque]', example: '10', required: true },
+          { key: 'stock1', label: 'local 1', example: '10' },
+          { key: 'stock5', label: 'local 5', example: '3' },
+          { key: 'location', label: 'Local de Estoque (formato ERP)', example: '1' },
+          { key: 'qty', label: 'Saldo [Und Estoque] (formato ERP)', example: '10' },
         ]}
         mapRow={(row, line) => {
           const code = pick(row, ['codigo', 'cod', 'code']);
           if (!code) return `Linha ${line}: sem código`;
+          const c = String(code).replace(/\.0+$/, '');
+          const l1 = pick(row, ['local 1', 'estoque 1', 'local1']);
+          const l5 = pick(row, ['local 5', 'estoque 5', 'local5']);
+          if (l1 || l5) return { code: c, stock1: toNumber(l1, 0), stock5: toNumber(l5, 0) };
           const location = toNumber(pick(row, ['local de estoque', 'local']), NaN);
-          if (!Number.isFinite(location)) return `Linha ${line}: sem local de estoque (${code})`;
+          if (!Number.isFinite(location)) return `Linha ${line}: sem local 1 / local 5 nem Local de Estoque (${code})`;
           const qty = toNumber(pick(row, ['saldo und estoque', 'saldo', 'quantidade', 'qtd']), NaN);
           if (!Number.isFinite(qty)) return `Linha ${line}: saldo inválido (${code})`;
-          return { code: String(code).replace(/\.0+$/, ''), location, qty };
+          return { code: c, location, qty };
         }}
-        preview={(r) => [r.code, String(r.location), fmtDec(r.qty)]}
+        preview={(r) => [r.code, r.location != null ? String(r.location) : `1: ${fmtDec(r.stock1)} · 5: ${fmtDec(r.stock5)}`, r.qty != null ? fmtDec(r.qty) : fmtDec((r.stock1 ?? 0) + (r.stock5 ?? 0))]}
         onImport={async (rows) => {
           const r = await importProdStock(rows);
           invalidate();
@@ -325,11 +331,16 @@ function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, on
         const sheet = readSheet(await f.arrayBuffer());
         sheet.rows.forEach((row, i) => {
           const code = String(pick(row, ['codigo', 'cod', 'code'])).replace(/\.0+$/, '');
-          const boxes = toNumber(pick(row, ['caixas', 'cx', 'pedido ttl', 'pedido', 'quantidade', 'qtd']), NaN);
-          if (!code || !Number.isFinite(boxes)) return;
+          if (!code) return;
           const prod = products.find((p) => p.code === code);
           const upb = prod?.units_per_box ?? 48;
-          const units = pick(row, ['unidades', 'un']) ? toNumber(pick(row, ['unidades', 'un'])) : boxes * upb;
+          const unitsRaw = pick(row, ['pedido ttl', 'pedido total', 'unidades', 'pedido (un)', 'total pedido']);
+          const boxesRaw = pick(row, ['caixas', 'cx', 'pedido (cx)']);
+          let units = NaN, boxes = NaN;
+          if (unitsRaw) { units = toNumber(unitsRaw, NaN); boxes = units / upb; }
+          else if (boxesRaw) { boxes = toNumber(boxesRaw, NaN); units = boxes * upb; }
+          else { const q = toNumber(pick(row, ['pedido', 'quantidade', 'qtd']), NaN); boxes = q; units = q * upb; }
+          if (!Number.isFinite(units) || units <= 0) return;
           out.push({ key: `xls-${i}`, store: null, clientCode: null, description: pick(row, ['descricao', 'produto', 'nome']) || code, boxes, units, code: prod?.code ?? null, productName: prod?.name ?? null, status: prod ? 'auto' : 'not_found', candidates: [] });
         });
       }
@@ -355,7 +366,7 @@ function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, on
 
   const ok = lines.filter((l) => l.code).length;
   return (
-    <Dialog open={open} onClose={reset} title="Importar pedido (Produção)" description="PDF das lojas (uma loja por página) ou planilha com Código e Caixas. Itens reconhecidos entram na necessidade; os outros vão para ajuste manual." wide footer={<><Button variant="outline" onClick={reset}>Cancelar</Button><Button onClick={confirm} loading={busy} disabled={!lines.length} icon={<Check className="size-4" />}>Importar {lines.length ? `${lines.length} item(ns)` : ''}</Button></>}>
+    <Dialog open={open} onClose={reset} title="Importar pedido (Produção)" description="PDF das lojas (uma loja por página) ou planilha: Código + 'pedido ttl' (unidades) ou Código + Caixas. Itens reconhecidos entram na necessidade; os outros vão para ajuste manual." wide footer={<><Button variant="outline" onClick={reset}>Cancelar</Button><Button onClick={confirm} loading={busy} disabled={!lines.length} icon={<Check className="size-4" />}>Importar {lines.length ? `${lines.length} item(ns)` : ''}</Button></>}>
       <div className="flex flex-col gap-4">
         <Dropzone accept=".pdf,.xlsx,.xls,.csv" onFile={onFile} file={file} label="Arraste o PDF do pedido ou a planilha" hint="Mantém o cálculo atual: total pedido − estoque disponível, caixas de 48." />
         {busy && !lines.length && <div className="flex items-center gap-2 text-sm text-muted"><Spinner /> Lendo o arquivo…</div>}

@@ -120,7 +120,7 @@
       <h1 class="title">Como usar o sistema ISA</h1>
       <p class="lede">Guia direto pra quem opera o dia a dia: do pedido da loja à ordem de produção, sem planilha na mão. O que muda em cada versão fica registrado aqui.</p>
       <div class="meta">
-        <span class="pill">versão atual <b>1.5.4</b></span>
+        <span class="pill">versão atual <b>1.5.5</b></span>
         <span class="pill">web · celular (PWA) · Windows</span>
         <span class="pill">uso interno</span>
       </div>
@@ -131,7 +131,7 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.5.3 – v1.5.4</span><span class="d">08/09/2026</span><span class="tag">atual</span>
+        <span class="v">v1.5.3 – v1.5.5</span><span class="d">08/09/2026</span><span class="tag">atual</span>
         <ul>
           <li><strong>Produção virou um módulo independente</strong>, com cadastro, estoque e pedido próprios (não usa mais os dados de Produtos/Estoque/Pedidos).</li>
           <li>Botões <strong>Importar cadastro</strong> (por código; diferença vai para ajuste manual), <strong>Importar estoque atual</strong> (locais 1 + 5), <strong>Importar pedido</strong> (PDF das lojas ou planilha), <strong>Exportar produzir</strong> e <strong>Imprimir</strong>.</li>
@@ -257,8 +257,8 @@
       <h3>Passo a passo</h3>
       <ol>
         <li><strong>Importar cadastro</strong>: solte a exportação do ERP (Código, Referência, Descrição do Produto). O peso sai da descrição ("60g", "10 KG") para a coluna própria. Código novo cadastra; igual ignora; <strong>diferente vai para ajuste manual</strong> — você escolhe "Usar planilha" ou "Manter".</li>
-        <li><strong>Importar estoque atual</strong>: a mesma exportação, agora lendo Local de Estoque e Saldo. Soma os locais <strong>1 e 5</strong> por código; não mexe na base de cálculo.</li>
-        <li><strong>Importar pedido</strong>: o PDF das lojas (uma loja por página) ou uma planilha com Código e Caixas. Item reconhecido entra na necessidade; item sem produto vai para <strong>ajuste manual</strong>, e o sistema aprende a descrição pra próxima vez.</li>
+        <li><strong>Importar estoque atual</strong>: a exportação do ERP (Local de Estoque + Saldo) ou o modelo do gestor (colunas "local 1" e "local 5"). Soma os locais <strong>1 e 5</strong> por código; não mexe na base de cálculo.</li>
+        <li><strong>Importar pedido</strong>: o PDF das lojas (uma loja por página) ou uma planilha — serve o modelo do gestor (Código + "pedido ttl" em unidades) ou Código + Caixas. Item reconhecido entra na necessidade; item sem produto vai para <strong>ajuste manual</strong>, e o sistema aprende a descrição pra próxima vez.</li>
         <li>Confira em <strong>Produzir</strong>. <strong>Exportar produzir</strong> baixa a tabela em Excel; <strong>Imprimir</strong> manda direto pra impressora, só o conteúdo.</li>
         <li>Pedido novo? <strong>Zerar pedido</strong> em Estoque/Pedido e importe de novo.</li>
       </ol>

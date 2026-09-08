@@ -79,7 +79,8 @@ export async function deleteProdProduct(code: string) {
 }
 
 /* ---------------- Importar estoque atual ---------------- */
-export interface ProdStockRow { code: string; location: number; qty: number }
+/** Formato longo (location + qty, uma linha por local) ou largo (stock1/stock5 na mesma linha, modelo do gestor). */
+export interface ProdStockRow { code: string; location?: number; qty?: number; stock1?: number; stock5?: number }
 export interface ProdStockResult { updated: number; unmatched: string[]; ignored: number }
 
 /** Soma os locais 1 e 5 por codigo. So atualiza quem existe no cadastro; codigo desconhecido fica para conferencia. Nao mexe na base de calculo. */
@@ -90,10 +91,12 @@ export async function importProdStock(rows: ProdStockRow[]): Promise<ProdStockRe
   const unmatched = new Set<string>();
   let ignored = 0;
   for (const r of rows) {
-    if (r.location !== 1 && r.location !== 5) { ignored++; continue; }
+    const wide = r.stock1 != null || r.stock5 != null;
+    if (!wide && r.location !== 1 && r.location !== 5) { ignored++; continue; }
     if (!known.has(r.code)) { unmatched.add(r.code); continue; }
     const t = totals.get(r.code) ?? { stock1: 0, stock5: 0 };
-    if (r.location === 1) t.stock1 += r.qty; else t.stock5 += r.qty;
+    if (wide) { t.stock1 += Number(r.stock1 ?? 0); t.stock5 += Number(r.stock5 ?? 0); }
+    else if (r.location === 1) t.stock1 += Number(r.qty ?? 0); else t.stock5 += Number(r.qty ?? 0);
     totals.set(r.code, t);
   }
   const payload = [...totals.entries()].map(([code, t]) => ({ code, stock1: t.stock1, stock5: t.stock5, updated_at: new Date().toISOString() }));
