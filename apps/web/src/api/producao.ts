@@ -128,3 +128,9 @@ export async function clearProdDemand() {
   unwrap(await supabase.from('prod_demand').delete().neq('units', -1));
   unwrap(await supabase.from('prod_pending').delete().neq('units', -1));
 }
+
+/** Apaga o cadastro inteiro da Producao (produtos, estoque, pedido, pendencias e apelidos). So administrador. */
+export async function clearProdAll() {
+  unwrap(await supabase.from('prod_pending').delete().neq('units', -1));
+  unwrap(await supabase.from('prod_products').delete().neq('code', ''));
+}

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { Upload, Boxes, ClipboardList, Download, Printer, Trash2, Factory, AlertTriangle, Check, Package, Scale, Eraser } from 'lucide-react';
-import { applyProdInconsistency, clearProdDemand, deleteProdProduct, discardProdPending, importProdCatalog, importProdDemand, importProdStock, listProdAliases, listProdDemand, listProdPending, listProdProducts, listProdStock, resolveProdPending, saveProdProduct, type ProdCatalogRow, type ProdDemandInput, type ProdInconsistency, type ProdPendingInput, type ProdStockRow } from '@/api/producao';
+import { applyProdInconsistency, clearProdAll, clearProdDemand, deleteProdProduct, discardProdPending, importProdCatalog, importProdDemand, importProdStock, listProdAliases, listProdDemand, listProdPending, listProdProducts, listProdStock, resolveProdPending, saveProdProduct, type ProdCatalogRow, type ProdDemandInput, type ProdInconsistency, type ProdPendingInput, type ProdStockRow } from '@/api/producao';
 import { getSettings } from '@/api/settings';
 import { logActivity } from '@/api/activity';
 import { computeNeed, type NeedRow } from '@/domain/producao';
@@ -24,7 +24,8 @@ interface PedidoPreviewLine { key: string; store: string | null; clientCode: str
 
 export default function ProductionPage() {
   const qc = useQueryClient();
-  const { canWriteArea, session, profile } = useAuth();
+  const { canWriteArea, isAdmin, session, profile } = useAuth();
+  const [wipeText, setWipeText] = useState<string | null>(null);
   const canWrite = canWriteArea('producao');
   const [view, setView] = useState<View>('produzir');
   const [importing, setImporting] = useState<'cadastro' | 'estoque' | 'pedido' | null>(null);
@@ -54,6 +55,7 @@ export default function ProductionPage() {
   const remove = useMutation({ mutationFn: deleteProdProduct, onSuccess: () => { toast.success('Produto removido.'); invalidate(); }, onError: (e: Error) => toast.error(e.message) });
   const resolve = useMutation({ mutationFn: (v: { p: ProdPending; code: string }) => resolveProdPending(v.p, v.code), onSuccess: () => { toast.success('Item ajustado. O sistema aprendeu essa descrição.'); invalidate(); }, onError: (e: Error) => toast.error(e.message) });
   const discard = useMutation({ mutationFn: discardProdPending, onSuccess: invalidate });
+  const wipe = useMutation({ mutationFn: clearProdAll, onSuccess: async () => { toast.success('Cadastro da Produção apagado.'); await logActivity({ kind: 'producao', title: 'Cadastro da Produção apagado', body: 'Produtos, estoque, pedido e apelidos zerados', link: '/producao', actor_id: session?.user.id, actor_name: profile?.name ?? null }); invalidate(); setWipeText(null); setInconsistencies([]); }, onError: (e: Error) => toast.error(e.message) });
   const clear = useMutation({ mutationFn: clearProdDemand, onSuccess: () => { toast.success('Pedido zerado.'); invalidate(); }, onError: (e: Error) => toast.error(e.message) });
 
   function exportProduzir() {
@@ -76,6 +78,7 @@ export default function ProductionPage() {
             {canWrite && <Button variant="outline" icon={<ClipboardList className="size-4" />} onClick={() => setImporting('pedido')}>Importar pedido</Button>}
             <Button variant="outline" icon={<Download className="size-4" />} onClick={exportProduzir} disabled={!needRows.length}>Exportar produzir</Button>
             <Button variant="outline" icon={<Printer className="size-4" />} onClick={() => { setView('produzir'); setTimeout(() => window.print(), 150); }}>Imprimir</Button>
+            {isAdmin && (products.data?.length ?? 0) > 0 && <Button variant="ghost" className="text-danger" icon={<Trash2 className="size-4" />} onClick={() => setWipeText('')}>Apagar cadastro</Button>}
           </div>
         }
       />
@@ -179,6 +182,19 @@ export default function ProductionPage() {
           </Card>
         </div>
       )}
+
+      <Dialog
+        open={wipeText !== null}
+        onClose={() => setWipeText(null)}
+        title="Apagar todo o cadastro da Produção?"
+        description="Remove os produtos, o estoque, o pedido atual, os itens pendentes e os apelidos aprendidos deste módulo. Não mexe nas outras telas. Não dá para desfazer."
+        footer={<><Button variant="outline" onClick={() => setWipeText(null)}>Cancelar</Button><Button className="bg-danger text-white hover:bg-danger/90" icon={<Trash2 className="size-4" />} disabled={wipeText !== 'APAGAR'} loading={wipe.isPending} onClick={() => wipe.mutate()}>Apagar tudo</Button></>}
+      >
+        <div className="flex flex-col gap-3 text-sm">
+          <p className="text-muted">Vai apagar <b className="text-ink">{products.data?.length ?? 0} produto(s)</b>, {stock.data?.length ?? 0} registro(s) de estoque e {demand.data?.length ?? 0} linha(s) de pedido.</p>
+          <Field label='Digite APAGAR para confirmar'><Input value={wipeText ?? ''} onChange={(e) => setWipeText(e.target.value.toUpperCase())} placeholder="APAGAR" autoFocus /></Field>
+        </div>
+      </Dialog>
 
       <Dialog open={!!editing} onClose={() => setEditing(null)} title="Editar produto (Produção)" footer={<><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={() => save.mutate()} loading={save.isPending} disabled={!editing?.name}>Salvar</Button></>}>
         {editing && (
