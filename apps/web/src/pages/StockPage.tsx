@@ -136,7 +136,7 @@ export default function StockPage() {
                     <td className="td text-right num font-bold">{fmtInt(s.total)}</td>
                     <td className="td text-right num text-muted">{fmtInt(Math.floor(Number(s.total) / (s.units_per_box || 48)))}</td>
                     <td className="td">
-                      {Number(s.total) === 0 ? <Badge tone="danger" dot>Zerado</Badge> : s.min_stock > 0 && Number(s.total) <= s.min_stock ? <Badge tone="warn" dot>Abaixo do mínimo</Badge> : <Badge tone="ok" dot>OK</Badge>}
+                      {Number(s.total) === 0 ? <Badge tone="danger" dot>Zerado</Badge> : <Badge tone="ok" dot>OK</Badge>}
                     </td>
                   </tr>
                 ))}

@@ -8,7 +8,7 @@ const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const secret = Deno.env.get('PUSH_WEBHOOK_SECRET') ?? '';
 webpush.setVapidDetails('mailto:noreply@isaindalimentos.com.br', Deno.env.get('VAPID_PUBLIC_KEY')!, Deno.env.get('VAPID_PRIVATE_KEY')!);
 
-const IMPORTANT = /acesso|pendente|abaixo do m|conclu|baixa|importad|Backup/i;
+const IMPORTANT = /acesso|pendente|conclu|baixa|importad|Backup/i;
 
 Deno.serve(async (req) => {
   if (secret && req.headers.get('x-webhook-secret') !== secret) return new Response('unauthorized', { status: 401 });

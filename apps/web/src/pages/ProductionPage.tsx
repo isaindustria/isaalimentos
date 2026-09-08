@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-import { Upload, Boxes, ClipboardList, Download, Printer, Trash2, Factory, AlertTriangle, Check, Package, Scale, Eraser } from 'lucide-react';
+import { Upload, Boxes, ClipboardList, Download, Printer, Trash2, Factory, AlertTriangle, Check, Package, Scale, Eraser, Search } from 'lucide-react';
 import { applyProdInconsistency, clearProdAll, clearProdDemand, deleteProdProduct, discardProdPending, importProdCatalog, importProdDemand, importProdStock, listProdAliases, listProdDemand, listProdPending, listProdProducts, listProdStock, resolveProdPending, saveProdProduct, type ProdCatalogRow, type ProdDemandInput, type ProdInconsistency, type ProdPendingInput, type ProdStockRow, type ProdImportMode } from '@/api/producao';
 import { getSettings } from '@/api/settings';
 import { logActivity } from '@/api/activity';
@@ -38,6 +38,7 @@ export default function ProductionPage() {
   const [editing, setEditing] = useState<Partial<ProdProduct> | null>(null);
   const [onlyOrdered, setOnlyOrdered] = useState(true);
   const [refFilter, setRefFilter] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
 
   const products = useQuery({ queryKey: ['prod-products'], queryFn: listProdProducts });
   const stock = useQuery({ queryKey: ['prod-stock'], queryFn: listProdStock });
@@ -51,8 +52,11 @@ export default function ProductionPage() {
   const references = useMemo(() => [...new Set((products.data ?? []).map((p) => p.reference ?? 'Sem referência'))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [products.data]);
   const refOf = (code: string) => products.data?.find((p) => p.code === code)?.reference ?? 'Sem referência';
   const inRef = (ref: string | null) => !refFilter.length || refFilter.includes(ref ?? 'Sem referência');
-  const visibleProducts = (products.data ?? []).filter((p) => inRef(p.reference));
-  const needRows = (onlyOrdered ? rows.filter((r) => r.ordered > 0) : rows).filter((r) => inRef(refOf(r.code)));
+  const fold = (t: string | null | undefined) => (t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const q = fold(search.trim());
+  const hit = (p: { code: string; name: string; description: string; reference: string | null }) => !q || fold(p.code).includes(q) || fold(p.name).includes(q) || fold(p.description).includes(q) || fold(p.reference).includes(q);
+  const visibleProducts = (products.data ?? []).filter((p) => inRef(p.reference) && hit(p));
+  const needRows = (onlyOrdered ? rows.filter((r) => r.ordered > 0) : rows).filter((r) => inRef(refOf(r.code)) && hit(r));
   const stockBy = useMemo(() => new Map((stock.data ?? []).map((s) => [s.code, s])), [stock.data]);
 
   const applyInc = useMutation({ mutationFn: (i: ProdInconsistency) => applyProdInconsistency(i.code, i.incoming.description, i.incoming.reference), onSuccess: (_, i) => { setInconsistencies((l) => l.filter((x) => x.code !== i.code)); invalidate(); toast.success(`Código ${i.code} atualizado.`); }, onError: (e: Error) => toast.error(e.message) });
@@ -101,12 +105,17 @@ export default function ProductionPage() {
         ))}
       </div>
 
-      {references.length > 1 && view !== 'pedido' && (
-        <div className="no-print mb-3 flex flex-wrap items-center gap-1.5">
+      {view !== 'pedido' && (
+        <div className="no-print mb-3 flex flex-wrap items-center gap-3">
+          <div className="relative w-full sm:w-72">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+            <Input className="pl-9" placeholder="Buscar por código, descrição ou referência" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          {references.length > 1 && <div className="flex flex-wrap items-center gap-1.5">
           <button type="button" onClick={() => setRefFilter([])} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${refFilter.length === 0 ? 'border-brand bg-brand text-brand-ink' : 'border-line text-muted hover:bg-surface-2'}`}>Todas</button>
           {references.map((r) => (
             <button key={r} type="button" onClick={() => setRefFilter((v) => (v.includes(r) ? v.filter((x) => x !== r) : [...v, r]))} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${refFilter.includes(r) ? 'border-brand bg-brand text-brand-ink' : 'border-line text-muted hover:bg-surface-2'}`}>{r}</button>
-          ))}
+          ))}</div>}
         </div>
       )}
 

@@ -1,17 +1,14 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
-import { Download, Printer, TrendingUp, Wand2 } from 'lucide-react';
+import { Download, Printer, TrendingUp } from 'lucide-react';
 import { listOrders } from '@/api/orders';
 import { listMovements, getCurrentStock } from '@/api/stock';
 import { listRuns } from '@/api/production';
-import { abcClass, applyMinStock, productStats, suggestMin } from '@/api/v14';
-import { listProducts } from '@/api/products';
+import { abcClass, productStats } from '@/api/v14';
 import { supabase, unwrap } from '@/lib/supabase';
 import { Badge, Button, Card, Field, Input, PageHeader, Table, Tabs } from '@/components/primitives';
 import { downloadBlob, fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
 import type { OrderItem } from '@/lib/types';
 
 type Tab = 'vendas' | 'producao' | 'giro' | 'abc';
@@ -24,12 +21,9 @@ function exportXlsx(name: string, rows: Record<string, unknown>[]) {
 }
 
 export default function ReportsPage() {
-  const qc = useQueryClient();
-  const { canWriteArea } = useAuth();
   const [tab, setTab] = useState<Tab>('vendas');
   const [from, setFrom] = useState(new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10));
   const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
-  const [leadWeeks, setLeadWeeks] = useState(1);
 
   const orders = useQuery({ queryKey: ['orders', { from, to, status: 'todos' }], queryFn: () => listOrders({ from, to, status: 'todos' }) });
   const items = useQuery({
@@ -41,7 +35,6 @@ export default function ReportsPage() {
   const moves = useQuery({ queryKey: ['movements', ''], queryFn: () => listMovements(1000) });
   const stock = useQuery({ queryKey: ['current-stock'], queryFn: getCurrentStock });
   const stats = useQuery({ queryKey: ['product-stats'], queryFn: productStats });
-  const products = useQuery({ queryKey: ['products', 'active'], queryFn: () => listProducts(false) });
 
   const sales = useMemo(() => {
     const byProduct = new Map<string, { code: string; name: string; boxes: number; units: number; value: number; orders: Set<string> }>();
@@ -71,17 +64,12 @@ export default function ReportsPage() {
     const rows = [...(stats.data ?? [])].sort((a, b) => Number(b.revenue_all) - Number(a.revenue_all));
     const total = rows.reduce((s, r) => s + Number(r.revenue_all), 0) || 1;
     let cum = 0;
-    return rows.map((r) => { cum += Number(r.revenue_all) / total; const upb = products.data?.find((p) => p.code === r.code)?.units_per_box ?? 48; return { ...r, cls: abcClass(cum), share: Number(r.revenue_all) / total, suggested: suggestMin(Number(r.weekly_avg_units), leadWeeks, 1.3, upb) }; });
-  }, [stats.data, products.data, leadWeeks]);
-  const applyMins = useMutation({
-    mutationFn: () => applyMinStock(abc.map((r) => ({ code: r.code, min_stock: r.suggested }))),
-    onSuccess: () => { toast.success('Estoque mínimo atualizado para todos os produtos.'); qc.invalidateQueries({ queryKey: ['products'] }); qc.invalidateQueries({ queryKey: ['current-stock'] }); qc.invalidateQueries({ queryKey: ['product-stats'] }); },
-    onError: (e: Error) => toast.error(e.message),
-  });
+    return rows.map((r) => { cum += Number(r.revenue_all) / total; return { ...r, cls: abcClass(cum), share: Number(r.revenue_all) / total }; });
+  }, [stats.data]);
 
   return (
     <>
-      <PageHeader title="Relatórios" description="Vendas por produto e por loja, produção por período, giro de estoque e curva ABC com estoque mínimo automático." actions={<><Button variant="outline" icon={<Printer className="size-4" />} onClick={() => window.print()}>Imprimir</Button></>} />
+      <PageHeader title="Relatórios" description="Vendas por produto e por loja, produção por período, giro de estoque e curva ABC." actions={<><Button variant="outline" icon={<Printer className="size-4" />} onClick={() => window.print()}>Imprimir</Button></>} />
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <Tabs value={tab} onChange={setTab} items={[{ value: 'vendas', label: 'Vendas' }, { value: 'producao', label: 'Produção' }, { value: 'giro', label: 'Giro de estoque' }, { value: 'abc', label: 'Curva ABC / mínimos' }]} />
         {tab !== 'abc' && <><Field label="De"><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field><Field label="Até"><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field></>}
@@ -112,10 +100,10 @@ export default function ReportsPage() {
         </Card>
       )}
       {tab === 'abc' && (
-        <Card title="Curva ABC (receita acumulada) e estoque mínimo sugerido" padded={false} action={<div className="flex items-center gap-2"><Field label="Tempo de produção (semanas)" className="mb-0"><Input type="number" min={0.5} step={0.5} className="h-8 w-24" value={leadWeeks} onChange={(e) => setLeadWeeks(Number(e.target.value) || 1)} /></Field>{canWriteArea('estoque') && <Button size="sm" icon={<Wand2 className="size-3.5" />} loading={applyMins.isPending} onClick={() => confirm('Aplicar os mínimos sugeridos em todos os produtos? Isso substitui os valores atuais.') && applyMins.mutate()}>Aplicar mínimos</Button>}<Button size="sm" variant="ghost" icon={<Download className="size-3.5" />} onClick={() => exportXlsx('curva-abc', abc.map((r) => ({ Classe: r.cls, Código: r.code, Produto: r.description, 'Média semanal (un)': Math.round(Number(r.weekly_avg_units)), 'Receita total': Number(r.revenue_all), 'Mínimo atual': r.min_stock, 'Mínimo sugerido': r.suggested })))}>Excel</Button></div>}>
-          <Table dense><thead><tr><th className="th">Classe</th><th className="th">Produto</th><th className="th text-right">Média/semana</th><th className="th text-right">Receita</th><th className="th text-right">% acum.</th><th className="th text-right">Mín. atual</th><th className="th text-right">Mín. sugerido</th></tr></thead>
-            <tbody>{abc.map((r) => <tr key={r.code}><td className="td"><Badge tone={r.cls === 'A' ? 'brand' : r.cls === 'B' ? 'info' : 'neutral'}>{r.cls}</Badge></td><td className="td">{r.description}</td><td className="td num text-right">{fmtInt(Number(r.weekly_avg_units))}</td><td className="td num text-right">{fmtBRL(r.revenue_all)}</td><td className="td num text-right text-muted">{Math.round(r.share * 100)}%</td><td className="td num text-right text-muted">{fmtInt(r.min_stock)}</td><td className="td num text-right font-semibold">{fmtInt(r.suggested)}</td></tr>)}</tbody></Table>
-          <p className="flex items-center gap-2 px-5 py-3 text-xs text-muted"><TrendingUp className="size-3.5" /> Mínimo sugerido = média semanal das últimas 8 semanas × tempo de produção × 1,3 de segurança, arredondado para caixas cheias.</p>
+        <Card title="Curva ABC (receita acumulada)" padded={false} action={<Button size="sm" variant="ghost" icon={<Download className="size-3.5" />} onClick={() => exportXlsx('curva-abc', abc.map((r) => ({ Classe: r.cls, Código: r.code, Produto: r.description, 'Média semanal (un)': Math.round(Number(r.weekly_avg_units)), 'Receita total': Number(r.revenue_all), '% acumulado': Math.round(r.share * 100) })))}>Excel</Button>}>
+          <Table dense><thead><tr><th className="th">Classe</th><th className="th">Produto</th><th className="th text-right">Média/semana</th><th className="th text-right">Receita</th><th className="th text-right">% acum.</th></tr></thead>
+            <tbody>{abc.map((r) => <tr key={r.code}><td className="td"><Badge tone={r.cls === 'A' ? 'brand' : r.cls === 'B' ? 'info' : 'neutral'}>{r.cls}</Badge></td><td className="td">{r.description}</td><td className="td num text-right">{fmtInt(Number(r.weekly_avg_units))}</td><td className="td num text-right">{fmtBRL(r.revenue_all)}</td><td className="td num text-right text-muted">{Math.round(r.share * 100)}%</td></tr>)}</tbody></Table>
+          <p className="flex items-center gap-2 px-5 py-3 text-xs text-muted"><TrendingUp className="size-3.5" /> Classe A = produtos que somam 80% da receita; B até 95%; C o restante.</p>
         </Card>
       )}
     </>

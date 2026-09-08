@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Trash2, FlaskConical, Upload, Boxes, TrendingUp, AlertTriangle, Download } from 'lucide-react';
+import { Trash2, FlaskConical, Upload, Boxes, TrendingUp, AlertTriangle, Download, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { computePurchasePlan, deleteSupply, importConsumption, importSupplyCatalog, importSupplyStock, listConsumption, listSupplies, saveSupply, type ConsumptionImportRow, type ImportMode, type SupplyCatalogImportRow, type SupplyStockImportRow } from '@/api/v14';
 import { logActivity } from '@/api/activity';
@@ -74,6 +74,7 @@ export default function SuppliesPage() {
   const [editing, setEditing] = useState<Partial<Supply> | null>(null);
   const [importing, setImporting] = useState<'cadastro' | 'estoque' | 'consumo' | null>(null);
   const [refFilter, setRefFilter] = useState<SupplyReference[]>([]);
+  const [search, setSearch] = useState('');
 
   const supplies = useQuery({ queryKey: ['supplies'], queryFn: listSupplies });
   const consumption = useQuery({ queryKey: ['supply-consumption'], queryFn: listConsumption });
@@ -83,7 +84,9 @@ export default function SuppliesPage() {
   const remove = useMutation({ mutationFn: deleteSupply, onSuccess: () => { toast.success('Item removido.'); invalidate(); }, onError: (e: Error) => toast.error(e.message) });
 
   const plan = useMemo(() => computePurchasePlan(supplies.data ?? [], consumption.data ?? []), [supplies.data, consumption.data]);
-  const visible = (supplies.data ?? []).filter((s) => !refFilter.length || refFilter.includes(s.reference));
+  const fold = (t: string | null | undefined) => (t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const q = fold(search.trim());
+  const visible = (supplies.data ?? []).filter((s) => (!refFilter.length || refFilter.includes(s.reference)) && (!q || fold(s.code).includes(q) || fold(s.name).includes(q) || fold(SUPPLY_REFERENCE_LABEL[s.reference]).includes(q) || fold(s.supplier).includes(q)));
   const review = [...plan.values()].filter((p) => p.needsReview).length;
 
   const canWrite = canWriteArea('compras');
@@ -131,7 +134,13 @@ export default function SuppliesPage() {
         {review > 0 && <Badge tone="danger" dot>{review} sugestão(ões) para conferir</Badge>}
       </div>
 
-      <div className="mb-3"><ReferenceFilter value={refFilter} onChange={setRefFilter} /></div>
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <div className="relative w-full sm:w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <Input className="pl-9" placeholder="Buscar por código, nome ou referência" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <ReferenceFilter value={refFilter} onChange={setRefFilter} />
+      </div>
 
       {view === 'cadastro' && (
         <Card padded={false}>
@@ -184,7 +193,6 @@ export default function SuppliesPage() {
             <Field label="Nome" className="sm:col-span-2"><Input value={editing.name ?? ''} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></Field>
             <Field label="Unidade"><Select value={editing.unit ?? 'kg'} onChange={(e) => setEditing({ ...editing, unit: e.target.value })}>{['kg', 'g', 'L', 'un', 'cx', 'pct'].map((u) => <option key={u}>{u}</option>)}</Select></Field>
             <Field label="Fornecedor"><Input value={editing.supplier ?? ''} onChange={(e) => setEditing({ ...editing, supplier: e.target.value })} /></Field>
-            <Field label="Estoque mínimo"><Input type="number" step="0.01" value={editing.min_stock ?? 0} onChange={(e) => setEditing({ ...editing, min_stock: Number(e.target.value) })} /></Field>
             <Field label="Custo por unidade (R$)"><Input type="number" step="0.01" value={editing.cost ?? ''} onChange={(e) => setEditing({ ...editing, cost: e.target.value ? Number(e.target.value) : null })} /></Field>
           </div>
         )}

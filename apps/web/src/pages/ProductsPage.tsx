@@ -113,7 +113,6 @@ export default function ProductsPage() {
                   <th className="th text-right">Un/caixa</th>
                   <th className="th text-right">Peso</th>
                   <th className="th text-right">Estoque</th>
-                  <th className="th text-right">Mínimo</th>
                   <th className="th">Status</th>
                   <th className="th" />
                 </tr>
@@ -129,7 +128,6 @@ export default function ProductsPage() {
                       <td className="td text-right num">{p.units_per_box}</td>
                       <td className="td text-right num text-muted">{fmtWeight(p.weight_g)}</td>
                       <td className="td text-right num font-semibold">{s ? fmtInt(s.total) : '—'}</td>
-                      <td className="td text-right num text-muted">{fmtInt(p.min_stock)}</td>
                       <td className="td">{p.active ? <Badge tone="ok" dot>Ativo</Badge> : <Badge>Inativo</Badge>}</td>
                       <td className="td text-right">
                         <Button size="sm" variant="ghost" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => setEditing(p)}>Editar</Button>
@@ -192,7 +190,6 @@ export default function ProductsPage() {
           { key: 'units_per_box', label: 'Unidades por caixa', example: '48' },
           { key: 'weight_g', label: 'Peso', example: '60 g ou 1,5 kg' },
           { key: 'category', label: 'Categoria', example: 'Temperos' },
-          { key: 'min_stock', label: 'Estoque mínimo', example: '200' },
         ]}
         mapRow={(row, line) => {
           const code = pick(row, ['codigo', 'cod', 'code']);
@@ -211,7 +208,7 @@ export default function ProductsPage() {
             min_stock: toNumber(pick(row, ['estoque minimo', 'minimo']), 0),
           };
         }}
-        preview={(r) => [r.code, r.description, r.reference ?? '—', String(r.units_per_box), fmtWeight(r.weight_g), r.category ?? '—', String(r.min_stock ?? 0)]}
+        preview={(r) => [r.code, r.description, r.reference ?? '—', String(r.units_per_box), fmtWeight(r.weight_g), r.category ?? '—']}
         onImport={async (rows) => {
           const n = await bulkUpsertProducts(rows);
           await logActivity({ kind: 'sistema', title: `${n} produto(s) importados por planilha`, link: '/produtos', actor_id: session?.user.id, actor_name: profile?.name ?? null });
@@ -256,9 +253,6 @@ export default function ProductsPage() {
                 <Input type="number" min={0} step="any" className="flex-1" value={weightUnit === 'kg' ? (editing.weight_g != null ? editing.weight_g / 1000 : '') : (editing.weight_g ?? '')} onChange={(e) => { const v = e.target.value === '' ? null : Number(e.target.value); setEditing({ ...editing, weight_g: v == null ? null : Math.round(weightUnit === 'kg' ? v * 1000 : v) }); }} />
                 <Select className="w-24" value={weightUnit} onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg')}><option value="g">g</option><option value="kg">kg</option></Select>
               </div>
-            </Field>
-            <Field label="Estoque mínimo (un)">
-              <Input type="number" min={0} value={editing.min_stock ?? 0} onChange={(e) => setEditing({ ...editing, min_stock: Number(e.target.value) })} />
             </Field>
             <Field label="Categoria">
               <Input value={editing.category ?? ''} onChange={(e) => setEditing({ ...editing, category: e.target.value })} placeholder="Ex.: Temperos, Caldos" />
