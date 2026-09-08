@@ -10,10 +10,15 @@ export function isNoMargin(name: string, list: string[] = DEFAULT_NO_MARGIN): bo
   return list.some((w) => n.includes(fold(w)));
 }
 
-/** Gr de uso (peso para producao) = peso do pote + 1 g de margem, igual para todos; excecoes sem margem. */
+/** Margem de erro: potes +1 g (60 g -> 61 g); sacarias (1 kg ou mais) +10 g (10 kg -> 10,010 kg). Excecoes sem margem. */
+export function marginGrams(weightG: number): number {
+  return weightG >= 1000 ? 10 : 1;
+}
+
+/** Gr de uso (peso para producao) = peso + margem de erro. */
 export function useGrams(weightG: number | null, noMargin: boolean): number | null {
   if (weightG == null) return null;
-  return noMargin ? weightG : weightG + 1;
+  return noMargin ? weightG : weightG + marginGrams(weightG);
 }
 
 export type NeedStatus = 'produzir' | 'atendido' | 'sem_pedido';

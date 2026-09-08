@@ -120,7 +120,7 @@
       <h1 class="title">Como usar o sistema ISA</h1>
       <p class="lede">Guia direto pra quem opera o dia a dia: do pedido da loja à ordem de produção, sem planilha na mão. O que muda em cada versão fica registrado aqui.</p>
       <div class="meta">
-        <span class="pill">versão atual <b>1.5.3</b></span>
+        <span class="pill">versão atual <b>1.5.4</b></span>
         <span class="pill">web · celular (PWA) · Windows</span>
         <span class="pill">uso interno</span>
       </div>
@@ -131,12 +131,12 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.5.3</span><span class="d">08/09/2026</span><span class="tag">atual</span>
+        <span class="v">v1.5.3 – v1.5.4</span><span class="d">08/09/2026</span><span class="tag">atual</span>
         <ul>
           <li><strong>Produção virou um módulo independente</strong>, com cadastro, estoque e pedido próprios (não usa mais os dados de Produtos/Estoque/Pedidos).</li>
           <li>Botões <strong>Importar cadastro</strong> (por código; diferença vai para ajuste manual), <strong>Importar estoque atual</strong> (locais 1 + 5), <strong>Importar pedido</strong> (PDF das lojas ou planilha), <strong>Exportar produzir</strong> e <strong>Imprimir</strong>.</li>
           <li>Cartões Cadastro de produtos · Estoque/Pedido · Produzir, tabela de necessidade com gr de uso, saldo restante, conversão para quilos e situação, e o cartão informativo (pedido, atendido, a produzir em un. e em kg).</li>
-          <li>Peso sai da descrição do ERP para uma coluna própria; <strong>gr de uso = peso + 1 g</strong> (orégano, cravo e bicarbonato sem margem).</li>
+          <li>Peso sai da descrição do ERP para uma coluna própria; <strong>gr de uso = peso + margem</strong>: potes +1 g, sacarias +10 g (orégano, cravo e bicarbonato sem margem).</li>
         </ul>
       </div>
 
@@ -264,7 +264,7 @@
       </ol>
       <div class="card ok">
         <div class="lbl">Cálculo</div>
-        Necessidade = total pedido − estoque disponível (1 + 5), nunca negativa; a sobra é o saldo restante. Quilos = necessidade × gr de uso. <strong>Gr de uso = peso + 1 g de margem</strong> para todos os produtos, exceto orégano, cravo e bicarbonato (sem margem). Situação: <strong>Produzir</strong> ou <strong>Atendido pelo estoque</strong>.
+        Necessidade = total pedido − estoque disponível (1 + 5), nunca negativa; a sobra é o saldo restante. Quilos = necessidade × gr de uso. <strong>Gr de uso = peso + margem de erro</strong>: potes +1 g (60 g → 61 g), sacarias +10 g (10 kg → 10,010 kg); orégano, cravo e bicarbonato sem margem. Situação: <strong>Produzir</strong> ou <strong>Atendido pelo estoque</strong>.
       </div>
     </section>
 
