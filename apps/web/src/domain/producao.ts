@@ -25,7 +25,10 @@ export type NeedStatus = 'produzir' | 'atendido' | 'sem_pedido';
 
 export interface NeedRow {
   code: string;
+  reference: string | null;
   name: string;
+  brand: string | null;
+  description: string;
   useG: number | null;
   unitsPerBox: number;
   stock1: number;
@@ -76,7 +79,7 @@ export function computeNeed(products: ProdProduct[], stock: ProdStock[], demand:
       const remaining = Math.max(0, -diff);
       const useG = p.use_g ?? useGrams(p.weight_g, p.no_margin);
       const status: NeedStatus = ordered > 0 ? (need > 0 ? 'produzir' : 'atendido') : 'sem_pedido';
-      return { code: p.code, name: p.name, useG, unitsPerBox, stock1, stock5, available, ordered, orderedBoxes: d?.boxes ?? ordered / unitsPerBox, need, needBoxes: need / unitsPerBox, remaining, kg: useG != null ? (need * useG) / 1000 : 0, status };
+      return { code: p.code, reference: p.reference, name: p.name, brand: p.brand, description: p.description, useG, unitsPerBox, stock1, stock5, available, ordered, orderedBoxes: d?.boxes ?? ordered / unitsPerBox, need, needBoxes: need / unitsPerBox, remaining, kg: useG != null ? (need * useG) / 1000 : 0, status };
     })
     .sort((a, b) => (b.need - a.need) || (b.ordered - a.ordered) || a.name.localeCompare(b.name, 'pt-BR'));
   const withOrder = rows.filter((r) => r.ordered > 0);

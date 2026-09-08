@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History,
+  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdates } from '@/hooks/useUpdates';
@@ -122,6 +122,8 @@ export default function AppShell() {
   const { profile, session, signOut, canWriteArea } = useAuth();
   const { dark, toggle } = useTheme();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem('isa-sidebar') === 'collapsed'; } catch { return false; } });
+  function toggleCollapsed() { setCollapsed((v) => { try { localStorage.setItem('isa-sidebar', v ? 'open' : 'collapsed'); } catch { /* ignore */ } return !v; }); }
   const navigate = useNavigate();
   const pending = useQuery({ queryKey: ['pending-items'], queryFn: listPendingItems, refetchInterval: 60_000 });
   const modules = useQuery({ queryKey: ['modules'], queryFn: getModules });
@@ -133,17 +135,27 @@ export default function AppShell() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-line flex flex-col transition-transform md:translate-x-0 md:static',
+          'fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-line flex flex-col transition-[transform,width] md:translate-x-0 md:static',
+          collapsed && 'md:w-[76px]',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         <div className="h-1.5 bg-[linear-gradient(90deg,rgb(var(--brand))_0%,rgb(var(--brand))_55%,rgb(var(--brand-green))_55%,rgb(var(--brand-green))_100%)]" />
-        <div className="flex items-center justify-between px-5 h-16 border-b border-line">
-          <Brand />
+        <div className={cn('flex items-center justify-between h-16 border-b border-line', collapsed ? 'md:justify-center md:px-0 px-5' : 'px-5')}>
+          {collapsed ? <img src="./brand/logo.png" alt="ISA" className="hidden h-9 w-auto md:block" /> : null}
+          <div className={cn(collapsed && 'md:hidden')}><Brand /></div>
           <button className="md:hidden text-muted" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />
           </button>
         </div>
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+          className={cn('hidden md:flex items-center gap-2 mx-3 mt-2 h-8 rounded-lg text-xs font-medium text-muted hover:bg-surface-2 hover:text-ink', collapsed ? 'justify-center' : 'px-3')}
+        >
+          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <><PanelLeftClose className="h-4 w-4" /> Recolher menu</>}
+        </button>
         <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
           {nav.map((n) => (
             <NavLink
@@ -151,25 +163,27 @@ export default function AppShell() {
               to={n.to}
               end={n.end}
               onClick={() => setOpen(false)}
+              title={collapsed ? n.label : undefined}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-xl px-3 h-10 text-sm font-medium transition group',
+                  'flex items-center gap-3 rounded-xl px-3 h-10 text-sm font-medium transition group relative',
+                  collapsed && 'md:justify-center md:px-0',
                   isActive ? 'bg-brand-soft text-brand' : 'text-muted hover:text-ink hover:bg-surface-2',
                 )
               }
             >
-              <n.icon className="h-4 w-4" />
-              <span className="flex-1">{n.label}</span>
+              <n.icon className="h-4 w-4 shrink-0" />
+              <span className={cn('flex-1', collapsed && 'md:hidden')}>{n.label}</span>
               {n.to === '/pedidos' && pendingCount > 0 && (
-                <span className="text-[11px] font-bold rounded-full bg-warn/15 text-warn px-1.5 py-0.5">{pendingCount}</span>
+                <span className={cn('text-[11px] font-bold rounded-full bg-warn/15 text-warn px-1.5 py-0.5', collapsed && 'md:absolute md:right-1 md:top-1 md:px-1 md:py-0')}>{pendingCount}</span>
               )}
             </NavLink>
           ))}
         </nav>
         <div className="p-3 border-t border-line">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="h-9 w-9 rounded-full bg-brand-soft text-brand grid place-items-center text-xs font-bold">{initials(profile?.name ?? session?.user.email)}</div>
-            <div className="min-w-0 flex-1">
+          <div className={cn('flex items-center gap-3 px-2 py-2', collapsed && 'md:flex-col md:px-0 md:gap-2')}>
+            <div className="h-9 w-9 rounded-full bg-brand-soft text-brand grid place-items-center text-xs font-bold" title={profile?.name ?? undefined}>{initials(profile?.name ?? session?.user.email)}</div>
+            <div className={cn('min-w-0 flex-1', collapsed && 'md:hidden')}>
               <div className="text-sm font-semibold truncate">{profile?.name ?? session?.user.email}</div>
               <div className="text-[11px] text-muted">{profile?.role ? ROLE_LABEL[profile.role] ?? profile.role : 'usuário'}</div>
             </div>

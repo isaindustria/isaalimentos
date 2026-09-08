@@ -3,6 +3,8 @@ import type { ProdAlias, ProdDemand, ProdPending, ProdPendingCandidate, ProdProd
 import { DEFAULT_NO_MARGIN, isNoMargin, useGrams } from '@/domain/producao';
 import { parseProductDescription } from '@/domain/parsers/weight';
 
+export type ProdImportMode = 'incluir' | 'substituir';
+
 /* ---------------- Leitura ---------------- */
 export async function listProdProducts(): Promise<ProdProduct[]> {
   return unwrap(await supabase.from('prod_products').select('*').order('name'));
@@ -39,8 +41,13 @@ function buildProduct(r: ProdCatalogRow, noMargin: string[]) {
 }
 
 /** Identifica pelo codigo. Codigo novo: cadastra. Codigo existente igual: ignora. Diferente: vai para ajuste manual (nunca sobrescreve sozinho). */
-export async function importProdCatalog(rows: ProdCatalogRow[]): Promise<ProdCatalogResult> {
+export async function importProdCatalog(mode: ProdImportMode, rows: ProdCatalogRow[]): Promise<ProdCatalogResult & { removed: number }> {
   const noMargin = await getNoMarginList();
+  let removed = 0;
+  if (mode === 'substituir') {
+    const { count } = await supabase.from('prod_products').delete({ count: 'exact' }).neq('code', '');
+    removed = count ?? 0;
+  }
   const existing = (await listProdProducts()) as ProdProduct[];
   const byCode = new Map(existing.map((p) => [p.code, p]));
   const seen = new Set<string>();
@@ -57,7 +64,7 @@ export async function importProdCatalog(rows: ProdCatalogRow[]): Promise<ProdCat
     inconsistencies.push({ code: r.code, current: { name: cur.name, reference: cur.reference, weight_g: cur.weight_g, description: cur.description }, incoming: { name: inc.name, reference: inc.reference, weight_g: inc.weight_g, description: inc.description } });
   }
   for (let i = 0; i < toInsert.length; i += 200) unwrap(await supabase.from('prod_products').insert(toInsert.slice(i, i + 200)));
-  return { created: toInsert.length, unchanged, inconsistencies };
+  return { created: toInsert.length, unchanged, inconsistencies, removed };
 }
 
 /** Ajuste manual: aplica a versao da planilha por cima do cadastro atual. */
@@ -84,8 +91,9 @@ export interface ProdStockRow { code: string; location?: number; qty?: number; s
 export interface ProdStockResult { updated: number; unmatched: string[]; ignored: number }
 
 /** Soma os locais 1 e 5 por codigo. So atualiza quem existe no cadastro; codigo desconhecido fica para conferencia. Nao mexe na base de calculo. */
-export async function importProdStock(rows: ProdStockRow[]): Promise<ProdStockResult> {
+export async function importProdStock(mode: ProdImportMode, rows: ProdStockRow[]): Promise<ProdStockResult> {
   const products = (await listProdProducts()) as ProdProduct[];
+  if (mode === 'substituir') unwrap(await supabase.from('prod_stock').update({ stock1: 0, stock5: 0, updated_at: new Date().toISOString() }).neq('code', ''));
   const known = new Set(products.map((p) => p.code));
   const totals = new Map<string, { stock1: number; stock5: number }>();
   const unmatched = new Set<string>();
@@ -108,7 +116,8 @@ export async function importProdStock(rows: ProdStockRow[]): Promise<ProdStockRe
 export interface ProdDemandInput { code: string; raw_description: string | null; store: string | null; boxes: number; units: number }
 export interface ProdPendingInput { raw_description: string; client_code: string | null; store: string | null; boxes: number; units: number; candidates: ProdPendingCandidate[] }
 
-export async function importProdDemand(source: string, matched: ProdDemandInput[], pending: ProdPendingInput[]) {
+export async function importProdDemand(mode: ProdImportMode, source: string, matched: ProdDemandInput[], pending: ProdPendingInput[]) {
+  if (mode === 'substituir') await clearProdDemand();
   if (matched.length) unwrap(await supabase.from('prod_demand').insert(matched.map((m) => ({ ...m, source }))));
   if (pending.length) unwrap(await supabase.from('prod_pending').insert(pending.map((p) => ({ ...p, source }))));
   return { matched: matched.length, pending: pending.length };

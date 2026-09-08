@@ -3,12 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { Upload, Boxes, ClipboardList, Download, Printer, Trash2, Factory, AlertTriangle, Check, Package, Scale, Eraser } from 'lucide-react';
-import { applyProdInconsistency, clearProdAll, clearProdDemand, deleteProdProduct, discardProdPending, importProdCatalog, importProdDemand, importProdStock, listProdAliases, listProdDemand, listProdPending, listProdProducts, listProdStock, resolveProdPending, saveProdProduct, type ProdCatalogRow, type ProdDemandInput, type ProdInconsistency, type ProdPendingInput, type ProdStockRow } from '@/api/producao';
+import { applyProdInconsistency, clearProdAll, clearProdDemand, deleteProdProduct, discardProdPending, importProdCatalog, importProdDemand, importProdStock, listProdAliases, listProdDemand, listProdPending, listProdProducts, listProdStock, resolveProdPending, saveProdProduct, type ProdCatalogRow, type ProdDemandInput, type ProdInconsistency, type ProdPendingInput, type ProdStockRow, type ProdImportMode } from '@/api/producao';
 import { getSettings } from '@/api/settings';
 import { logActivity } from '@/api/activity';
 import { computeNeed, type NeedRow } from '@/domain/producao';
 import { extractRowsFromFile } from '@/domain/parsers/pdfText';
-import { consolidateItems, parseOrderPages } from '@/domain/parsers/orderPdf';
+import { parseOrderPages } from '@/domain/parsers/orderPdf';
 import { matchProduct } from '@/domain/matching';
 import { normalizedKey } from '@/domain/normalize';
 import { pick, readSheet, toNumber } from '@/domain/parsers/sheet';
@@ -19,6 +19,11 @@ import { useAuth } from '@/hooks/useAuth';
 import type { ProdPending, ProdProduct } from '@/lib/types';
 
 type View = 'cadastro' | 'pedido' | 'produzir';
+
+const MODES = (what: string) => [
+  { value: 'incluir', label: 'Incluir', description: `Mantém o que já existe. ${what}` },
+  { value: 'substituir', label: 'Substituir', description: 'Apaga o que existe nesta tela e grava só o que está no arquivo.' },
+];
 
 interface PedidoPreviewLine { key: string; store: string | null; clientCode: string | null; description: string; boxes: number; units: number; code: string | null; productName: string | null; status: string; candidates: Array<{ code: string; description: string; score: number }> }
 
@@ -59,7 +64,7 @@ export default function ProductionPage() {
   const clear = useMutation({ mutationFn: clearProdDemand, onSuccess: () => { toast.success('Pedido zerado.'); invalidate(); }, onError: (e: Error) => toast.error(e.message) });
 
   function exportProduzir() {
-    const data = needRows.map((r) => ({ 'Código': r.code, 'Nome do produto': r.name, 'Gr de uso': r.useG ?? '', 'Estoque disponível': r.available, 'Total pedido': r.ordered, 'Necessidade': r.need, 'Saldo restante': r.remaining, 'Conversão para quilos': Number(r.kg.toFixed(3)), 'Situação': STATUS[r.status] }));
+    const data = needRows.map((r) => ({ 'Código': r.code, 'Referência': r.reference ?? '', 'Nome do produto': r.name, 'Descrição': r.description, 'Gr de uso': r.useG ?? '', 'Estoque disponível': r.available, 'Total pedido': r.ordered, 'Necessidade': r.need, 'Saldo restante': r.remaining, 'Conversão para quilos': Number(r.kg.toFixed(3)), 'Situação': STATUS[r.status] }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Produzir');
@@ -174,8 +179,8 @@ export default function ProductionPage() {
           </div>
           <Card title={<span className="font-display text-sm font-bold">Pedido / Necessidade de produção</span>} action={<label className="no-print inline-flex items-center gap-2 text-xs text-muted"><input type="checkbox" className="accent-brand" checked={onlyOrdered} onChange={(e) => setOnlyOrdered(e.target.checked)} /> só produtos com pedido</label>} padded={false}>
             {needRows.length ? (
-              <Table>
-                <thead><tr><th className="th">Código</th><th className="th">Nome do produto</th><th className="th text-right">Gr de uso</th><th className="th text-right">Estoque disponível</th><th className="th text-right">Total pedido</th><th className="th text-right">Necessidade</th><th className="th text-right">Saldo restante</th><th className="th text-right">Conversão para quilos</th><th className="th">Situação</th></tr></thead>
+              <Table dense>
+                <thead><tr><th className="th">Código</th><th className="th">Referência</th><th className="th">Nome do produto</th><th className="th text-right hidden xl:table-cell">Gr de uso</th><th className="th text-right">Estoque disp.</th><th className="th text-right">Total pedido</th><th className="th text-right">Necessidade</th><th className="th text-right hidden xl:table-cell">Saldo restante</th><th className="th text-right">Quilos</th><th className="th">Situação</th></tr></thead>
                 <tbody>{needRows.map((r) => <NeedTr key={r.code} r={r} />)}</tbody>
               </Table>
             ) : <EmptyState icon={<Factory className="size-5" />} title="Nada a calcular" description="Importe o cadastro, o estoque atual e o pedido." />}
@@ -215,6 +220,7 @@ export default function ProductionPage() {
         title="Importar cadastro (Produção)"
         description="Exportação do ERP: Código, Referência, Descrição do Produto. Identifica pelo código: novo cadastra, igual ignora, diferente vai para ajuste manual."
         templateName="modelo-cadastro-producao.xlsx"
+        modes={MODES('Código novo cadastra; igual ignora; diferente vai para ajuste manual.')}
         columns={[
           { key: 'code', label: 'Código', example: '612', required: true },
           { key: 'reference', label: 'Referência', example: 'ISA POTE C/ST' },
@@ -228,13 +234,13 @@ export default function ProductionPage() {
           return { code: String(code).replace(/\.0+$/, ''), reference: pick(row, ['referencia', 'ref']) || null, description };
         }}
         preview={(r) => [r.code, r.reference ?? '—', r.description]}
-        onImport={async (rows) => {
-          const r = await importProdCatalog(rows);
+        onImport={async (rows, mode) => {
+          const r = await importProdCatalog(mode as ProdImportMode, rows);
           setInconsistencies(r.inconsistencies);
           if (r.inconsistencies.length) setView('cadastro');
           await logActivity({ kind: 'producao', title: 'Cadastro da Produção importado', body: `${r.created} novo(s), ${r.unchanged} já cadastrado(s), ${r.inconsistencies.length} para ajuste`, link: '/producao', actor_id: session?.user.id, actor_name: profile?.name ?? null });
           invalidate();
-          return `Cadastro: ${r.created} novo(s), ${r.unchanged} já existiam${r.inconsistencies.length ? `, ${r.inconsistencies.length} com diferença — confira em Ajuste manual` : ''}.`;
+          return `Cadastro: ${r.created} novo(s), ${r.unchanged} já existiam${r.removed ? `, ${r.removed} apagado(s) pela substituição` : ''}${r.inconsistencies.length ? `, ${r.inconsistencies.length} com diferença — confira em Ajuste manual` : ''}.`;
         }}
       />
 
@@ -244,6 +250,7 @@ export default function ProductionPage() {
         title="Importar estoque atual (Produção)"
         description="Mesma exportação do ERP: Código, Local de Estoque, Saldo. Soma os locais 1 e 5 por código. Só atualiza códigos do cadastro; a base de cálculo não muda."
         templateName="modelo-estoque-producao.xlsx"
+        modes={MODES('Quem está no arquivo tem o estoque substituído (não soma); quem não está fica como estava.')}
         columns={[
           { key: 'code', label: 'Código', example: '612', required: true },
           { key: 'stock1', label: 'local 1', example: '10' },
@@ -265,8 +272,8 @@ export default function ProductionPage() {
           return { code: c, location, qty };
         }}
         preview={(r) => [r.code, r.location != null ? String(r.location) : `1: ${fmtDec(r.stock1)} · 5: ${fmtDec(r.stock5)}`, r.qty != null ? fmtDec(r.qty) : fmtDec((r.stock1 ?? 0) + (r.stock5 ?? 0))]}
-        onImport={async (rows) => {
-          const r = await importProdStock(rows);
+        onImport={async (rows, mode) => {
+          const r = await importProdStock(mode as ProdImportMode, rows);
           invalidate();
           const miss = r.unmatched.length ? ` ${r.unmatched.length} código(s) fora do cadastro ignorado(s): ${r.unmatched.slice(0, 6).join(', ')}${r.unmatched.length > 6 ? '…' : ''}.` : '';
           return `Estoque atualizado em ${r.updated} produto(s).${r.ignored ? ` ${r.ignored} linha(s) de outros locais ignorada(s).` : ''}${miss}`;
@@ -279,8 +286,8 @@ export default function ProductionPage() {
         products={products.data ?? []}
         aliases={(aliases.data ?? []).map((a) => ({ product_code: a.code, client_code: a.client_code, normalized: normalizedKey(a.raw) }))}
         matchOptions={settings.data ? { threshold: settings.data.match_threshold, margin: settings.data.match_margin } : undefined}
-        onDone={async (source, matched, pend) => {
-          const r = await importProdDemand(source, matched, pend);
+        onDone={async (mode, source, matched, pend) => {
+          const r = await importProdDemand(mode, source, matched, pend);
           await logActivity({ kind: 'producao', title: 'Pedido importado na Produção', body: `${r.matched} item(ns) reconhecido(s)${r.pending ? `, ${r.pending} para ajuste manual` : ''}`, link: '/producao', actor_id: session?.user.id, actor_name: profile?.name ?? null });
           invalidate();
           setView(r.pending ? 'pedido' : 'produzir');
@@ -293,19 +300,29 @@ export default function ProductionPage() {
 
 const fmtUse = (g: number) => (g >= 1000 ? `${fmtKg(g / 1000)} kg` : `${fmtInt(g)} g`);
 
+/** "CXA 1 X 48 60G" -> 60; "10 KG" -> 10000; sem peso -> null. */
+function packagingGrams(packaging: string | null): number | null {
+  if (!packaging) return null;
+  const m = packaging.match(/(\d+(?:[.,]\d+)?)\s*(kg|g)\b/i);
+  if (!m) return null;
+  const n = Number(m[1].replace(',', '.'));
+  return Math.round(m[2].toLowerCase() === 'kg' ? n * 1000 : n);
+}
+
 const STATUS: Record<NeedRow['status'], string> = { produzir: 'Produzir', atendido: 'Atendido pelo estoque', sem_pedido: 'Sem pedido' };
 
 function NeedTr({ r }: { r: NeedRow }) {
   return (
     <tr className={r.status === 'produzir' ? 'bg-brand-soft/30' : ''}>
       <td className="td font-mono text-xs text-muted">{r.code}</td>
-      <td className="td font-medium">{r.name}</td>
-      <td className="td num text-right text-muted">{r.useG != null ? fmtUse(r.useG) : '—'}</td>
+      <td className="td"><Badge tone={/POTE/i.test(r.reference ?? '') ? 'brand' : 'neutral'}>{r.reference ?? '—'}</Badge></td>
+      <td className="td font-medium" title={r.description}>{r.name}{r.brand && <span className="ml-1 text-xs font-normal text-muted">{r.brand}</span>}</td>
+      <td className="td num text-right text-muted hidden xl:table-cell">{r.useG != null ? fmtUse(r.useG) : '—'}</td>
       <td className="td num text-right">{fmtInt(r.available)}</td>
-      <td className="td num text-right">{fmtInt(r.ordered)} <span className="text-xs text-muted">({fmtDec(r.orderedBoxes)} cx)</span></td>
-      <td className={`td num text-right font-bold ${r.need > 0 ? 'text-brand' : 'text-muted'}`}>{r.need > 0 ? <>{fmtInt(r.need)} <span className="text-xs font-normal">({fmtDec(r.needBoxes)} cx)</span></> : '0'}</td>
-      <td className="td num text-right text-muted">{fmtInt(r.remaining)}</td>
-      <td className="td num text-right font-semibold">{r.need > 0 ? `${fmtKg(r.kg)} kg` : '—'}</td>
+      <td className="td num text-right whitespace-nowrap">{fmtInt(r.ordered)}<span className="block text-[11px] text-muted">{fmtDec(r.orderedBoxes)} cx</span></td>
+      <td className={`td num text-right whitespace-nowrap font-bold ${r.need > 0 ? 'text-brand' : 'text-muted'}`}>{r.need > 0 ? <>{fmtInt(r.need)}<span className="block text-[11px] font-normal">{fmtDec(r.needBoxes)} cx</span></> : '0'}</td>
+      <td className="td num text-right text-muted hidden xl:table-cell">{fmtInt(r.remaining)}</td>
+      <td className="td num text-right font-semibold whitespace-nowrap">{r.need > 0 ? `${fmtKg(r.kg)} kg` : '—'}</td>
       <td className="td whitespace-nowrap"><Badge tone={r.status === 'produzir' ? 'brand' : r.status === 'atendido' ? 'ok' : 'neutral'} dot>{STATUS[r.status]}</Badge></td>
     </tr>
   );
@@ -330,18 +347,18 @@ function PendingRow({ p, products, onResolve, onDiscard, canWrite }: { p: ProdPe
   );
 }
 
-function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, onDone }: { open: boolean; onClose: () => void; products: ProdProduct[]; aliases: Array<{ product_code: string; client_code: string | null; normalized: string | null }>; matchOptions?: { threshold: number; margin: number }; onDone: (source: string, matched: ProdDemandInput[], pending: ProdPendingInput[]) => Promise<void> }) {
+function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, onDone }: { open: boolean; onClose: () => void; products: ProdProduct[]; aliases: Array<{ product_code: string; client_code: string | null; normalized: string | null }>; matchOptions?: { threshold: number; margin: number }; onDone: (mode: ProdImportMode, source: string, matched: ProdDemandInput[], pending: ProdPendingInput[]) => Promise<void> }) {
   const [file, setFile] = useState<File | null>(null);
+  const [mode, setMode] = useState<ProdImportMode | ''>('');
   const [lines, setLines] = useState<PedidoPreviewLine[]>([]);
   const [busy, setBusy] = useState(false);
   const [warnings, setWarnings] = useState<string[]>([]);
 
-  function reset() { setFile(null); setLines([]); setWarnings([]); onClose(); }
+  function reset() { setFile(null); setLines([]); setWarnings([]); setMode(''); onClose(); }
 
   async function onFile(f: File) {
     setFile(f); setBusy(true);
     try {
-      const matchable = products.map((p) => ({ code: p.code, description: p.description }));
       const out: PedidoPreviewLine[] = [];
       if (/\.pdf$/i.test(f.name)) {
         const pages = await extractRowsFromFile(await f.arrayBuffer());
@@ -349,11 +366,23 @@ function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, on
         setWarnings(parsed.warnings);
         for (const o of parsed.orders) {
           const store = o.deliveryCnpj ? `${o.orderNumber ?? ''} ${o.city ?? ''}`.trim() || o.deliveryCnpj : o.orderNumber;
-          for (const c of consolidateItems([o])) {
-            const m = matchProduct({ clientCode: c.clientCode, description: c.description }, matchable, aliases, matchOptions);
+          // agrupa por codigo do cliente (ou descricao) mantendo a embalagem, que traz o peso do pote
+          const grouped = new Map<string, { clientCode: string | null; description: string; packaging: string | null; boxes: number }>();
+          for (const it of o.items) {
+            const key = it.clientCode ?? it.description;
+            const cur = grouped.get(key) ?? { clientCode: it.clientCode, description: it.description, packaging: it.packaging, boxes: 0 };
+            cur.boxes += it.quantityBoxes;
+            grouped.set(key, cur);
+          }
+          for (const [key, c] of grouped) {
+            const grams = packagingGrams(c.packaging);
+            // com o peso da embalagem, so concorrem produtos daquele peso (evita casar pote de 100 g com saco de 10 kg)
+            const pool = grams != null ? products.filter((p) => p.weight_g === grams) : products;
+            const candidates = (pool.length ? pool : products).map((p) => ({ code: p.code, description: `${p.name} ${p.brand ?? ''}`.trim() }));
+            const m = matchProduct({ clientCode: c.clientCode, description: c.description.replace(/^HF\./i, '') }, candidates, aliases, matchOptions);
             const prod = m.productCode ? products.find((p) => p.code === m.productCode) : undefined;
             const upb = prod?.units_per_box ?? 48;
-            out.push({ key: `${o.orderNumber}-${c.key}`, store, clientCode: c.clientCode, description: c.description, boxes: c.boxes, units: c.boxes * upb, code: prod?.code ?? null, productName: prod?.name ?? null, status: m.status, candidates: m.candidates.slice(0, 3) });
+            out.push({ key: `${o.orderNumber}-${key}`, store, clientCode: c.clientCode, description: `${c.description}${c.packaging ? ` · ${c.packaging}` : ''}`, boxes: c.boxes, units: c.boxes * upb, code: prod?.code ?? null, productName: prod?.name ?? null, status: m.status, candidates: m.candidates.slice(0, 3) });
           }
         }
       } else {
@@ -381,12 +410,12 @@ function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, on
   }
 
   async function confirm() {
-    if (!file) return;
+    if (!file || !mode) return;
     setBusy(true);
     try {
       const matched: ProdDemandInput[] = lines.filter((l) => l.code).map((l) => ({ code: l.code!, raw_description: l.description, store: l.store, boxes: l.boxes, units: l.units }));
       const pend: ProdPendingInput[] = lines.filter((l) => !l.code).map((l) => ({ raw_description: l.description, client_code: l.clientCode, store: l.store, boxes: l.boxes, units: l.units, candidates: l.candidates }));
-      await onDone(file.name, matched, pend);
+      await onDone(mode, file.name, matched, pend);
       reset();
     } catch (e) {
       toast.error(`Falha na importação: ${(e as Error).message}`);
@@ -395,8 +424,16 @@ function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, on
 
   const ok = lines.filter((l) => l.code).length;
   return (
-    <Dialog open={open} onClose={reset} title="Importar pedido (Produção)" description="PDF das lojas (uma loja por página) ou planilha: Código + 'pedido ttl' (unidades) ou Código + Caixas. Itens reconhecidos entram na necessidade; os outros vão para ajuste manual." wide footer={<><Button variant="outline" onClick={reset}>Cancelar</Button><Button onClick={confirm} loading={busy} disabled={!lines.length} icon={<Check className="size-4" />}>Importar {lines.length ? `${lines.length} item(ns)` : ''}</Button></>}>
+    <Dialog open={open} onClose={reset} title="Importar pedido (Produção)" description="PDF das lojas (uma loja por página) ou planilha: Código + 'pedido ttl' (unidades) ou Código + Caixas. Itens reconhecidos entram na necessidade; os outros vão para ajuste manual." wide footer={<><Button variant="outline" onClick={reset}>Cancelar</Button><Button onClick={confirm} loading={busy} disabled={!lines.length || !mode} icon={<Check className="size-4" />}>Importar {lines.length ? `${lines.length} item(ns)` : ''}</Button></>}>
       <div className="flex flex-col gap-4">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {MODES('Soma ao pedido que já está na tela (outra loja, outro dia).').map((m) => (
+            <label key={m.value} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${mode === m.value ? 'border-brand bg-brand-soft/40' : 'border-line hover:bg-surface-2'}`}>
+              <input type="radio" name="pedido-mode" className="mt-1 accent-brand" value={m.value} checked={mode === m.value} onChange={() => setMode(m.value as ProdImportMode)} />
+              <span><b>{m.label} pedido</b><span className="block text-xs text-muted">{m.value === 'substituir' ? 'Apaga o pedido atual e os itens pendentes; grava só este arquivo.' : m.description}</span></span>
+            </label>
+          ))}
+        </div>
         <Dropzone accept=".pdf,.xlsx,.xls,.csv" onFile={onFile} file={file} label="Arraste o PDF do pedido ou a planilha" hint="Mantém o cálculo atual: total pedido − estoque disponível, caixas de 48." />
         {busy && !lines.length && <div className="flex items-center gap-2 text-sm text-muted"><Spinner /> Lendo o arquivo…</div>}
         {warnings.length > 0 && <div className="rounded-xl border border-warn/30 bg-warn/5 p-3 text-xs text-muted">{warnings.slice(0, 5).map((w, i) => <div key={i}>{w}</div>)}</div>}
