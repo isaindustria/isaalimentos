@@ -31,6 +31,7 @@ export default function ProductionPage() {
   const [inconsistencies, setInconsistencies] = useState<ProdInconsistency[]>([]);
   const [editing, setEditing] = useState<Partial<ProdProduct> | null>(null);
   const [onlyOrdered, setOnlyOrdered] = useState(true);
+  const [refFilter, setRefFilter] = useState<string[]>([]);
 
   const products = useQuery({ queryKey: ['prod-products'], queryFn: listProdProducts });
   const stock = useQuery({ queryKey: ['prod-stock'], queryFn: listProdStock });
@@ -41,7 +42,11 @@ export default function ProductionPage() {
   const invalidate = () => ['prod-products', 'prod-stock', 'prod-demand', 'prod-pending', 'prod-aliases'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
 
   const { rows, info } = useMemo(() => computeNeed(products.data ?? [], stock.data ?? [], demand.data ?? []), [products.data, stock.data, demand.data]);
-  const needRows = onlyOrdered ? rows.filter((r) => r.ordered > 0) : rows;
+  const references = useMemo(() => [...new Set((products.data ?? []).map((p) => p.reference ?? 'Sem referência'))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [products.data]);
+  const refOf = (code: string) => products.data?.find((p) => p.code === code)?.reference ?? 'Sem referência';
+  const inRef = (ref: string | null) => !refFilter.length || refFilter.includes(ref ?? 'Sem referência');
+  const visibleProducts = (products.data ?? []).filter((p) => inRef(p.reference));
+  const needRows = (onlyOrdered ? rows.filter((r) => r.ordered > 0) : rows).filter((r) => inRef(refOf(r.code)));
   const stockBy = useMemo(() => new Map((stock.data ?? []).map((s) => [s.code, s])), [stock.data]);
 
   const applyInc = useMutation({ mutationFn: (i: ProdInconsistency) => applyProdInconsistency(i.code, i.incoming.description, i.incoming.reference), onSuccess: (_, i) => { setInconsistencies((l) => l.filter((x) => x.code !== i.code)); invalidate(); toast.success(`Código ${i.code} atualizado.`); }, onError: (e: Error) => toast.error(e.message) });
@@ -88,6 +93,15 @@ export default function ProductionPage() {
         ))}
       </div>
 
+      {references.length > 1 && view !== 'pedido' && (
+        <div className="no-print mb-3 flex flex-wrap items-center gap-1.5">
+          <button type="button" onClick={() => setRefFilter([])} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${refFilter.length === 0 ? 'border-brand bg-brand text-brand-ink' : 'border-line text-muted hover:bg-surface-2'}`}>Todas</button>
+          {references.map((r) => (
+            <button key={r} type="button" onClick={() => setRefFilter((v) => (v.includes(r) ? v.filter((x) => x !== r) : [...v, r]))} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${refFilter.includes(r) ? 'border-brand bg-brand text-brand-ink' : 'border-line text-muted hover:bg-surface-2'}`}>{r}</button>
+          ))}
+        </div>
+      )}
+
       {view === 'cadastro' && (
         <div className="flex flex-col gap-4">
           {inconsistencies.length > 0 && (
@@ -108,13 +122,12 @@ export default function ProductionPage() {
           <Card padded={false}>
             {products.data?.length ? (
               <Table>
-                <thead><tr><th className="th">Código</th><th className="th">Referência</th><th className="th">Nome do produto</th><th className="th text-right">Gr de uso</th><th className="th text-right">Estoque 1</th><th className="th text-right">Estoque 5</th><th className="th text-right">Estoque disponível</th><th className="th" /></tr></thead>
-                <tbody>{products.data.map((p) => { const s = stockBy.get(p.code); const s1 = Number(s?.stock1 ?? 0), s5 = Number(s?.stock5 ?? 0); return (
+                <thead><tr><th className="th">Código</th><th className="th">Referência</th><th className="th">Nome do produto</th><th className="th text-right">Estoque 1</th><th className="th text-right">Estoque 5</th><th className="th text-right">Estoque disponível</th><th className="th" /></tr></thead>
+                <tbody>{visibleProducts.map((p) => { const s = stockBy.get(p.code); const s1 = Number(s?.stock1 ?? 0), s5 = Number(s?.stock5 ?? 0); return (
                   <tr key={p.code}>
                     <td className="td font-mono text-xs text-muted">{p.code}</td>
                     <td className="td"><Badge tone={/POTE/i.test(p.reference ?? '') ? 'brand' : 'neutral'}>{p.reference ?? '—'}</Badge></td>
                     <td className="td font-medium">{p.name}{p.brand && <span className="ml-1 text-xs font-normal text-muted">{p.brand}</span>}</td>
-                    <td className="td num text-right">{p.use_g != null ? <>{fmtUse(p.use_g)}{p.no_margin && <span className="ml-1 text-[10px] text-muted">sem margem</span>}</> : '—'}</td>
                     <td className="td num text-right text-muted">{fmtInt(s1)}</td>
                     <td className="td num text-right text-muted">{fmtInt(s5)}</td>
                     <td className="td num text-right font-semibold">{fmtInt(s1 + s5)}</td>
