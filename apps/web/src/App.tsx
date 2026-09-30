@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { RealtimeProvider } from './hooks/useRealtime';
 import { TooltipProvider } from './components/ui/tooltip';
 import { Splash } from './components/Splash';
+import { RecoveryDialog } from './components/RecoveryDialog';
 import { isDesktop } from './lib/desktop';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
@@ -56,6 +57,7 @@ export default function App() {
   return (
     <HashRouter>
       {splash && <Splash onDone={() => setSplash(false)} />}
+      <RecoveryDialog />
       <RealtimeProvider>
       <TooltipProvider>
       <Suspense fallback={<FullSpinner />}>

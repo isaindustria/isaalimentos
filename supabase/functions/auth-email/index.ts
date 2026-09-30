@@ -85,10 +85,11 @@ Deno.serve(async (req) => {
     };
     const { user, email_data: e } = data;
     const kind = e.email_action_type;
-    const siteUrl = (e.site_url || SITE).replace(/\/$/, '');
+    // site_url do hook ja vem como https://<ref>.supabase.co/auth/v1; usa a URL do projeto para nao duplicar /auth/v1.
+    const authBase = `${(Deno.env.get('SUPABASE_URL') ?? e.site_url ?? '').replace(/\/$/, '').replace(/\/auth\/v1$/, '')}/auth/v1`;
     const redirect = e.redirect_to || SITE;
     const type = kind === 'signup' ? 'signup' : kind === 'recovery' ? 'recovery' : kind === 'invite' ? 'invite' : kind === 'email_change' ? 'email_change' : 'magiclink';
-    const url = `${siteUrl}/auth/v1/verify?token=${encodeURIComponent(e.token_hash)}&type=${type}&redirect_to=${encodeURIComponent(redirect)}`;
+    const url = `${authBase}/verify?token=${encodeURIComponent(e.token_hash)}&type=${type}&redirect_to=${encodeURIComponent(redirect)}`;
     const to = kind === 'email_change' && e.new_email ? e.new_email : user.email;
     const body = html(kind, { email: user.email, newEmail: e.new_email ?? '', url, token: e.token });
     const subject = (COPY[kind] ?? COPY.magiclink).subject;
