@@ -1,0 +1,10 @@
+shots/
+vo2/
+prev/
+node_modules/
+*.wav
+*.mp3
+*.mp4
+*_build.html
+timeline*.json
+script*_t.json

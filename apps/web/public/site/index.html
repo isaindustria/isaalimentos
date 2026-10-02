@@ -52,6 +52,9 @@
   .sec { padding: 6rem 0; }
   .sec-head { max-width: 60ch; }
   .sec-head p { color: var(--mute); margin-top: 1rem; font-size: 1.1rem; }
+  .video-frame { margin: 2.6rem 0 0; border-radius: 24px; overflow: hidden; background: var(--cocoa); border: 1px solid var(--line); box-shadow: 0 34px 70px -34px rgba(31,22,21,.5); }
+  .video-frame video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--cocoa); }
+  .video-note { margin-top: .9rem; color: var(--mute); font-size: .92rem; }
   @media (max-width: 760px) { .sec { padding: 4.2rem 0; } }
 
   /* Splash */
@@ -323,6 +326,7 @@
     <a class="brand" href="/"><img src="/brand/logo.png" alt="ISA Alimentos" width="50" height="44" /> ISA Alimentos</a>
     <nav class="menu" aria-label="Principal">
       <a href="#como-funciona">Como funciona</a>
+      <a href="#video">Vídeo</a>
       <a href="#produtos">Produtos</a>
       <a href="#recursos">Recursos</a>
       <a href="#sobre">A ISA</a>
@@ -335,7 +339,7 @@
 </header>
 <div class="mobile" id="mobile" aria-hidden="true">
   <button class="close" id="close" aria-label="Fechar menu"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-  <a href="#como-funciona">Como funciona</a><a href="#produtos">Produtos</a><a href="#recursos">Recursos</a><a href="#sobre">A ISA</a><a href="#baixar">Baixar</a>
+  <a href="#como-funciona">Como funciona</a><a href="#video">Vídeo</a><a href="#produtos">Produtos</a><a href="#recursos">Recursos</a><a href="#sobre">A ISA</a><a href="#baixar">Baixar</a>
   <a class="btn btn-yellow" style="font-size:1.1rem;margin-top:1rem" href="https://app.isaindalimentos.com.br">Entrar no sistema</a>
 </div>
 
@@ -429,6 +433,22 @@
         </table>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="sec video-sec" id="video">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="rule"></span>
+      <h2>Veja o sistema funcionando em 1 minuto.</h2>
+      <p>Do PDF da loja à ordem de produção, nas telas do próprio sistema.</p>
+    </div>
+    <figure class="video-frame reveal">
+      <video controls preload="none" playsinline poster="./video/isa-sistema-1min.jpg" width="1920" height="1080" aria-label="Vídeo de 1 minuto mostrando o sistema ISA">
+        <source src="./video/isa-sistema-1min.mp4" type="video/mp4" />
+      </video>
+    </figure>
+    <p class="video-note">Telas reais do sistema com dados de exemplo.</p>
   </div>
 </section>
 

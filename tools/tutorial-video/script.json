@@ -1,0 +1,84 @@
+[
+ {"ch": "", "title": "Como usar o sistema ISA", "intro": true, "beats": [
+  {"shot": "login", "say": "Olá! Neste vídeo você vai aprender a usar o sistema da ISA Alimentos, do começo ao fim."},
+  {"shot": "login", "say": "Vamos ver cada parte com calma: acesso, painel, estoque, pedidos, produção, cadastros, insumos e configurações."}
+ ]},
+ {"ch": "1", "title": "Acesso ao sistema", "beats": [
+  {"shot": "login", "say": "O sistema funciona no navegador, no celular e também como programa no Windows. As informações são as mesmas em todos eles."},
+  {"shot": "login", "focus": "email", "cursor": "email", "click": true, "say": "Para entrar, digite o seu e-mail e a sua senha."},
+  {"shot": "login_filled", "focus": "entrar", "cursor": "entrar", "click": true, "hl": "entrar", "say": "Depois, é só clicar em Entrar."},
+  {"shot": "login", "focus": "criar", "cursor": "criar", "hl": "criar", "say": "Quem ainda não tem acesso clica em Criar conta. A conta fica esperando a aprovação de um administrador."},
+  {"shot": "login", "focus": "esqueci", "cursor": "esqueci", "hl": "esqueci", "say": "Esqueceu a senha? Clique em Esqueci a senha. O link chega no seu e-mail, e você cria uma senha nova antes de entrar."}
+ ]},
+ {"ch": "2", "title": "Painel", "beats": [
+  {"shot": "dash", "say": "Depois de entrar, você chega no Painel. Ele mostra o resumo do dia."},
+  {"shot": "dash", "focus": "stats", "hl": "stats", "say": "Aqui em cima estão os números principais: faturamento, pedidos abertos, quanto falta produzir e itens para conferir."},
+  {"shot": "dash", "focus": "needs", "hl": "needs", "say": "Logo abaixo aparecem os produtos que mais precisam ser produzidos agora."},
+  {"shot": "dash", "focus": "menu", "hl": "menu", "cursor": "menu", "say": "No menu da esquerda ficam todas as áreas do sistema. É só clicar para trocar de tela."},
+  {"shot": "dash_bell", "cursor": "bell", "click": true, "focus": "bellArea", "say": "No sininho chegam os avisos da equipe: pedidos novos, estoque atualizado, produção concluída e recados."}
+ ]},
+ {"ch": "3", "title": "Estoque", "beats": [
+  {"shot": "estoque", "focus": "table", "say": "Na tela de Estoque você vê o saldo de cada produto, somando os locais um e cinco."},
+  {"shot": "estoque", "focus": "importar", "cursor": "importar", "hl": "importar", "say": "Para atualizar, clique em Importar planilha."},
+  {"shot": "estoque_import", "focus": "dialog", "say": "Escolha a planilha de estoque que sai do sistema da fábrica. A importação nova sempre substitui a anterior, então o estoque fica sempre atualizado."},
+  {"shot": "estoque_busca", "focus": "busca", "cursor": "busca", "click": true, "hl": "busca", "say": "Use a busca para achar um produto pelo código ou pelo nome."},
+  {"shot": "estoque_lanc", "focus": "table", "hl": "table", "say": "Na aba Lançamentos você registra entradas, saídas e perdas feitas à mão. Tudo fica guardado com o nome de quem lançou."}
+ ]},
+ {"ch": "4", "title": "Pedidos", "beats": [
+  {"shot": "pedidos", "focus": "table", "say": "Em Pedidos ficam os pedidos das lojas, com cliente, data de entrega, valor e situação."},
+  {"shot": "pedidos", "focus": "importar", "cursor": "importar", "click": true, "hl": "importar", "say": "Para lançar pedidos, clique em Importar PDF."},
+  {"shot": "ped_import", "focus": "drop", "cursor": "drop", "hl": "drop", "say": "Arraste aqui os PDFs das lojas. Pode soltar vários de uma vez. O sistema lê cada item sozinho e transforma em caixas e unidades."},
+  {"shot": "conferencia", "say": "Se o sistema ficar em dúvida sobre algum produto, o item vai para a Conferência."},
+  {"shot": "conferencia_sel", "focus": "sug", "cursor": "sug", "click": true, "hl": "sug", "say": "Você escolhe o produto certo na lista de sugestões."},
+  {"shot": "conferencia_sel", "focus": "confirmar", "cursor": "confirmar", "click": true, "hl": "confirmar", "say": "E clica em Confirmar. O sistema aprende, e na próxima vez já reconhece sozinho."},
+  {"shot": "pedido_det", "focus": "table", "say": "Abrindo um pedido, você vê todos os itens, com quantidades e valores."},
+  {"shot": "pedidos", "focus": "novo", "cursor": "novo", "hl": "novo", "say": "E também dá para lançar um pedido à mão, pelo botão Novo pedido."}
+ ]},
+ {"ch": "5", "title": "Produção", "beats": [
+  {"shot": "prod", "say": "A Produção é um módulo independente. Ela tem o próprio cadastro, o próprio estoque e o próprio pedido."},
+  {"shot": "prod", "focus": "cards", "hl": "cards", "say": "São três cartões: Cadastro de produtos, Estoque e Pedido, e Produzir."},
+  {"shot": "prod", "focus": "cad", "cursor": "cad", "click": true, "hl": "cad", "say": "Comece pelo botão Importar cadastro, com a planilha de produtos do sistema da fábrica."},
+  {"shot": "prod_cad_open", "focus": "dialog", "cursor": "drop", "say": "Solte a planilha aqui. Antes de importar, o sistema sempre pergunta: incluir ou substituir."},
+  {"shot": "prod_cad_file", "focus": "modes", "hl": "modes", "say": "Incluir mantém o que já existe e acrescenta o que é novo. Substituir apaga tudo e grava só o que está na planilha."},
+  {"shot": "prod_cad_file", "focus": "confirm", "cursor": "confirm", "click": true, "hl": "confirm", "say": "Confira a prévia e clique para importar."},
+  {"shot": "prod_cadastro", "focus": "ajuste", "hl": "ajuste", "say": "O peso sai sozinho da descrição. Código novo é cadastrado, código igual é ignorado, e o que estiver diferente vai para ajuste manual, para você decidir."},
+  {"shot": "prod", "focus": "est", "cursor": "est", "click": true, "hl": "est", "say": "Depois, clique em Importar estoque atual. O sistema soma os locais um e cinco de cada produto."},
+  {"shot": "prod_ped_open", "focus": "dialog", "say": "Em seguida, Importar pedido: pode ser o PDF das lojas ou uma planilha."},
+  {"shot": "prod_pedido", "focus": "pend", "hl": "pend", "say": "No cartão Estoque e Pedido você confere as linhas do pedido e resolve os itens que precisam de ajuste."},
+  {"shot": "prod_produzir", "focus": "table", "say": "No cartão Produzir está a conta pronta: o total pedido, menos o estoque disponível, dá a necessidade de produção."},
+  {"shot": "prod_produzir", "focus": "info", "hl": "info", "say": "O sistema também converte tudo para quilos, usando o peso de uso de cada pote, e mostra o resumo nestes cartões."},
+  {"shot": "prod_produzir", "focus": "exp", "cursor": "exp", "hl": "exp", "say": "Para mandar para a fábrica, use Exportar produzir, que baixa em Excel."},
+  {"shot": "prod_produzir", "focus": "imp", "cursor": "imp", "click": true, "hl": "imp", "say": "Ou Imprimir, que manda direto para a impressora."},
+  {"shot": "prod_produzir", "focus": "sit", "hl": "sit", "say": "Lembre: a ISA produz sobre pedido. Produto sem pedido não aparece para produzir."}
+ ]},
+ {"ch": "6", "title": "Clientes, produtos e preços", "beats": [
+  {"shot": "clientes", "focus": "group", "hl": "group", "say": "Em Clientes ficam as lojas, separadas por rede. O CNPJ é a identidade de cada cliente."},
+  {"shot": "clientes", "focus": "novo", "cursor": "novo", "hl": "novo", "say": "Clientes novos são criados sozinhos quando chega um pedido, mas você também pode cadastrar à mão ou importar uma planilha."},
+  {"shot": "cliente_det", "say": "Abrindo um cliente, você vê os pedidos dele e pode anotar ligações, visitas e mensagens."},
+  {"shot": "produtos", "focus": "table", "say": "Em Produtos ficam os itens que a ISA vende, com código, descrição, peso e caixa de quarenta e oito."},
+  {"shot": "precos", "focus": "table", "say": "Em Preços você cadastra o preço por caixa: geral, por rede ou por loja. Vale sempre o mais específico."}
+ ]},
+ {"ch": "7", "title": "Insumos e compras", "beats": [
+  {"shot": "insumos", "focus": "table", "say": "Em Insumos e compras você controla a matéria-prima, os potes, as tampas, as caixas e as etiquetas."},
+  {"shot": "insumos", "focus": "cons", "cursor": "cons", "click": true, "hl": "cons", "say": "Clique em Importar consumo."},
+  {"shot": "ins_cons_file", "focus": "dialog", "say": "E solte a planilha de consumo da fábrica, do jeito que ela sai. Aqui também você escolhe incluir ou substituir."},
+  {"shot": "ins_controle", "focus": "table", "say": "Na aba Controle de estoque, o sistema calcula a média de consumo por mês e quantos meses o estoque ainda aguenta."},
+  {"shot": "ins_controle", "focus": "comprar", "hl": "comprar", "say": "Quando o estoque não cobre nem um mês, aparece o aviso de comprar agora. Se o consumo mudou muito de um mês para o outro, aparece um alerta para conferir."},
+  {"shot": "ins_controle", "focus": "exp", "cursor": "exp", "hl": "exp", "say": "O botão Exportar planilha baixa essa tabela em Excel."}
+ ]},
+ {"ch": "8", "title": "Rotas, relatórios e auditoria", "beats": [
+  {"shot": "rotas", "focus": "table", "hl": "table", "say": "Em Rotas de entrega você junta os pedidos por cidade e gera o romaneio e as etiquetas para o motorista."},
+  {"shot": "relatorios", "say": "Em Relatórios você vê as vendas por produto e por loja, em qualquer período, e pode imprimir ou baixar em Excel."},
+  {"shot": "auditoria", "focus": "table", "say": "E a Auditoria mostra quem alterou o quê, e quando."},
+  {"shot": "auditoria", "focus": "desfazer", "cursor": "desfazer", "hl": "desfazer", "say": "Se alguém errou, o administrador pode desfazer a alteração."}
+ ]},
+ {"ch": "9", "title": "Configurações", "beats": [
+  {"shot": "config_users", "focus": "sec", "hl": "sec", "cursor": "aprovar", "say": "Em Configurações, o administrador aprova quem pediu acesso e escolhe a área e o nível de cada pessoa."},
+  {"shot": "config_users", "focus": "users", "hl": "users", "say": "Visualizador só consulta. Editor altera na própria área. Administrador pode tudo."},
+  {"shot": "config_push", "focus": "sec", "hl": "sec", "say": "Aqui você também ativa as notificações no celular, para receber os avisos mesmo com o aplicativo fechado."},
+  {"shot": "config_backup", "focus": "sec", "hl": "sec", "say": "E todo dia, às três da manhã, o sistema faz uma cópia de segurança de tudo, guardada por trinta dias."}
+ ]},
+ {"ch": "", "title": "Pronto!", "outro": true, "beats": [
+  {"shot": "dash", "say": "Pronto! Agora você já sabe usar o sistema da ISA. Qualquer dúvida, consulte a documentação ou fale com o administrador."}
+ ]}
+]

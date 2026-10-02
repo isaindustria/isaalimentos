@@ -37,6 +37,12 @@
   .nav-links{display:flex;gap:18px;align-items:center}
   .nav-back{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim)}
   .nav-back:hover{color:var(--red)}
+  .video{margin:0 0 8px}
+  .video video{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:var(--radius);border:1px solid var(--line-strong);background:#000}
+  .chapters{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .chapters button{font:500 13.5px var(--body);color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+  .chapters button b{font-family:var(--mono);font-weight:500;color:var(--yellow);margin-right:4px}
+  .chapters button:hover,.chapters button:focus-visible{color:var(--ink);border-color:var(--red)}
   .layout{display:grid;grid-template-columns:220px 1fr;gap:48px;max-width:var(--maxw);margin:0 auto;padding:48px 24px 96px}
   @media(max-width:820px){.layout{grid-template-columns:1fr;padding-top:32px}}
   .toc{position:sticky;top:84px;align-self:start;display:flex;flex-direction:column;gap:2px}
@@ -102,6 +108,7 @@
 
 <div class="layout">
   <nav class="toc" aria-label="Sumário">
+    <a href="#video">Vídeo do sistema</a>
     <a href="#novidades">Novidades</a>
     <a href="#acesso">Acesso e instalação</a>
     <a href="#importar">Estoque e pedidos</a>
@@ -126,6 +133,25 @@
       </div>
     </header>
 
+    <section class="doc video" id="video">
+      <h2>Vídeo: o sistema completo</h2>
+      <p>Seis minutos, com narração e legenda, passando por todas as telas na ordem do dia a dia. Clique num capítulo para pular direto para ele. As telas são do próprio sistema, com dados de exemplo.</p>
+      <video id="tutorial" controls preload="metadata" playsinline poster="/site/video/isa-tutorial.jpg" width="1920" height="1080">
+        <source src="/site/video/isa-tutorial.mp4" type="video/mp4" />
+      </video>
+      <div class="chapters" aria-label="Capítulos do vídeo">
+        <button type="button" data-t="16"><b>0:16</b> Acesso ao sistema</button>
+        <button type="button" data-t="44"><b>0:44</b> Painel</button>
+        <button type="button" data-t="74"><b>1:14</b> Estoque</button>
+        <button type="button" data-t="103"><b>1:43</b> Pedidos</button>
+        <button type="button" data-t="143"><b>2:23</b> Produção</button>
+        <button type="button" data-t="228"><b>3:48</b> Clientes, produtos e preços</button>
+        <button type="button" data-t="262"><b>4:22</b> Insumos e compras</button>
+        <button type="button" data-t="297"><b>4:57</b> Rotas, relatórios e auditoria</button>
+        <button type="button" data-t="318"><b>5:18</b> Configurações</button>
+      </div>
+    </section>
+
     <section class="doc" id="novidades">
       <h2>1. Novidades por versão</h2>
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
@@ -133,6 +159,7 @@
       <div class="rel cur">
         <span class="v">v1.5.3 – v1.6.4</span><span class="d">08/09/2026</span><span class="tag">atual</span>
         <ul>
+          <li><strong>Vídeo tutorial</strong> do sistema completo (6 min, com capítulos) no topo desta página, e um vídeo de 1 minuto na página inicial.</li>
           <li>Toda importação da Produção (cadastro, estoque e pedido — planilha ou PDF) pergunta <strong>Incluir ou Substituir</strong> antes de gravar. <strong>Apagar cadastro</strong> (só administrador, digitando APAGAR) limpa o módulo inteiro.</li>
           <li><strong>Menu recolhível</strong> no computador ("Recolher menu" no topo do menu): fica só com os ícones e libera espaço para as tabelas. Tabela de Produzir mais compacta.</li>
           <li>Programa do Windows confere atualização a cada 3 min e ao voltar o foco; a janela de atualização ficou nítida, mostra o progresso do download e a versão atual x nova.</li>
@@ -396,7 +423,8 @@
       <h3>Nesta documentação</h3>
       <ul>
         <li>Prints de cada tela ao lado do passo a passo.</li>
-        <li>Vídeo curto (1–2 min) por seção, gravado no próprio sistema.</li>
+        <li>Atualizar o vídeo tutorial a cada versão que mudar uma tela (hoje ele mostra a v1.6.4).</li>
+        <li>Versão do vídeo em formato vertical, para mandar pelo WhatsApp para quem usa no celular.</li>
         <li>Página de <strong>perguntas frequentes</strong> alimentada pelas dúvidas reais da equipe.</li>
         <li>Modelos de planilha pra baixar direto daqui (estoque, matéria-prima, consumo, clientes, produtos).</li>
       </ul>
@@ -411,6 +439,7 @@
 <footer>© 2026 ISA Indústria de Alimentos e Temperos · Documentação de uso interno</footer>
 
 <script>
+document.querySelectorAll(".chapters button").forEach(function(b){b.addEventListener("click",function(){var v=document.getElementById("tutorial");v.currentTime=+b.dataset.t;v.play();});});
 (function(){
   var links = document.querySelectorAll(".toc a");
   var sections = Array.prototype.map.call(links, function(a){ return document.querySelector(a.getAttribute("href")); });

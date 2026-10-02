@@ -1,0 +1,19 @@
+[
+ {"ch": "", "title": "O sistema ISA em 1 minuto", "sub": "Do pedido da loja à linha de produção", "intro": true, "beats": [
+  {"shot": "login", "say": "Conheça o sistema da ISA Alimentos: do pedido da loja até a linha de produção, tudo num lugar só."}
+ ]},
+ {"ch": "", "title": "Visão geral", "nocard": true, "beats": [
+  {"shot": "dash", "focus": "stats", "hl": "stats", "say": "No Painel, você vê o resumo do dia: faturamento, pedidos abertos e quanto falta produzir."},
+  {"shot": "ped_import", "focus": "drop", "cursor": "drop", "hl": "drop", "say": "Os pedidos das lojas chegam em PDF. É só arrastar, e o sistema lê cada item sozinho."},
+  {"shot": "conferencia_sel", "focus": "sug", "cursor": "sug", "click": true, "hl": "sug", "say": "Quando fica em dúvida, ele pergunta uma vez e aprende para as próximas."},
+  {"shot": "estoque", "focus": "table", "say": "O estoque é atualizado com a planilha da fábrica, somando os locais um e cinco."},
+  {"shot": "prod_produzir", "focus": "table", "say": "Na Produção, a conta sai pronta: total pedido menos estoque, em unidades e em quilos."},
+  {"shot": "prod_produzir", "focus": "exp", "cursor": "exp", "click": true, "hl": "exp", "say": "É só exportar ou imprimir e mandar para a fábrica."},
+  {"shot": "ins_controle", "focus": "comprar", "hl": "comprar", "say": "Em Insumos, o sistema avisa quando é hora de comprar matéria-prima e embalagem."},
+  {"shot": "clientes", "focus": "group", "hl": "group", "say": "Clientes, preços, rotas de entrega e relatórios também ficam aqui."},
+  {"shot": "config_users", "focus": "users", "hl": "users", "say": "Cada pessoa tem o seu acesso, e todo dia é feita uma cópia de segurança."}
+ ]},
+ {"ch": "", "title": "ISA Alimentos", "outro": true, "end1": "Sistema ISA", "end2": "No navegador, no celular e no Windows", "beats": [
+  {"shot": "dash", "say": "Sistema ISA. Funciona no navegador, no celular e no Windows."}
+ ]}
+]
