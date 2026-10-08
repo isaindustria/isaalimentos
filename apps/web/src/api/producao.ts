@@ -125,7 +125,13 @@ export async function importProdDemand(mode: ProdImportMode, source: string, mat
 
 /** Ajuste manual de um item do pedido: vira demanda do produto escolhido e o sistema aprende o apelido. */
 export async function resolveProdPending(p: ProdPending, code: string) {
-  unwrap(await supabase.from('prod_demand').insert({ code, raw_description: p.raw_description, store: p.store, boxes: p.boxes, units: p.units, source: p.source }));
+  // pote avulso (PTE 1 X 1): as unidades vieram do PDF; as caixas seguem o cadastro do produto escolhido
+  let boxes = p.boxes;
+  if (/\b1\s*X\s*1\b/i.test(p.raw_description)) {
+    const prod = unwrap(await supabase.from('prod_products').select('units_per_box').eq('code', code).maybeSingle()) as { units_per_box: number } | null;
+    boxes = p.units / (prod?.units_per_box || 48);
+  }
+  unwrap(await supabase.from('prod_demand').insert({ code, raw_description: p.raw_description, store: p.store, boxes, units: p.units, source: p.source }));
   unwrap(await supabase.from('prod_aliases').upsert({ raw: p.raw_description, client_code: p.client_code, code }, { onConflict: 'raw' }));
   unwrap(await supabase.from('prod_pending').delete().eq('id', p.id));
 }

@@ -377,11 +377,12 @@ function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, on
         for (const o of parsed.orders) {
           const store = o.deliveryCnpj ? `${o.orderNumber ?? ''} ${o.city ?? ''}`.trim() || o.deliveryCnpj : o.orderNumber;
           // agrupa por codigo do cliente (ou descricao) mantendo a embalagem, que traz o peso do pote
-          const grouped = new Map<string, { clientCode: string | null; description: string; packaging: string | null; boxes: number }>();
+          const grouped = new Map<string, { clientCode: string | null; description: string; packaging: string | null; qty: number; inUnits: boolean }>();
           for (const it of o.items) {
             const key = it.clientCode ?? it.description;
-            const cur = grouped.get(key) ?? { clientCode: it.clientCode, description: it.description, packaging: it.packaging, boxes: 0 };
-            cur.boxes += it.quantityBoxes;
+            // embalagem "PTE 1 X 1" (pote avulso, ex.: ISA Frut): a Qtde do PDF ja vem em unidades; "CXA 1 X 48" vem em caixas
+            const cur = grouped.get(key) ?? { clientCode: it.clientCode, description: it.description, packaging: it.packaging, qty: 0, inUnits: it.unitsPerBox === 1 };
+            cur.qty += it.quantityBoxes;
             grouped.set(key, cur);
           }
           for (const [key, c] of grouped) {
@@ -392,7 +393,8 @@ function PedidoImportDialog({ open, onClose, products, aliases, matchOptions, on
             const m = matchProduct({ clientCode: c.clientCode, description: c.description.replace(/^HF\./i, '') }, candidates, aliases, matchOptions);
             const prod = m.productCode ? products.find((p) => p.code === m.productCode) : undefined;
             const upb = prod?.units_per_box ?? 48;
-            out.push({ key: `${o.orderNumber}-${key}`, store, clientCode: c.clientCode, description: `${c.description}${c.packaging ? ` · ${c.packaging}` : ''}`, boxes: c.boxes, units: c.boxes * upb, code: prod?.code ?? null, productName: prod?.name ?? null, status: m.status, candidates: m.candidates.slice(0, 3) });
+            const units = c.inUnits ? c.qty : c.qty * upb, boxes = c.inUnits ? c.qty / upb : c.qty;
+            out.push({ key: `${o.orderNumber}-${key}`, store, clientCode: c.clientCode, description: `${c.description}${c.packaging ? ` · ${c.packaging}` : ''}`, boxes, units, code: prod?.code ?? null, productName: prod?.name ?? null, status: m.status, candidates: m.candidates.slice(0, 3) });
           }
         }
       } else {
