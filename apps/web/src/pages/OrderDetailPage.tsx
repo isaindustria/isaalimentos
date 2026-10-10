@@ -16,7 +16,7 @@ export default function OrderDetailPage() {
   const { id = '' } = useParams();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { isAdmin, session, profile } = useAuth();
+  const { isAdmin, isSeller, session, profile } = useAuth();
   const rt = useRealtime();
   const editors = rt.editorsOf(`order:${id}`);
   const order = useQuery({ queryKey: ['order', id], queryFn: () => getOrder(id) });
@@ -60,19 +60,22 @@ export default function OrderDetailPage() {
   const boxes = o.items.reduce((s, i) => s + Number(i.quantity_boxes), 0);
   const units = o.items.reduce((s, i) => s + Number(i.quantity_units), 0);
   const unresolved = o.items.filter((i) => !i.product_code).length;
+  const sales = o.items.length > 0 && o.items.every((i) => i.sale_unit);
+  const kg = o.items.filter((i) => i.sale_unit === 'kg').reduce((s, i) => s + Number(i.quantity ?? 0), 0);
+  const custName = o.customer?.name ?? o.customer_name;
 
   return (
     <>
       <PageHeader
         eyebrow="Pedido"
         title={`Pedido #${o.order_number ?? '—'}`}
-        description={<span>{o.customer ? <Link className="text-brand font-medium" to={`/clientes/${o.customer.id}`}>{o.customer.name}</Link> : 'Sem cliente'} · {formatCnpj(o.customer?.cnpj)} · emitido em {fmtDate(o.order_date)}</span>}
+        description={<span>{o.customer && !isSeller ? <Link className="text-brand font-medium" to={`/clientes/${o.customer.id}`}>{o.customer.name}</Link> : custName ?? 'Sem cliente'} · {formatCnpj(o.customer?.cnpj ?? o.customer_cnpj)}{o.seller_name ? ` · vendedor ${o.seller_name}` : ''} · emitido em {fmtDate(o.order_date)}</span>}
         actions={
           <>
             <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(-1)}>Voltar</Button>
             <Button variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${id}/editar`)}>Editar</Button>
             <Button variant="outline" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Imprimir</Button>
-            {!o.stock_posted && <Button variant="outline" icon={<PackageMinus className="h-4 w-4" />} loading={post.isPending} onClick={() => confirm('Baixar do estoque (local 1) todas as unidades deste pedido?') && post.mutate()}>Baixar estoque</Button>}
+            {!o.stock_posted && !isSeller && <Button variant="outline" icon={<PackageMinus className="h-4 w-4" />} loading={post.isPending} onClick={() => confirm('Baixar do estoque (local 1) todas as unidades deste pedido?') && post.mutate()}>Baixar estoque</Button>}
             <Select className="w-44" value={o.status} onChange={(e) => status.mutate(e.target.value as OrderStatus)}>
               {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </Select>
@@ -83,8 +86,17 @@ export default function OrderDetailPage() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
         <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Status</div><div className="mt-1"><Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge></div></div>
         <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Valor</div><div className="font-display text-xl font-bold num">{fmtBRL(o.total_value)}</div></div>
-        <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Caixas</div><div className="font-display text-xl font-bold num">{fmtInt(boxes)}</div></div>
-        <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Unidades</div><div className="font-display text-xl font-bold num">{fmtInt(units)}</div></div>
+        {sales ? (
+          <>
+            <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Quilos</div><div className="font-display text-xl font-bold num">{kg.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}</div></div>
+            <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Unidades</div><div className="font-display text-xl font-bold num">{fmtInt(units)}</div></div>
+          </>
+        ) : (
+          <>
+            <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Caixas</div><div className="font-display text-xl font-bold num">{fmtInt(boxes)}</div></div>
+            <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Unidades</div><div className="font-display text-xl font-bold num">{fmtInt(units)}</div></div>
+          </>
+        )}
         <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Entrega</div><div className="font-display text-xl font-bold">{fmtDate(o.delivery_date)}</div><div className="text-xs text-muted">{o.payment_terms ? `pgto ${o.payment_terms} dias` : ''} {o.buyer ? `· ${o.buyer}` : ''}</div></div>
       </div>
       {editors.length > 0 && (
@@ -96,7 +108,33 @@ export default function OrderDetailPage() {
           <Link to="/pedidos/conferencia"><Button size="sm" variant="outline">Conferir</Button></Link>
         </div>
       )}
-      <Card title="Itens" padded={false}>
+      {sales && (
+        <Card title="Itens do pedido" padded={false}>
+          <Table>
+            <thead><tr><th className="th">Referência</th><th className="th">Código</th><th className="th">Produto</th><th className="th text-right">Quantidade</th><th className="th">Unidade de venda</th><th className="th text-right">Valor unitário</th><th className="th text-right">Valor total</th></tr></thead>
+            <tbody>
+              {o.items.map((it) => (
+                <tr key={it.id}>
+                  <td className="td text-xs">{it.product_reference ?? '—'}</td>
+                  <td className="td font-mono text-xs">{it.product_code}</td>
+                  <td className="td">{it.product_name ?? it.raw_description}</td>
+                  <td className="td text-right num">{Number(it.quantity ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })}</td>
+                  <td className="td">{it.sale_unit === 'kg' ? 'kg' : 'unidade'}</td>
+                  <td className="td text-right num">{fmtBRL(it.unit_price)}</td>
+                  <td className="td text-right num font-semibold">{fmtBRL(it.total_price)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          <dl className="ml-auto grid max-w-sm gap-1 p-5 text-sm">
+            <div className="flex justify-between"><dt className="text-muted">Subtotal dos itens</dt><dd className="num">{fmtBRL(o.subtotal_value ?? o.total_value)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted">Desconto financeiro{o.discount_pct ? ` (${String(o.discount_pct).replace('.', ',')}%)` : ''}</dt><dd className="num">− {fmtBRL(o.discount_value ?? 0)}</dd></div>
+            <div className="flex justify-between border-t border-line pt-1 font-semibold"><dt>Total</dt><dd className="num">{fmtBRL(o.total_value)}</dd></div>
+          </dl>
+          {o.notes && <p className="px-5 pb-5 text-sm text-muted">Observações: {o.notes}</p>}
+        </Card>
+      )}
+      {!sales && <Card title="Itens" padded={false}>
         <Table>
           <thead>
             <tr>
@@ -129,7 +167,7 @@ export default function OrderDetailPage() {
             ))}
           </tbody>
         </Table>
-      </Card>
+      </Card>}
     </>
   );
 }
