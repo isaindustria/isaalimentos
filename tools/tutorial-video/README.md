@@ -36,3 +36,13 @@ Exemplo completo em `pedido-venda/`:
 3. `python pedido-venda/make.py web` e `... mobile` (linha do tempo, trilha de fundo e mixagem; usa `composer2.html`).
 4. `NAME=v_web node render_tut.mjs full x saida.mp4` (idem `v_mobile`).
 5. Comprima (`ffmpeg -crf 26 -tune stillimage -movflags +faststart`) para `apps/web/public/site/video/`.
+
+### Versão atual do pipeline (1.7.4)
+
+- Roteiro: `pedido-venda/script2.json` (cada fala com `label`, o balão numerado do passo).
+- Voz: **Chatterbox Multilingual** (Resemble AI, licença MIT, código aberto), em português, imitando o timbre de `voz/ref_francisca.wav`.
+  Rode `python pedido-venda/tts_cb.py` num Python 3.11 com `chatterbox-tts` (cerca de 1 min por frase em CPU).
+  Escreva siglas como se fala ("cê ene pê jota") e números por extenso.
+- Conferência: `python pedido-venda/check_vo.py` transcreve cada fala, aponta as erradas (regere só elas: `tts_cb.py c010 c013`) e guarda o tempo de cada palavra para a legenda.
+- Montagem: `python pedido-venda/make3.py web|mobile` usa `composer3.html` (moldura de navegador/celular, balões por passo, transições, legenda palavra a palavra, resumo final).
+- Render: `NAME=v3_web node render_tut.mjs full x saida.mp4`. Comprima com `-vf format=yuv420p -profile:v high -level 4.1`.

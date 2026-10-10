@@ -19,6 +19,19 @@ export default function TutorialsPage() {
           <Card title={<span className="flex flex-wrap items-center gap-2">{cur.title} <Badge tone="info">versão {cur.version}</Badge>{cur.version === APP_VERSION && <Badge tone="ok">novidade</Badge>}</span>}>
             <TutorialPlayer t={cur} />
             <p className="mt-3 text-sm text-muted">{cur.summary}</p>
+            <div className="mt-6 space-y-5">
+              <h2 className="font-display text-lg font-bold">Passo a passo</h2>
+              {cur.steps.map((s) => (
+                <section key={s.title}>
+                  <h3 className="mb-2 font-semibold">{s.title}</h3>
+                  <ol className="space-y-2 text-sm leading-relaxed">
+                    {s.items.map((it, i) => (
+                      <li key={i} className="flex gap-3"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-brand">{i + 1}</span><span className="pt-0.5">{it}</span></li>
+                    ))}
+                  </ol>
+                </section>
+              ))}
+            </div>
           </Card>
         )}
         <Card title="Todos os tutoriais" padded={false}>

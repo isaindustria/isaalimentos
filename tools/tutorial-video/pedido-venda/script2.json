@@ -1,0 +1,29 @@
+[
+ {"ch": "", "title": "Pedido de venda", "sub": "Novidade da versão 1.7", "intro": true, "beats": [
+  {"shot": "cards", "say": "Oi! Nesta atualização, o pedido de venda ganhou cliente, vendedor, desconto financeiro e produtos em quilo ou unidade. Vem comigo que eu te mostro."}
+ ]},
+ {"ch": "1", "title": "Cadastros do ADM", "beats": [
+  {"shot": "cards", "focus": "cli", "hl": "cli", "label": "Só o ADM vê este cartão", "say": "Na aba Pedidos, o administrador tem o cartão Clientes. Só ele importa clientes e escolhe o vendedor de cada um."},
+  {"shot": "imp_cli_open", "focus": "modelo", "cursor": "modelo", "click": true, "hl": "modelo", "label": "Comece pelo modelo", "say": "Baixe o modelo e preencha quatro colunas: vendedor, cê ene pê jota, nome do cliente e desconto financeiro. Se o cliente tiver mais de um desconto, separe com ponto e vírgula."},
+  {"shot": "imp_cli_prev", "focus": "chips", "hl": "chips", "label": "Prévia antes de gravar", "say": "Antes de gravar, o sistema mostra o que é novo, o que já existe, o que está repetido e o que tem erro."},
+  {"shot": "imp_cli_prev", "focus": "table", "hl": "table", "label": "Linha e motivo de cada erro", "say": "Cada erro vem com a linha da planilha e o motivo. Como o cê ene pê jota identifica o cliente, ninguém fica duplicado."},
+  {"shot": "clientes", "focus": "seller", "cursor": "seller", "hl": "seller", "label": "Troca de vendedor registrada", "say": "Em Ver clientes, você troca o vendedor e ajusta os descontos. Toda troca de vendedor fica registrada."},
+  {"shot": "imp_prod_prev", "focus": "chips", "hl": "chips", "label": "Referência, código e nome", "say": "No cartão Produtos, importe a referência, o código e o nome. Os zeros na frente do código são mantidos."}
+ ]},
+ {"ch": "2", "title": "Lançar o pedido", "beats": [
+  {"shot": "novo", "focus": "cnpj", "cursor": "cnpj", "click": true, "hl": "cnpj", "label": "Nome ou CNPJ", "say": "Em Novo pedido, digite parte do nome ou do cê ene pê jota do cliente, com ou sem pontuação, e escolha na lista."},
+  {"shot": "novo_cli", "focus": "desconto", "hl": "desconto", "label": "Descontos do cliente", "say": "O outro campo é preenchido sozinho, o vendedor aparece, e os descontos desse cliente ficam prontos para escolher."},
+  {"shot": "item_ref", "focus": "ref", "cursor": "ref", "click": true, "hl": "ref", "label": "Filtre pela referência", "say": "Nos itens, escolha a referência para filtrar a lista. Depois, o produto, pelo código ou pelo nome."},
+  {"shot": "itens", "focus": "linha1", "hl": "linha1", "label": "Unidade automática", "say": "A unidade de venda vem sozinha. Os produtos Ander e Isa são vendidos em quilo. Pote de tempero, pote de fruta e revenda são vendidos em unidade."},
+  {"shot": "itens", "focus": "q1", "cursor": "q1", "click": true, "hl": "q1", "label": "10 kg × R$ 6,60 = R$ 66,00", "say": "Digite a quantidade e o valor unitário. Dez quilos a seis reais e sessenta dão sessenta e seis reais."},
+  {"shot": "totais", "focus": "totais", "hl": "totais", "label": "Subtotal − desconto = total", "say": "Embaixo, o subtotal, o desconto financeiro e o total. Trocou o desconto, o total muda na hora."},
+  {"shot": "erro_un", "focus": "q2", "hl": "q2", "label": "Aviso junto do campo", "say": "Se algo estiver errado, o aviso aparece em vermelho, ao lado do campo. Um produto vendido por unidade só aceita número inteiro."},
+  {"shot": "detalhe", "focus": "itens", "hl": "itens", "label": "Kg entra em kg na produção", "say": "Pedido salvo! Ele guarda os dados daquele momento, e os itens em quilo vão para a produção em quilo, sem conversão."}
+ ]},
+ {"ch": "3", "title": "Vendedor no celular", "beats": [
+  {"shot": "vendedor", "focus": "novo", "cursor": "novo", "hl": "novo", "label": "Só os pedidos dele", "say": "O vendedor entra pelo celular e só vê a aba Pedidos, os clientes dele e os pedidos que ele mesmo lançou."}
+ ]},
+ {"ch": "", "title": "Pronto!", "outro": true, "end1": "Pedido de venda", "end2": "Este vídeo fica em Tutoriais", "summary": ["Clientes e produtos por planilha, com prévia", "Cliente por nome ou CNPJ, com desconto", "Kg ou unidade automática pela referência", "Vendedor vê só os pedidos dele"], "beats": [
+  {"shot": "detalhe_top", "say": "Resumindo: cadastros por planilha, cliente por nome ou cê ene pê jota, unidade automática e cada vendedor com os seus pedidos. Bom trabalho!"}
+ ]}
+]
