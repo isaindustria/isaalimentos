@@ -112,6 +112,7 @@
     <a href="#novidades">Novidades</a>
     <a href="#acesso">Acesso e instalação</a>
     <a href="#importar">Estoque e pedidos</a>
+    <a href="#vendas">Pedido de venda</a>
     <a href="#producao">Produção</a>
     <a href="#cadastros">Cadastros</a>
     <a href="#insumos">Insumos e compras</a>
@@ -127,7 +128,7 @@
       <h1 class="title">Como usar o sistema ISA</h1>
       <p class="lede">Guia direto pra quem opera o dia a dia: do pedido da loja à ordem de produção, sem planilha na mão. O que muda em cada versão fica registrado aqui.</p>
       <div class="meta">
-        <span class="pill">versão atual <b>1.6.5</b></span>
+        <span class="pill">versão atual <b>1.7.0</b></span>
         <span class="pill">web · celular (PWA) · Windows</span>
         <span class="pill">uso interno</span>
       </div>
@@ -157,7 +158,17 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.5.3 – v1.6.5</span><span class="d">08/10/2026</span><span class="tag">atual</span>
+        <span class="v">v1.7.0</span><span class="d">10/10/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Pedido de venda</strong>: cliente por nome ou CNPJ, desconto financeiro do cadastro do cliente, itens por referência, código ou produto, unidade de venda pela referência (Ander e ISA em kg; pote temp., pote frut. e revenda em unidade) e totais com subtotal, desconto e total.</li>
+          <li>Na aba Pedidos, cartões <strong>Clientes</strong> (só ADM: importar, vincular vendedor, descontos) e <strong>Produtos</strong> (importar referência, código e nome), com prévia, motivo de cada erro e confirmação antes de atualizar.</li>
+          <li>Perfil <strong>Vendedor</strong>: vê só os clientes ligados a ele e os pedidos que ele lançou, também no banco de dados. O ADM vê tudo.</li>
+          <li>Itens em kg entram na produção em kg, sem conversão. Pedidos antigos continuam como estavam.</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.5.3 – v1.6.5</span><span class="d">08/10/2026</span>
         <ul>
           <li><strong>Pedido em potes avulsos (ISA Frut)</strong>: quando a embalagem do PDF é <code>PTE 1 X 1</code>, a quantidade já está em unidades. 120 potes de Amêndoa Confeitada com caixa de 60 viram 120 un. e 2 caixas (antes virava 120 caixas). Pedidos de temperos (<code>CXA 1 X 48</code>) continuam em caixas.</li>
           <li><strong>Vídeo tutorial</strong> do sistema completo (6 min, com capítulos) no topo desta página, e um vídeo de 1 minuto na página inicial.</li>
@@ -277,6 +288,25 @@
         <div class="lbl">Sem planilha</div>
         Estoque, pedidos, clientes e produtos também têm botão <strong>Novo</strong> pra lançar direto no sistema. Entradas e baixas manuais ficam em <strong>Estoque → Movimentações</strong>.
       </div>
+    </section>
+
+    <section class="doc" id="vendas">
+      <h2>Pedido de venda e vendedores</h2>
+      <h3>Cadastros (ADM)</h3>
+      <ul>
+        <li>Pedidos → cartão <strong>Clientes</strong> → Importar cadastro de clientes. Colunas: Vendedor, CNPJ, Nome do cliente/loja e Desconto financeiro ("nenhum" ou vários com ponto e vírgula, ex.: 3%;1%).</li>
+        <li>O CNPJ identifica o cliente. O vendedor é ligado pelo nome ou e-mail da conta dele; quem não tiver conta fica só para o ADM até ser ligado em "Ver clientes".</li>
+        <li>Cartão <strong>Produtos</strong> → Importar produtos: Referência, Código e Nome. O código identifica o produto.</li>
+        <li>As duas importações mostram a prévia, pedem confirmação para atualizar o que já existe e nunca apagam quem ficou fora do arquivo.</li>
+      </ul>
+      <h3>Lançar o pedido</h3>
+      <ul>
+        <li>Digite o nome ou o CNPJ do cliente e escolha na lista; o vendedor e os descontos dele aparecem sozinhos.</li>
+        <li>Nos itens, escolha a referência (opcional) e o produto pelo código ou nome. A unidade de venda vem da referência: kg aceita até 3 casas decimais, unidade só números inteiros.</li>
+        <li>Valor total do item = quantidade × valor unitário. O pedido mostra subtotal, desconto financeiro e total.</li>
+      </ul>
+      <h3>Vendedor</h3>
+      <p>Crie a conta do vendedor e aprove em Configurações → Usuários com a área <strong>Vendedor</strong>. Ele só vê a aba Pedidos, os clientes ligados a ele e os pedidos que ele lançou. Ao trocar o vendedor de um cliente, os pedidos antigos continuam com quem os digitou.</p>
     </section>
 
     <section class="doc" id="producao">

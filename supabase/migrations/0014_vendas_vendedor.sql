@@ -101,4 +101,42 @@ insert into public.app_settings (key, value)
 values ('sale_unit_rules', '{"ander": "kg", "isa": "kg", "pote temp": "un", "pote frut": "un", "revenda": "un"}')
 on conflict (key) do nothing;
 
--- 6. Regras de acesso do vendedor (RLS): PENDENTE de aprovacao do responsavel antes de escrever e aplicar.
+-- 6. Acesso (aprovado pelo responsavel em 10/10/2026): as regras atuais continuam e somamos
+--    (a) regras RESTRITIVAS que so limitam o vendedor (os demais perfis nao mudam) e
+--    (b) regras que deixam o vendedor gravar apenas os proprios pedidos.
+drop policy if exists seller_scope on public.customers;
+create policy seller_scope on public.customers as restrictive for all to authenticated
+  using (not public.is_seller() or seller_id = auth.uid())
+  with check (not public.is_seller());
+
+drop policy if exists seller_scope on public.orders;
+create policy seller_scope on public.orders as restrictive for all to authenticated
+  using (not public.is_seller() or created_by = auth.uid())
+  with check (not public.is_seller() or (created_by = auth.uid()
+    and exists (select 1 from public.customers c where c.id = customer_id and c.seller_id = auth.uid())));
+drop policy if exists seller_write on public.orders;
+create policy seller_write on public.orders for all to authenticated
+  using (public.is_seller()) with check (public.is_seller());
+
+drop policy if exists seller_scope on public.order_items;
+create policy seller_scope on public.order_items as restrictive for all to authenticated
+  using (not public.is_seller() or exists (select 1 from public.orders o where o.id = order_id and o.created_by = auth.uid()))
+  with check (not public.is_seller() or exists (select 1 from public.orders o where o.id = order_id and o.created_by = auth.uid()));
+drop policy if exists seller_write on public.order_items;
+create policy seller_write on public.order_items for all to authenticated
+  using (public.is_seller()) with check (public.is_seller());
+
+-- Demais tabelas de pedidos, clientes, estoque, producao e compras: o vendedor nao le nem grava.
+do $$
+declare t text;
+begin
+  foreach t in array array['activities', 'order_imports', 'product_aliases', 'customer_interactions', 'customer_seller_log', 'production_runs', 'production_run_items',
+    'stock_movements', 'stock_imports', 'stock_balances', 'audit_log', 'purchase_orders', 'purchase_order_items', 'delivery_routes',
+    'prod_products', 'prod_stock', 'prod_demand', 'prod_pending', 'prod_aliases', 'supplies', 'supply_consumption', 'product_bom']
+  loop
+    if to_regclass('public.' || t) is not null then
+      execute format('drop policy if exists seller_block on public.%I', t);
+      execute format('create policy seller_block on public.%I as restrictive for all to authenticated using (not public.is_seller()) with check (not public.is_seller())', t);
+    end if;
+  end loop;
+end $$;
