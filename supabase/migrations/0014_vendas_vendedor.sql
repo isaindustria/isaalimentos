@@ -44,18 +44,18 @@ alter table public.customer_seller_log enable row level security;
 drop policy if exists adm_select on public.customer_seller_log;
 create policy adm_select on public.customer_seller_log for select to authenticated using (public.is_adm());
 
--- So o ADM define o vendedor; toda troca fica registrada.
+-- So o ADM define o vendedor (tarefas do servidor, sem usuario logado, tambem podem); toda troca fica registrada.
 create or replace function public.customers_seller_guard() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'INSERT' then
-    if (new.seller_id is not null or new.seller_name is not null) and not public.is_adm() then
+    if (new.seller_id is not null or new.seller_name is not null) and auth.uid() is not null and not public.is_adm() then
       new.seller_id := null; new.seller_name := null;
     end if;
     return new;
   end if;
   if new.seller_id is distinct from old.seller_id or new.seller_name is distinct from old.seller_name then
-    if not public.is_adm() then
+    if auth.uid() is not null and not public.is_adm() then
       raise exception 'Somente o administrador pode definir o vendedor do cliente.';
     end if;
     insert into public.customer_seller_log (customer_id, old_seller_id, new_seller_id, old_seller_name, new_seller_name)
