@@ -9,6 +9,7 @@ import { Badge, Button, Card, EmptyState, Input, PageHeader, Select, Table, Tabs
 import { fmtBRL, fmtDate, fmtDateTime, fmtInt } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
+import { SalesCards } from '@/components/SalesCards';
 
 export const STATUS_LABEL: Record<OrderStatus, { label: string; tone: 'info' | 'brand' | 'ok' | 'neutral' | 'danger' }> = {
   aberto: { label: 'Aberto', tone: 'info' },
@@ -21,7 +22,7 @@ export const STATUS_LABEL: Record<OrderStatus, { label: string; tone: 'info' | '
 export default function OrdersPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { isAdmin, canWriteArea } = useAuth();
+  const { isAdmin, isSeller, canWriteArea } = useAuth();
   const [tab, setTab] = useState<'pedidos' | 'importacoes'>('pedidos');
   const [filters, setFilters] = useState<OrderFilters>({ status: 'todos' });
 
@@ -65,9 +66,15 @@ export default function OrdersPage() {
                 </Link>
               </>
             )}
+            {isSeller && (
+              <Link to="/pedidos/novo">
+                <Button icon={<Plus className="h-4 w-4" />}>Novo pedido</Button>
+              </Link>
+            )}
           </>
         }
       />
+      <SalesCards />
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <Tabs value={tab} onChange={setTab} items={[{ value: 'pedidos', label: 'Pedidos', count: orders.data?.length }, { value: 'importacoes', label: 'Importações', count: imports.data?.length }]} />

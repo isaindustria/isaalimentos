@@ -17,12 +17,27 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEditLock } from '@/hooks/useRealtime';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Users } from 'lucide-react';
+import SalesOrderForm from './SalesOrderForm';
+
+/**
+ * Pedido novo usa o formulário de venda (kg/unidade, desconto financeiro).
+ * Pedido antigo (itens em caixas, sem unidade de venda) abre no formulário antigo para não alterar valores já salvos.
+ */
+export default function OrderFormPage() {
+  const { id } = useParams();
+  const existing = useQuery({ queryKey: ['order', id], queryFn: () => getOrder(id!), enabled: Boolean(id) });
+  if (!id) return <SalesOrderForm />;
+  if (existing.isLoading || !existing.data) return <div className="grid place-items-center py-20"><Spinner /></div>;
+  const legacy = existing.data.items.some((it) => !it.sale_unit) || existing.data.source !== 'manual';
+  return legacy ? <LegacyOrderForm /> : <SalesOrderForm key={id} existing={existing.data} />;
+}
 
 interface Line extends ManualOrderItemInput {
   key: number;
 }
 
-export default function OrderFormPage() {
+/** Formulário antigo (caixas × un/cx), mantido para abrir pedidos lançados antes do pedido de venda. */
+function LegacyOrderForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();

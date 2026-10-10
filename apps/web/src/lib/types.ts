@@ -1,6 +1,6 @@
 import type { MatchStatus, Candidate } from '@/domain/matching';
 
-export type Role = 'admin' | 'gestor' | 'comercial' | 'estoque' | 'producao' | 'operador';
+export type Role = 'admin' | 'gestor' | 'comercial' | 'estoque' | 'producao' | 'operador' | 'vendedor';
 
 export const ROLE_LABEL: Record<Role, string> = {
   admin: 'Administrador',
@@ -9,12 +9,13 @@ export const ROLE_LABEL: Record<Role, string> = {
   estoque: 'Estoque',
   producao: 'Produção',
   operador: 'Operador',
+  vendedor: 'Vendedor',
 };
 
 /** Areas de escrita (item 6 do v1.3): cada papel so altera as telas da propria area; gestor e admin alteram tudo. */
 export type Area = 'compras' | 'estoque' | 'producao';
 export const AREA_LABEL: Record<Area, string> = { compras: 'Comercial / Compras (insumos, pedidos, clientes, preços, rotas)', estoque: 'Estoque (estoque e produtos)', producao: 'Produção (ordens de produção)' };
-export const ROLE_AREAS: Record<Role, Area[]> = { admin: ['compras', 'estoque', 'producao'], gestor: ['compras', 'estoque', 'producao'], comercial: ['compras'], estoque: ['estoque'], producao: ['producao'], operador: [] };
+export const ROLE_AREAS: Record<Role, Area[]> = { admin: ['compras', 'estoque', 'producao'], gestor: ['compras', 'estoque', 'producao'], comercial: ['compras'], estoque: ['estoque'], producao: ['producao'], operador: [], vendedor: [] };
 
 export type ProfileStatus = 'pendente' | 'ativo' | 'bloqueado';
 export type Access = 'admin' | 'editor' | 'visualizador';
@@ -109,6 +110,11 @@ export interface Customer {
   email: string | null;
   contact_name: string | null;
   notes: string | null;
+  /** Vendedor responsável (usuário) e nome exibido; só o ADM altera. */
+  seller_id?: string | null;
+  seller_name?: string | null;
+  /** Descontos financeiros do cliente, em %; vazio = nenhum. */
+  financial_discounts?: number[] | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -153,6 +159,14 @@ export interface Order {
   source: string;
   notes: string | null;
   stock_posted?: boolean;
+  /** Pedido de venda: quem lançou, retrato do cliente/vendedor no momento do salvamento e desconto financeiro. */
+  created_by?: string | null;
+  customer_name?: string | null;
+  customer_cnpj?: string | null;
+  seller_name?: string | null;
+  subtotal_value?: number | null;
+  discount_pct?: number | null;
+  discount_value?: number | null;
   created_at: string;
   updated_at: string;
   customer?: Pick<Customer, 'id' | 'name' | 'cnpj' | 'city' | 'state' | 'group_name'> | null;
@@ -175,6 +189,11 @@ export interface OrderItem {
   match_status: MatchStatus;
   match_score: number | null;
   candidates: Candidate[];
+  /** Pedido de venda: unidade de venda (kg/un), quantidade nessa unidade e retrato do produto. */
+  sale_unit?: 'kg' | 'un' | null;
+  quantity?: number | null;
+  product_reference?: string | null;
+  product_name?: string | null;
   product?: Pick<Product, 'code' | 'description'> | null;
   order?: Pick<Order, 'id' | 'order_number' | 'order_date' | 'customer_id'> & { customer?: Pick<Customer, 'name'> | null };
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen,
@@ -119,7 +119,8 @@ function UpdateBanner() {
 }
 
 export default function AppShell() {
-  const { profile, session, signOut, canWriteArea } = useAuth();
+  const { profile, session, signOut, canWriteArea, isSeller } = useAuth();
+  const location = useLocation();
   const { dark, toggle } = useTheme();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem('isa-sidebar') === 'collapsed'; } catch { return false; } });
@@ -127,7 +128,10 @@ export default function AppShell() {
   const navigate = useNavigate();
   const pending = useQuery({ queryKey: ['pending-items'], queryFn: listPendingItems, refetchInterval: 60_000 });
   const modules = useQuery({ queryKey: ['modules'], queryFn: getModules });
-  const nav = NAV.filter((n) => !('module' in n) || !n.module || modules.data?.[n.module] !== false);
+  // Vendedor só usa Pedidos (e a própria conta em Configurações); o resto é bloqueado também no banco.
+  const SELLER_PATHS = ['/pedidos', '/configuracoes'];
+  const nav = NAV.filter((n) => (!('module' in n) || !n.module || modules.data?.[n.module] !== false) && (!isSeller || SELLER_PATHS.includes(n.to)));
+  const sellerBlocked = isSeller && !SELLER_PATHS.some((p) => location.pathname.startsWith(p));
   const pendingCount = pending.data?.length ?? 0;
 
   return (
@@ -222,7 +226,7 @@ export default function AppShell() {
             </button>
           )}
           <OnlineUsers meId={session?.user.id} />
-          {canWriteArea('compras') && <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>}
+          {(canWriteArea('compras') || isSeller) && <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>}
           <NotificationsBell />
           <button className="h-9 w-9 rounded-xl grid place-items-center text-muted hover:bg-surface-2" onClick={toggle} title="Alternar tema">
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -231,7 +235,7 @@ export default function AppShell() {
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto animate-fade-up">
             <PushPrompt />
-            <Outlet />
+            {sellerBlocked ? <Navigate to="/pedidos" replace /> : <Outlet />}
           </div>
         </main>
       </div>

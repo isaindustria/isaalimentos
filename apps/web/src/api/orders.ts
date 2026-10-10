@@ -371,7 +371,7 @@ export async function postOrderStock(orderId: string, userId?: string | null): P
   if (order.stock_posted) return 0;
   const items = unwrap(await supabase.from('order_items').select('product_code, quantity_units').eq('order_id', orderId).not('product_code', 'is', null)) as Array<{ product_code: string; quantity_units: number }>;
   const moves = await addMovements(
-    items.map((i) => ({ product_code: i.product_code, location: 1, quantity: Number(i.quantity_units), kind: 'venda' as const, reason: `Pedido #${order.order_number ?? ''}`, reference_type: 'order', reference_id: orderId, created_by: userId ?? null })),
+    items.filter((i) => Number(i.quantity_units) > 0).map((i) => ({ product_code: i.product_code, location: 1, quantity: Number(i.quantity_units), kind: 'venda' as const, reason: `Pedido #${order.order_number ?? ''}`, reference_type: 'order', reference_id: orderId, created_by: userId ?? null })),
   );
   unwrap(await supabase.from('orders').update({ stock_posted: true }).eq('id', orderId));
   return moves.length;

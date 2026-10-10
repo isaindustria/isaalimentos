@@ -8,6 +8,8 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
+  /** Vendedor: vê só os clientes vinculados a ele e os pedidos que ele lançou. */
+  isSeller: boolean;
   /** Conta aprovada e ativa. */
   isActive: boolean;
   /** Pode criar/alterar registros (editor ou admin). */
@@ -62,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       isAdmin: profile?.status === 'ativo' && (profile?.access === 'admin' || profile?.is_superadmin === true),
+      isSeller: profile?.status === 'ativo' && profile?.role === 'vendedor' && profile?.access !== 'admin' && !profile?.is_superadmin,
       isActive: profile?.status === 'ativo',
       canWrite: profile?.status === 'ativo' && (profile?.access === 'admin' || profile?.access === 'editor'),
       canWriteArea(area) {

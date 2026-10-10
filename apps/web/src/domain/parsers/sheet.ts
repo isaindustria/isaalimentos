@@ -46,6 +46,32 @@ export function readSheet(data: ArrayBuffer | Uint8Array): SheetResult {
   return { headers, rows, sheetName };
 }
 
+/**
+ * Like readSheet, but every cell comes as the text Excel shows (keeps "00123" from text or custom-formatted cells).
+ * Also returns the spreadsheet line number of each row, for error messages.
+ */
+export function readSheetText(data: ArrayBuffer | Uint8Array): SheetResult & { lines: number[] } {
+  const wb = XLSX.read(data, { type: 'array', cellDates: false });
+  const sheetName = wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const matrix = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: false, defval: '' });
+  const hi = Math.max(0, matrix.findIndex((r) => (r ?? []).filter((c) => String(c ?? '').trim()).length >= 2));
+  const headers = (matrix[hi] ?? []).map((h) => String(h ?? '').trim());
+  const rows: Record<string, string>[] = [];
+  const lines: number[] = [];
+  for (let i = hi + 1; i < matrix.length; i++) {
+    const r = matrix[i] ?? [];
+    if (!r.some((c) => String(c ?? '').trim())) continue;
+    const obj: Record<string, string> = {};
+    headers.forEach((h, idx) => {
+      if (h) obj[normalizeHeader(h)] = String(r[idx] ?? '').trim();
+    });
+    rows.push(obj);
+    lines.push(i + 1);
+  }
+  return { headers, rows, sheetName, lines };
+}
+
 /** Picks the first matching column (by normalized aliases) from a row. */
 export function pick(row: Record<string, string>, aliases: string[]): string {
   for (const a of aliases) {
