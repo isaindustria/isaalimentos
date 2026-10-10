@@ -42,9 +42,13 @@ export const TUTORIALS: Tutorial[] = [
   },
 ];
 
-/** O programa do Windows não leva os vídeos dentro do instalador: busca no site. */
-const BASE = isDesktop ? 'https://www.isaindalimentos.com.br/site/video/' : '/site/video/';
-export const videoUrl = (file: string) => BASE + file;
+/**
+ * Endereço completo no site, igual no navegador, no celular e no programa do Windows
+ * (o programa não leva os vídeos no instalador). No navegador, o próprio domínio do app também serve os vídeos.
+ */
+const ORIGIN = !isDesktop && typeof window !== 'undefined' && /^https?:$/.test(window.location.protocol) ? window.location.origin : 'https://www.isaindalimentos.com.br';
+const BASE = `${ORIGIN}/site/video/`;
+export const videoUrl = (file: string) => `${BASE}${file}?v=2`;
 
 /** Tutorial mais novo lançado entre duas versões (exclui `after`, inclui `upTo`). */
 export function tutorialBetween(after: string | null, upTo: string): Tutorial | undefined {
