@@ -21,3 +21,18 @@ Pré-requisitos: Node com `playwright-core` (Chromium do Playwright instalado), 
 Para a versão de 1 minuto, rode os passos 4 a 6 com `NAME=_short` no ambiente.
 
 Para publicar, comprima com `ffmpeg -crf 27 -tune stillimage -movflags +faststart` e substitua os arquivos em `apps/web/public/site/video/`. Se os capítulos mudarem de tempo, atualize os botões de capítulo em `site/docs.html`.
+
+## Tutoriais por atualização (a partir da 1.7.1)
+
+Regra: toda versão que muda uma tela ganha um tutorial em vídeo, em duas versões (computador 16:9 e celular 9:16).
+Ele entra em `apps/web/src/lib/tutorials.ts`, aparece na página **Tutoriais** do menu, na janela de novidade
+ao entrar na versão nova e no aviso de atualização do programa do Windows.
+
+Exemplo completo em `pedido-venda/`:
+
+1. `node pedido-venda/capture.mjs web` e `... mobile` (telas com banco simulado, dados fictícios).
+2. Voz: Kokoro (código aberto, Apache 2.0, roda no computador), voz `pf_dora`, num Python 3.11:
+   `python pedido-venda/tts_kokoro.py`.
+3. `python pedido-venda/make.py web` e `... mobile` (linha do tempo, trilha de fundo e mixagem; usa `composer2.html`).
+4. `NAME=v_web node render_tut.mjs full x saida.mp4` (idem `v_mobile`).
+5. Comprima (`ffmpeg -crf 26 -tune stillimage -movflags +faststart`) para `apps/web/public/site/video/`.

@@ -12,5 +12,6 @@ if (!existsSync(src)) {
   process.exit(1);
 }
 rmSync(dest, { recursive: true, force: true });
-cpSync(src, dest, { recursive: true });
+// O site público (landing, docs e vídeos) fica de fora: o programa abre os vídeos pela internet.
+cpSync(src, dest, { recursive: true, filter: (p) => !path.relative(src, p).split(path.sep).includes('site') });
 console.log('Copied web build to', dest);

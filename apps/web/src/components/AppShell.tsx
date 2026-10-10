@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen,
-} from 'lucide-react';
+  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen, PlayCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { WhatsNew } from './WhatsNew';
 import { useUpdates } from '@/hooks/useUpdates';
 import { listPendingItems } from '@/api/orders';
 import { getModules } from '@/api/v14';
@@ -28,6 +28,7 @@ const NAV = [
   { to: '/rotas', label: 'Rotas de entrega', icon: Truck, module: 'rotas' as const },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' as const },
   { to: '/auditoria', label: 'Auditoria', icon: History, module: 'auditoria' as const },
+  { to: '/tutoriais', label: 'Tutoriais', icon: PlayCircle },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
@@ -129,7 +130,7 @@ export default function AppShell() {
   const pending = useQuery({ queryKey: ['pending-items'], queryFn: listPendingItems, refetchInterval: 60_000 });
   const modules = useQuery({ queryKey: ['modules'], queryFn: getModules });
   // Vendedor só usa Pedidos (e a própria conta em Configurações); o resto é bloqueado também no banco.
-  const SELLER_PATHS = ['/pedidos', '/configuracoes'];
+  const SELLER_PATHS = ['/pedidos', '/tutoriais', '/configuracoes'];
   const nav = NAV.filter((n) => (!('module' in n) || !n.module || modules.data?.[n.module] !== false) && (!isSeller || SELLER_PATHS.includes(n.to)));
   const sellerBlocked = isSeller && !SELLER_PATHS.some((p) => location.pathname.startsWith(p));
   const pendingCount = pending.data?.length ?? 0;
@@ -236,6 +237,7 @@ export default function AppShell() {
           <div className="max-w-7xl mx-auto animate-fade-up">
             <PushPrompt />
             {sellerBlocked ? <Navigate to="/pedidos" replace /> : <Outlet />}
+            <WhatsNew />
           </div>
         </main>
       </div>

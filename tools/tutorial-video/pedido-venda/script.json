@@ -1,0 +1,29 @@
+[
+ {"ch": "", "title": "Pedido de venda", "sub": "Novidade da versão 1.7", "intro": true, "beats": [
+  {"shot": "cards", "say": "Novidade na aba Pedidos: agora o pedido de venda tem cliente, vendedor, desconto financeiro e produtos em quilo ou unidade."}
+ ]},
+ {"ch": "1", "title": "Cadastros", "beats": [
+  {"shot": "cards", "focus": "cli", "hl": "cli", "say": "O administrador tem o cartão Clientes. Ele é o único que importa clientes e escolhe o vendedor de cada um."},
+  {"shot": "imp_cli_open", "focus": "modelo", "cursor": "modelo", "click": true, "hl": "modelo", "say": "Baixe o modelo e preencha: vendedor, CNPJ, nome do cliente e desconto financeiro. Para mais de um desconto, separe com ponto e vírgula."},
+  {"shot": "imp_cli_prev", "focus": "chips", "hl": "chips", "say": "Antes de gravar, o sistema mostra o que é novo, o que já existe, o que está repetido e o que tem erro."},
+  {"shot": "imp_cli_prev", "focus": "table", "say": "Cada erro mostra a linha da planilha e o motivo. O CNPJ identifica o cliente, então ninguém fica duplicado."},
+  {"shot": "clientes", "focus": "seller", "cursor": "seller", "hl": "seller", "say": "Em Ver clientes, dá para trocar o vendedor e ajustar os descontos. Toda troca de vendedor fica registrada."},
+  {"shot": "imp_prod_prev", "focus": "chips", "hl": "chips", "say": "No cartão Produtos, importe referência, código e nome. Os zeros do código são mantidos."}
+ ]},
+ {"ch": "2", "title": "Lançar o pedido", "beats": [
+  {"shot": "novo", "focus": "cnpj", "cursor": "cnpj", "click": true, "hl": "cnpj", "say": "Em Novo pedido, digite parte do nome ou do CNPJ do cliente, com ou sem pontuação, e escolha na lista."},
+  {"shot": "novo_cli", "focus": "desconto", "hl": "desconto", "say": "O sistema preenche o outro campo, mostra o vendedor e traz os descontos desse cliente para você escolher."},
+  {"shot": "item_ref", "focus": "ref", "cursor": "ref", "click": true, "hl": "ref", "say": "Nos itens, escolha a referência para filtrar a lista. Depois, o produto pelo código ou pelo nome."},
+  {"shot": "itens", "focus": "linha1", "hl": "linha1", "say": "A unidade de venda vem sozinha. Ander e Isa são vendidos em quilo. Pote de tempero, pote de fruta e revenda, em unidade."},
+  {"shot": "itens", "focus": "q1", "cursor": "q1", "click": true, "hl": "q1", "say": "Digite a quantidade e o valor unitário. Dez quilos a seis e sessenta dão sessenta e seis reais."},
+  {"shot": "totais", "focus": "totais", "hl": "totais", "say": "O pedido mostra o subtotal, o desconto financeiro e o total. Mudou o desconto, o total muda na hora."},
+  {"shot": "erro_un", "focus": "q2", "hl": "q2", "say": "Se algo estiver errado, o aviso aparece em vermelho, junto do campo. Produto em unidade só aceita número inteiro."},
+  {"shot": "detalhe", "focus": "itens", "hl": "itens", "say": "Salvo o pedido, ele guarda os dados daquele momento. Itens em quilo entram na produção em quilo, sem conversão."}
+ ]},
+ {"ch": "3", "title": "Vendedor", "beats": [
+  {"shot": "vendedor", "focus": "novo", "cursor": "novo", "hl": "novo", "say": "O vendedor entra pelo celular e só vê a aba Pedidos, os clientes dele e os pedidos que ele mesmo lançou."}
+ ]},
+ {"ch": "", "title": "Pronto!", "outro": true, "end1": "Pedido de venda", "end2": "Dúvidas? Veja em Tutoriais", "beats": [
+  {"shot": "detalhe_top", "say": "Pronto! Esse vídeo fica sempre na página Tutoriais, no menu do sistema."}
+ ]}
+]

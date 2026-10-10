@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { FileText, AlertTriangle, Trash2, Filter, Plus } from 'lucide-react';
+import { FileText, AlertTriangle, Trash2, Filter, Plus, PlayCircle } from 'lucide-react';
 import { deleteOrderImport, listOrderImports, listOrders, listPendingItems, type OrderFilters } from '@/api/orders';
 import { listCustomers } from '@/api/customers';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select, Table, Tabs } from '@/components/primitives';
@@ -51,6 +51,9 @@ export default function OrdersPage() {
         description="Pedidos de compra das lojas, importados do PDF ou lançados manualmente."
         actions={
           <>
+            <Link to="/tutoriais">
+              <Button variant="ghost" icon={<PlayCircle className="h-4 w-4" />}>Como usar</Button>
+            </Link>
             {!!pending.data?.length && (
               <Link to="/pedidos/conferencia">
                 <Button variant="outline" icon={<AlertTriangle className="h-4 w-4 text-warn" />}>Conferir {pending.data.length} item(ns)</Button>

@@ -93,7 +93,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   // Content Security Policy para o renderer (mesma politica do site)
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const csp = "default-src 'self' file:; script-src 'self' 'unsafe-inline' file:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com file:; font-src 'self' https://fonts.gstatic.com data: file:; img-src 'self' data: blob: https: file:; connect-src 'self' https://exbhhwrutvzpwcjxqikp.supabase.co wss://exbhhwrutvzpwcjxqikp.supabase.co https://api.github.com https://github.com https://objects.githubusercontent.com; worker-src 'self' blob:; frame-ancestors 'none'";
+    const csp = "default-src 'self' file:; script-src 'self' 'unsafe-inline' file:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com file:; font-src 'self' https://fonts.gstatic.com data: file:; img-src 'self' data: blob: https: file:; connect-src 'self' https://exbhhwrutvzpwcjxqikp.supabase.co wss://exbhhwrutvzpwcjxqikp.supabase.co https://api.github.com https://github.com https://objects.githubusercontent.com; worker-src 'self' blob:; media-src 'self' file: https://www.isaindalimentos.com.br https://isaindalimentos.com.br; frame-ancestors 'none'";
     callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [csp] } });
   });
   wireUpdater();

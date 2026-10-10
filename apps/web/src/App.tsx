@@ -13,6 +13,7 @@ import SetupPage from './pages/SetupPage';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const TutorialsPage = lazy(() => import('./pages/TutorialsPage'));
 const ProductsPage = lazy(() => import('./pages/ProductsPage'));
 const StockPage = lazy(() => import('./pages/StockPage'));
 const OrdersPage = lazy(() => import('./pages/OrdersPage'));
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="rotas" element={<RoutesPage />} />
             <Route path="relatorios" element={<ReportsPage />} />
             <Route path="auditoria" element={<AuditPage />} />
+            <Route path="tutoriais" element={<TutorialsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -4,6 +4,8 @@ import { Dialog as UiDialog, DialogContent, DialogDescription, DialogTitle } fro
 import { Button } from '@/components/primitives';
 import { useUpdates } from '@/hooks/useUpdates';
 import { APP_VERSION, openExternal } from '@/lib/desktop';
+import { tutorialBetween } from '@/lib/tutorials';
+import { TutorialPlayer } from '@/components/TutorialPlayer';
 
 const REPO = (import.meta.env.VITE_GITHUB_REPO as string | undefined) ?? 'isaindustria/isaalimentos';
 const DOCS_URL = 'https://www.isaindalimentos.com.br/site/docs.html#novidades';
@@ -50,7 +52,7 @@ export function UpdateDialog() {
 
   return (
     <UiDialog open onOpenChange={(o) => !o && later()}>
-      <DialogContent className="max-w-md gap-0 overflow-hidden rounded-3xl border-0 p-0 shadow-pop antialiased [backface-visibility:hidden] data-open:zoom-in-100 data-closed:zoom-out-100" showCloseButton={false}>
+      <DialogContent className="max-w-lg gap-0 overflow-hidden max-h-[92vh] overflow-y-auto rounded-3xl border-0 p-0 shadow-pop antialiased [backface-visibility:hidden] data-open:zoom-in-100 data-closed:zoom-out-100" showCloseButton={false}>
         <div className="relative overflow-hidden bg-brand px-6 pb-7 pt-6 text-brand-ink">
           <img src="./brand/mascot-inverted.png" alt="" aria-hidden className="pointer-events-none absolute -bottom-6 -right-4 w-36 select-none" />
           <div className="relative flex items-start gap-3 pr-28">
@@ -76,6 +78,12 @@ export function UpdateDialog() {
         </div>
 
         <div className="px-6 py-5">
+          {version && tutorialBetween(APP_VERSION, version) && (
+            <div className="mb-4">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Vídeo: como usar a novidade</div>
+              <TutorialPlayer t={tutorialBetween(APP_VERSION, version)!} />
+            </div>
+          )}
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">O que mudou</div>
           {notes.length ? (
             <ul className="space-y-1.5 text-sm">

@@ -7,7 +7,7 @@ import { listCustomers } from '@/api/customers';
 import { listProducts } from '@/api/products';
 import { getSaleUnitRules, saveSalesOrder } from '@/api/sales';
 import { logActivity } from '@/api/activity';
-import { Button, Card, Field, Input, PageHeader, Select, Table, Textarea } from '@/components/primitives';
+import { Button, Card, Field, Input, PageHeader, Select, Textarea } from '@/components/primitives';
 import { SearchSelect, type SearchOption } from '@/components/SearchSelect';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { fmtCnpj, normalizeKey, orderTotals, quantityError, saleUnitFor, type SaleUnit } from '@/domain/sales';
@@ -226,41 +226,38 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
           </div>
         </Card>
         <Card title="Itens do pedido" padded={false} action={<Button size="sm" variant="outline" icon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setLines((ls) => [...ls, emptyLine()]); touch(); }}>Adicionar item</Button>}>
-          <Table>
-            <thead>
-              <tr>
-                <th className="th">Referência</th><th className="th">Código</th><th className="th">Produto</th>
-                <th className="th text-right">Quantidade</th><th className="th">Unidade de venda</th>
-                <th className="th text-right">Valor unitário</th><th className="th text-right">Valor total</th><th className="th" />
-              </tr>
-            </thead>
-            <tbody>
-              {calc.map((c, i) => {
-                const pool = productList.filter((p) => inRef(p, c.l.reference));
-                const codeOpts = pool.map((p) => ({ value: p.code, label: p.code, sub: `${p.description}${p.reference ? ' · ' + p.reference : ''}` }));
-                const nameOpts = pool.map((p) => ({ value: p.code, label: p.description, sub: `${p.code}${p.reference ? ' · ' + p.reference : ''}` }));
-                const e = showErrors ? c.errs : {};
-                return (
-                  <tr key={c.l.key} className="align-top">
-                    <td className="td min-w-[130px]"><SearchSelect ariaLabel={`Referência da linha ${i + 1}`} options={refOptions} value={references.find((r) => normalizeKey(r) === normalizeKey(c.l.reference)) ?? null} onChange={(v) => changeRef(c.l, v)} placeholder="Todas" /></td>
-                    <td className="td min-w-[120px]"><SearchSelect ariaLabel={`Código da linha ${i + 1}`} options={codeOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Código" invalid={!!e.product} /></td>
-                    <td className="td min-w-[240px]"><SearchSelect ariaLabel={`Produto da linha ${i + 1}`} options={nameOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Produto" invalid={!!e.product} />{err(c.errs.product)}</td>
-                    <td className="td w-28">
-                      <Input aria-label={`Quantidade da linha ${i + 1}`} inputMode={c.unit === 'un' ? 'numeric' : 'decimal'} type="number" min={0} step={c.unit === 'un' ? 1 : 0.001} className={`h-10 text-right ${e.quantity ? 'border-danger' : ''}`} value={c.l.quantity} onChange={(ev) => update(c.l.key, { quantity: ev.target.value })} />
-                      {err(c.errs.quantity)}
-                    </td>
-                    <td className="td whitespace-nowrap pt-5">{c.unit ? (c.unit === 'kg' ? 'kg' : 'unidade') : c.p ? <span className="text-xs text-danger">pendente</span> : '—'}{c.p && !c.unit && err(c.errs.unit)}{c.p && !c.unit && !showErrors && <p className="mt-1 max-w-[160px] whitespace-normal text-[11px] text-danger">Referência sem regra de unidade.</p>}</td>
-                    <td className="td w-32">
-                      <Input aria-label={`Valor unitário da linha ${i + 1}`} type="number" min={0} step="0.01" inputMode="decimal" className={`h-10 text-right ${e.price ? 'border-danger' : ''}`} value={c.l.price} onChange={(ev) => update(c.l.key, { price: ev.target.value })} placeholder={c.unit === 'kg' ? 'R$/kg' : 'R$/un'} />
-                      {err(c.errs.price)}
-                    </td>
-                    <td className="td whitespace-nowrap pt-5 text-right num font-semibold">{c.q && c.price != null && !Object.keys(c.errs).length ? fmtBRL(totals.lineTotals[i]) : '—'}<div className="text-[11px] font-normal text-muted">{c.q && c.unit ? `${fmtQty(c.q, c.unit)} ${c.unit === 'kg' ? 'kg' : 'un'}` : ''}</div></td>
-                    <td className="td pt-4 text-right"><button className="p-1 text-muted hover:text-danger" onClick={() => { setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== c.l.key) : [emptyLine()])); touch(); }} aria-label={`Remover linha ${i + 1}`}><Trash2 className="h-4 w-4" /></button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </Table>
+          {/* Uma grade só: em telas largas parece tabela; no celular cada item vira um cartão empilhado. */}
+          <div className="hidden gap-2 border-b border-line px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted lg:grid lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_minmax(200px,2fr)_100px_110px_120px_120px_28px]">
+            <span>Referência</span><span>Código</span><span>Produto</span><span className="text-right">Quantidade</span><span>Unidade de venda</span><span className="text-right">Valor unitário</span><span className="text-right">Valor total</span><span />
+          </div>
+          <div className="divide-y divide-line">
+            {calc.map((c, i) => {
+              const pool = productList.filter((p) => inRef(p, c.l.reference));
+              const codeOpts = pool.map((p) => ({ value: p.code, label: p.code, sub: `${p.description}${p.reference ? ' · ' + p.reference : ''}` }));
+              const nameOpts = pool.map((p) => ({ value: p.code, label: p.description, sub: `${p.code}${p.reference ? ' · ' + p.reference : ''}` }));
+              const e = showErrors ? c.errs : {};
+              const lbl = (t: string) => <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted lg:hidden">{t}</span>;
+              return (
+                <div key={c.l.key} className="grid grid-cols-2 items-start gap-x-3 gap-y-3 px-4 py-4 lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_minmax(200px,2fr)_100px_110px_120px_120px_28px] lg:gap-2 lg:py-3">
+                  <div className="col-span-2 flex items-center justify-between lg:hidden"><b className="text-sm">Item {i + 1}</b><button className="p-1 text-muted hover:text-danger" onClick={() => { setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== c.l.key) : [emptyLine()])); touch(); }} aria-label={`Remover item ${i + 1}`}><Trash2 className="h-4 w-4" /></button></div>
+                  <div>{lbl('Referência')}<SearchSelect ariaLabel={`Referência da linha ${i + 1}`} options={refOptions} value={references.find((r) => normalizeKey(r) === normalizeKey(c.l.reference)) ?? null} onChange={(v) => changeRef(c.l, v)} placeholder="Todas" /></div>
+                  <div>{lbl('Código')}<SearchSelect ariaLabel={`Código da linha ${i + 1}`} options={codeOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Código" invalid={!!e.product} /></div>
+                  <div className="col-span-2 lg:col-span-1">{lbl('Produto')}<SearchSelect ariaLabel={`Produto da linha ${i + 1}`} options={nameOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Produto" invalid={!!e.product} />{err(c.errs.product)}</div>
+                  <div>{lbl('Quantidade')}
+                    <Input aria-label={`Quantidade da linha ${i + 1}`} inputMode={c.unit === 'un' ? 'numeric' : 'decimal'} type="number" min={0} step={c.unit === 'un' ? 1 : 0.001} className={`h-10 text-right ${e.quantity ? 'border-danger' : ''}`} value={c.l.quantity} onChange={(ev) => update(c.l.key, { quantity: ev.target.value })} />
+                    {err(c.errs.quantity)}
+                  </div>
+                  <div className="lg:pt-2.5">{lbl('Unidade de venda')}<span className="text-sm">{c.unit ? (c.unit === 'kg' ? 'kg' : 'unidade') : c.p ? <span className="text-xs text-danger">pendente</span> : '—'}</span>{c.p && !c.unit && err(c.errs.unit)}{c.p && !c.unit && !showErrors && <p className="mt-1 text-[11px] text-danger">Referência sem regra de unidade.</p>}</div>
+                  <div>{lbl('Valor unitário')}
+                    <Input aria-label={`Valor unitário da linha ${i + 1}`} type="number" min={0} step="0.01" inputMode="decimal" className={`h-10 text-right ${e.price ? 'border-danger' : ''}`} value={c.l.price} onChange={(ev) => update(c.l.key, { price: ev.target.value })} placeholder={c.unit === 'kg' ? 'R$/kg' : 'R$/un'} />
+                    {err(c.errs.price)}
+                  </div>
+                  <div className="text-right lg:pt-2">{lbl('Valor total')}<span className="num font-semibold">{c.q && c.price != null && !Object.keys(c.errs).length ? fmtBRL(totals.lineTotals[i]) : '—'}</span><div className="text-[11px] text-muted">{c.q && c.unit ? `${fmtQty(c.q, c.unit)} ${c.unit === 'kg' ? 'kg' : 'un'}` : ''}</div></div>
+                  <div className="hidden pt-2 text-right lg:block"><button className="p-1 text-muted hover:text-danger" onClick={() => { setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== c.l.key) : [emptyLine()])); touch(); }} aria-label={`Remover linha ${i + 1}`}><Trash2 className="h-4 w-4" /></button></div>
+                </div>
+              );
+            })}
+          </div>
           {showErrors && formErrors.items && <p className="px-5 pt-3 text-xs text-danger">{formErrors.items}</p>}
           <p className="px-5 py-3 text-xs text-muted">A unidade de venda vem da referência do produto (Ander e ISA em kg; pote temp., pote frut. e revenda em unidade). Valor total = quantidade × valor unitário. Itens em kg entram na produção em kg, sem conversão.</p>
         </Card>

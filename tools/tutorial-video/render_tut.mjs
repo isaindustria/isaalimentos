@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 const exe = process.env.LOCALAPPDATA + '/ms-playwright/chromium-1243/chrome-win64/chrome.exe';
 const [mode, arg, out] = process.argv.slice(2);
 const b = await chromium.launch({ executablePath: exe });
-const p = await (await b.newContext({ viewport: { width: 1000, height: 600 } })).newPage();
+const p = await (await b.newContext({ viewport: { width: 1200, height: 1100 } })).newPage();
 p.on('pageerror', (e) => console.log('PAGEERROR', e.message));
 await p.goto(pathToFileURL(path.resolve(`tut${process.env.NAME || ''}_build.html`)).href); await p.waitForFunction(() => window.__ready === true, null, { timeout: 120000 });
 const grab = async (t, q = 0.9) => Buffer.from((await p.evaluate(([t, q]) => { window.render(t); return document.getElementById('c').toDataURL('image/jpeg', q); }, [t, q])).split(',')[1], 'base64');
