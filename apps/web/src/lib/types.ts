@@ -50,6 +50,12 @@ export interface Product {
   category: string | null;
   min_stock: number;
   active: boolean;
+  /** fiscais (NF-e) */
+  ncm?: string | null;
+  cest?: string | null;
+  gtin?: string | null;
+  origem?: number | null;
+  cfop?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -115,6 +121,12 @@ export interface Customer {
   seller_name?: string | null;
   /** Descontos financeiros do cliente, em %; vazio = nenhum. */
   financial_discounts?: number[] | null;
+  /** fiscais (NF-e) */
+  ie?: string | null;
+  ind_ie_dest?: 1 | 2 | 9 | null;
+  address_number?: string | null;
+  address_complement?: string | null;
+  city_ibge?: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -287,4 +299,4 @@ export interface DeliveryRoute { id: string; name: string; route_date: string; d
 export interface AuditEntry { id: string; table_name: string; row_id: string; action: 'INSERT' | 'UPDATE' | 'DELETE'; old_data: Record<string, unknown> | null; new_data: Record<string, unknown> | null; changed_by: string | null; changed_by_name: string | null; changed_at: string }
 export interface ProductStats { code: string; description: string; min_stock: number; weekly_avg_units: number; total_units_all: number; revenue_all: number }
 export interface DbStats { db_bytes: number; tables: Array<{ name: string; bytes: number; rows: number }>; audit_rows: number; activities_rows: number }
-export interface Modules { precos: boolean; compras: boolean; rotas: boolean; relatorios: boolean; auditoria: boolean; portal: boolean; push: boolean }
+export interface Modules { precos: boolean; compras: boolean; rotas: boolean; relatorios: boolean; auditoria: boolean; portal: boolean; push: boolean; nfe: boolean }

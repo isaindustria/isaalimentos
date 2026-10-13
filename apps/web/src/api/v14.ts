@@ -2,7 +2,7 @@ import { supabase, unwrap } from '@/lib/supabase';
 import type { AuditEntry, DbStats, DeliveryRoute, Modules, PriceList, ProductBom, ProductStats, PurchaseOrder, PurchaseOrderItem, RouteStatus, Supply, SupplyConsumption, SupplyReference } from '@/lib/types';
 
 /* ---------------- Modulos (liga/desliga sem apagar) ---------------- */
-export const DEFAULT_MODULES: Modules = { precos: true, compras: true, rotas: true, relatorios: true, auditoria: true, portal: true, push: true };
+export const DEFAULT_MODULES: Modules = { precos: true, compras: true, rotas: true, relatorios: true, auditoria: true, portal: true, push: true, nfe: false };
 export async function getModules(): Promise<Modules> {
   const row = unwrap(await supabase.from('app_settings').select('value').eq('key', 'modules').maybeSingle()) as { value: Partial<Modules> } | null;
   return { ...DEFAULT_MODULES, ...(row?.value ?? {}) };

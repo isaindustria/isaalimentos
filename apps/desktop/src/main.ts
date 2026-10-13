@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell, Menu, session } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'node:path';
+import { registerNfe } from './nfe';
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
@@ -97,6 +98,7 @@ app.whenReady().then(() => {
     callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [csp] } });
   });
   wireUpdater();
+  registerNfe(() => win);
   createWindow();
   // Verifica em silencio poucos segundos depois de abrir; depois a cada 10 min e ao voltar o foco.
   if (!isDev) {

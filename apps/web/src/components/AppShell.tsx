@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen, PlayCircle } from 'lucide-react';
+  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen, PlayCircle, ReceiptText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { WhatsNew } from './WhatsNew';
+import { NfeWorker } from './NfeWorker';
 import { useUpdates } from '@/hooks/useUpdates';
 import { listPendingItems } from '@/api/orders';
 import { getModules } from '@/api/v14';
@@ -26,6 +27,7 @@ const NAV = [
   { to: '/precos', label: 'Preços', icon: Tag, module: 'precos' as const },
   { to: '/insumos', label: 'Insumos e compras', icon: FlaskConical, module: 'compras' as const },
   { to: '/rotas', label: 'Rotas de entrega', icon: Truck, module: 'rotas' as const },
+  { to: '/notas-fiscais', label: 'Notas fiscais', icon: ReceiptText, module: 'nfe' as const },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' as const },
   { to: '/auditoria', label: 'Auditoria', icon: History, module: 'auditoria' as const },
   { to: '/tutoriais', label: 'Tutoriais', icon: PlayCircle },
@@ -120,7 +122,7 @@ function UpdateBanner() {
 }
 
 export default function AppShell() {
-  const { profile, session, signOut, canWriteArea, isSeller } = useAuth();
+  const { profile, session, signOut, canWriteArea, isSeller, isAdmin } = useAuth();
   const location = useLocation();
   const { dark, toggle } = useTheme();
   const [open, setOpen] = useState(false);
@@ -131,7 +133,7 @@ export default function AppShell() {
   const modules = useQuery({ queryKey: ['modules'], queryFn: getModules });
   // Vendedor só usa Pedidos (e a própria conta em Configurações); o resto é bloqueado também no banco.
   const SELLER_PATHS = ['/pedidos', '/tutoriais', '/configuracoes'];
-  const nav = NAV.filter((n) => (!('module' in n) || !n.module || modules.data?.[n.module] !== false) && (!isSeller || SELLER_PATHS.includes(n.to)));
+  const nav = NAV.filter((n) => (!('module' in n) || !n.module || (n.module === 'nfe' ? !!modules.data?.nfe && (isAdmin || canWriteArea('compras')) : modules.data?.[n.module] !== false)) && (!isSeller || SELLER_PATHS.includes(n.to)));
   const sellerBlocked = isSeller && !SELLER_PATHS.some((p) => location.pathname.startsWith(p));
   const pendingCount = pending.data?.length ?? 0;
 
@@ -238,6 +240,7 @@ export default function AppShell() {
             <PushPrompt />
             {sellerBlocked ? <Navigate to="/pedidos" replace /> : <Outlet />}
             <WhatsNew />
+            {modules.data?.nfe && <NfeWorker />}
           </div>
         </main>
       </div>

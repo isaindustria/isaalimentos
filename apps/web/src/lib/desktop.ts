@@ -21,6 +21,21 @@ export interface DesktopBridge {
   installUpdate(): void;
   openExternal(url: string): void;
   onUpdateState(cb: (state: UpdateState) => void): () => void;
+  /** Emissor de NF-e (só no programa do Windows; versões antigas não têm). */
+  nfe?: NfeBridge;
+}
+
+export type NfeResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export interface NfeCertInfo { cnpj: string | null; titular: string; validoDe: string; validoAte: string; emissor: string; diasParaVencer: number }
+export interface NfeEmissao { ok: boolean; chave: string; cStat: string | null; motivo: string | null; protocolo: string | null; dhRecbto: string | null; xml: string; vNF: number }
+export interface NfeBridge {
+  certInfo(): Promise<NfeResult<NfeCertInfo | null>>;
+  importCert(senha: string): Promise<NfeResult<NfeCertInfo | null>>;
+  removeCert(): Promise<NfeResult<boolean>>;
+  status(ambiente: 1 | 2): Promise<NfeResult<{ cStat: string | null; motivo: string | null; dhRecbto: string | null; tMed: string | null }>>;
+  emitir(input: unknown): Promise<NfeResult<NfeEmissao>>;
+  consultar(ambiente: 1 | 2, chave: string): Promise<NfeResult<{ cStat: string | null; motivo: string | null; protocolo: string | null }>>;
+  cancelar(p: { ambiente: 1 | 2; cnpj: string; chave: string; protocolo: string; justificativa: string }): Promise<NfeResult<{ ok: boolean; cStat: string | null; motivo: string | null; protocolo: string | null; xml: string }>>;
 }
 
 declare global {

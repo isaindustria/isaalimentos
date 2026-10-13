@@ -11,6 +11,7 @@ import { STATUS_LABEL } from './OrdersPage';
 import { MatchBadge } from './OrderImportPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtime } from '@/hooks/useRealtime';
+import { EmitirNfeButton } from '@/components/EmitirNfeButton';
 
 export default function OrderDetailPage() {
   const { id = '' } = useParams();
@@ -75,6 +76,7 @@ export default function OrderDetailPage() {
             <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(-1)}>Voltar</Button>
             <Button variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${id}/editar`)}>Editar</Button>
             <Button variant="outline" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Imprimir</Button>
+            {!isSeller && <EmitirNfeButton orderId={o.id} />}
             {!o.stock_posted && !isSeller && <Button variant="outline" icon={<PackageMinus className="h-4 w-4" />} loading={post.isPending} onClick={() => confirm('Baixar do estoque (local 1) todas as unidades deste pedido?') && post.mutate()}>Baixar estoque</Button>}
             <Select className="w-44" value={o.status} onChange={(e) => status.mutate(e.target.value as OrderStatus)}>
               {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}

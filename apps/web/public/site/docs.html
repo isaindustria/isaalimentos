@@ -113,6 +113,7 @@
     <a href="#acesso">Acesso e instalação</a>
     <a href="#importar">Estoque e pedidos</a>
     <a href="#vendas">Pedido de venda</a>
+    <a href="#nfe">Notas fiscais</a>
     <a href="#producao">Produção</a>
     <a href="#cadastros">Cadastros</a>
     <a href="#insumos">Insumos e compras</a>
@@ -128,7 +129,7 @@
       <h1 class="title">Como usar o sistema ISA</h1>
       <p class="lede">Guia direto pra quem opera o dia a dia: do pedido da loja à ordem de produção, sem planilha na mão. O que muda em cada versão fica registrado aqui.</p>
       <div class="meta">
-        <span class="pill">versão atual <b>1.7.5</b></span>
+        <span class="pill">versão atual <b>1.8.0</b></span>
         <span class="pill">web · celular (PWA) · Windows</span>
         <span class="pill">uso interno</span>
       </div>
@@ -158,7 +159,17 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.7.0 – v1.7.5</span><span class="d">10/10/2026</span><span class="tag">atual</span>
+        <span class="v">v1.8.0</span><span class="d">13/10/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Notas fiscais NF-e (beta)</strong>: emissão pela SEFAZ-SP com o certificado A1, começando em homologação. Ligue em Configurações → Módulos.</li>
+          <li>O certificado é carregado e guardado só no programa do Windows, criptografado pelo próprio Windows; nunca vai para a internet nem para o banco.</li>
+          <li>Quem está no navegador ou no celular clica em Emitir NF-e no pedido; a nota entra na fila e o programa do Windows com o certificado emite.</li>
+          <li>Antes de emitir, o sistema lista o que falta no cadastro (NCM dos produtos, IE e código IBGE dos clientes, dados do emitente).</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.7.0 – v1.7.5</span><span class="d">10/10/2026</span>
         <ul>
           <li><strong>Novo pedido reorganizado</strong> (pedido do comercial, parte 2): Vendedor e Nº do pedido no topo, depois Cliente, CNPJ e Desc. Fin., Data e Entrega, Observações e os totais. Nos itens: Referência e Código, Produto, e Qtd Kg/Un, Vlr Un. e Vlr Ttl. (calculado sozinho). Status e Unidade de venda saíram desta tela; o pedido novo nasce Aberto.</li>
           <li>Vídeo do pedido de venda refeito (passos numerados, legenda que acompanha a fala, voz nova) e <strong>passo a passo em texto</strong> na página Tutoriais.</li>
@@ -318,6 +329,25 @@
       <p>Crie a conta do vendedor e aprove em Configurações → Usuários com a área <strong>Vendedor</strong>. Ele só vê a aba Pedidos, os clientes ligados a ele e os pedidos que ele lançou. Ao trocar o vendedor de um cliente, os pedidos antigos continuam com quem os digitou.</p>
     </section>
 
+    <section class="doc" id="nfe">
+      <h2>Notas fiscais NF-e (beta)</h2>
+      <p>Emissão de NF-e modelo 55 direto na SEFAZ-SP. Sempre comece em <strong>homologação</strong>: as notas não têm valor fiscal.</p>
+      <h3>Preparar (ADM)</h3>
+      <ul>
+        <li>Configurações → Módulos: ligue <strong>Notas fiscais NF-e</strong>.</li>
+        <li>Notas fiscais → Emitente: CNPJ, IE, razão social, endereço com código IBGE do município, regime (CRT) e as regras padrão (CFOP, CSOSN/CST, PIS/COFINS, frete, pagamento). Confirme com o contador.</li>
+        <li>Notas fiscais → Certificado A1, no <strong>programa do Windows</strong>: digite a senha, clique em Carregar certificado e escolha o arquivo .pfx. Depois, Testar conexão com a SEFAZ (esperado: 107 Serviço em operação).</li>
+        <li>Notas fiscais → Dados fiscais: NCM de cada produto; IE, número, bairro, CEP e código IBGE de cada cliente.</li>
+      </ul>
+      <h3>Emitir</h3>
+      <ul>
+        <li>No pedido, clique em <strong>Emitir NF-e</strong>. Se faltar algum dado, aparece a lista do que completar.</li>
+        <li>A nota vai para a fila. Um computador com o programa do Windows aberto e o certificado carregado assina e envia; o resultado (autorizada, rejeitada com o motivo da SEFAZ, ou erro) aparece em Notas fiscais.</li>
+        <li>Notas autorizadas: baixe o XML. Cancelamento em até 24 h, com justificativa, no programa do Windows.</li>
+      </ul>
+      <div class="card tip"><div class="lbl">Segurança do certificado</div>O arquivo .pfx é escolhido numa janela do Windows e fica gravado criptografado pelo Windows (DPAPI), preso ao usuário daquele computador. Ele só é aberto na memória na hora de assinar. No banco ficam apenas CNPJ, titular e validade.</div>
+    </section>
+
     <section class="doc" id="producao">
       <h2>4. Produção (módulo independente)</h2>
       <p>A Produção tem <strong>cadastro, estoque e pedido próprios</strong>. Nada aqui depende das outras telas: o que entra é o que você importa neste módulo.</p>
@@ -453,6 +483,7 @@
       <p>O que ainda dá pra evoluir, tanto no sistema quanto nesta documentação. Atualizado a cada versão.</p>
       <h3>No sistema</h3>
       <ul>
+        <li><strong>DANFE em PDF</strong> para imprimir e mandar junto com a nota (hoje sai o XML).</li>
         <li><strong>Pedido de compra a partir da sugestão</strong>: botão que transforma as sugestões de compra do mês em um pedido pronto pro fornecedor.</li>
         <li><strong>Leitura de PDF com IA</strong> pros layouts de loja que o reconhecimento por descrição ainda erra (precisa de uma chave de API).</li>
         <li><strong>Histórico de consumo em gráfico</strong> por insumo, pra ver a oscilação de 20% em vez de só o alerta.</li>

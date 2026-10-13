@@ -10,7 +10,7 @@ import { downloadBlob, fmtInt } from '@/lib/utils';
 import type { Modules } from '@/lib/types';
 
 const MB = 1024 * 1024;
-const MODULE_LABEL: Record<keyof Modules, string> = { precos: 'Tabela de preços', compras: 'Insumos e compras', rotas: 'Rotas de entrega', relatorios: 'Relatórios e curva ABC', auditoria: 'Auditoria', portal: 'Portal do cliente', push: 'Notificações no celular' };
+const MODULE_LABEL: Record<keyof Modules, string> = { precos: 'Tabela de preços', compras: 'Insumos e compras', rotas: 'Rotas de entrega', relatorios: 'Relatórios e curva ABC', auditoria: 'Auditoria', portal: 'Portal do cliente', push: 'Notificações no celular', nfe: 'Notas fiscais NF-e (beta)' };
 
 /** Database size, backups, push notifications and module switches (admin). */
 export function SystemAdmin() {
