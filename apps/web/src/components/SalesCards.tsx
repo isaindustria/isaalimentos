@@ -19,7 +19,7 @@ export function SalesCards() {
   const qc = useQueryClient();
   const { isAdmin, isSeller, canWriteArea } = useAuth();
   // inclui os inativos: a importação reconhece quem já existe (pelo código ou CNPJ) mesmo inativado
-  const customers = useQuery({ queryKey: ['customers', 'all'], queryFn: () => listCustomers(true), enabled: isAdmin });
+  const customers = useQuery({ queryKey: ['customers', 'all'], queryFn: () => listCustomers(true), enabled: isAdmin || isSeller });
   const products = useQuery({ queryKey: ['products', 'all'], queryFn: () => listProducts(true) });
   const sellers = useQuery({ queryKey: ['sellers'], queryFn: listSellers, enabled: isAdmin });
   const [dlg, setDlg] = useState<'' | 'imp-cli' | 'imp-prod' | 'list-cli' | 'list-prod'>('');
@@ -33,15 +33,16 @@ export function SalesCards() {
   return (
     <>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        {isAdmin && (
+        {(isAdmin || isSeller) && (
           <section className="card flex flex-wrap items-center gap-3 p-4">
             <span className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand"><Users className="size-5" /></span>
             <div className="min-w-0 flex-1">
-              <div className="font-display font-bold">Clientes</div>
-              <div className="text-xs text-muted">{ativos.length} cadastrado(s){noSeller ? ` · ${noSeller} sem vendedor` : ''}</div>
+              <div className="font-display font-bold">{isSeller && !isAdmin ? 'Meus clientes' : 'Clientes'}</div>
+              <div className="text-xs text-muted">{ativos.length} cadastrado(s){isAdmin && noSeller ? ` · ${noSeller} sem vendedor` : ''}</div>
             </div>
             <Button size="sm" variant="outline" onClick={() => setDlg('list-cli')}>Ver clientes</Button>
-            <Button size="sm" icon={<Upload className="size-4" />} onClick={() => setDlg('imp-cli')}>Importar cadastro de clientes</Button>
+            {/* Vendas parte 4: vendedor não importa clientes; vê só os cadastrados no nome dele */}
+            {isAdmin && <Button size="sm" icon={<Upload className="size-4" />} onClick={() => setDlg('imp-cli')}>Importar cadastro de clientes</Button>}
           </section>
         )}
         {(canProducts || isSeller) && (
@@ -76,7 +77,7 @@ export function SalesCards() {
           onDone={() => refresh('products')}
         />
       )}
-      {isAdmin && dlg === 'list-cli' && <ClientsDialog onClose={() => setDlg('')} />}
+      {(isAdmin || isSeller) && dlg === 'list-cli' && <ClientsDialog readOnly={!isAdmin} onClose={() => setDlg('')} />}
       {dlg === 'list-prod' && <ProductsDialog onClose={() => setDlg('')} />}
     </>
   );
@@ -84,12 +85,12 @@ export function SalesCards() {
 
 const fmtDays = (d: number) => (d === 0 ? 'hoje (0)' : d === 1 ? '1 dia' : `${d} dias`);
 
-function ClientsDialog({ onClose }: { onClose: () => void }) {
+function ClientsDialog({ onClose, readOnly = false }: { onClose: () => void; readOnly?: boolean }) {
   const qc = useQueryClient();
   const [inativos, setInativos] = useState(false);
   const customers = useQuery({ queryKey: ['customers', 'all'], queryFn: () => listCustomers(true) });
   const last = useQuery({ queryKey: ['customers', 'last-order'], queryFn: listLastOrders });
-  const sellers = useQuery({ queryKey: ['sellers'], queryFn: listSellers });
+  const sellers = useQuery({ queryKey: ['sellers'], queryFn: listSellers, enabled: !readOnly });
   const [q, setQ] = useState('');
   const [sellerFilter, setSellerFilter] = useState('');
   const [removing, setRemoving] = useState<{ c: Customer; links: { orders: number; notas: number } | null } | null>(null);
@@ -132,20 +133,20 @@ function ClientsDialog({ onClose }: { onClose: () => void }) {
       <td className="td font-mono text-xs">{c.code || '—'}</td>
       <td className="td font-medium">{c.name}{!c.active && <Badge tone="neutral" className="ml-2">inativo</Badge>}</td>
       <td className="td font-mono text-xs">{fmtCnpj(c.cnpj)}</td>
-      <td className="td">
+      {readOnly ? <td className="td text-sm">{c.seller_name ?? '—'}</td> : <td className="td">
         <Select className="h-8 w-44" value={c.seller_id ?? ''} onChange={(e) => seller.mutate({ id: c.id, sid: e.target.value })} aria-label={`Vendedor de ${c.name}`}>
           <option value="">— sem vendedor —</option>
           {sellers.data?.map((s) => <option key={s.id} value={s.id}>{s.name ?? s.email}</option>)}
         </Select>
         {!c.seller_id && c.seller_name && <div className="mt-0.5 text-[11px] text-warn">planilha: {c.seller_name}</div>}
-      </td>
-      <td className="td">
+      </td>}
+      {readOnly ? <td className="td text-sm">{(c.financial_discounts ?? []).length ? (c.financial_discounts ?? []).map((d) => `${String(d).replace('.', ',')}%`).join(' · ') : 'nenhum'}</td> : <td className="td">
         <Input className="h-8 w-28" defaultValue={(c.financial_discounts ?? []).join(';').replace(/\./g, ',') || 'nenhum'} aria-label={`Descontos de ${c.name}`}
           onBlur={(e) => { const p = parseDiscounts(e.target.value); if (p.error) { toast.error(p.error); return; } if (p.values.join(';') !== (c.financial_discounts ?? []).map(Number).join(';')) disc.mutate({ id: c.id, v: p.values }); }} />
-      </td>
+      </td>}
       <td className="td num whitespace-nowrap">{days === null ? <span className="text-muted">Sem pedido</span> : fmtDays(days)}</td>
       <td className="td text-right">
-        {c.active
+        {readOnly ? null : c.active
           ? <button className="p-1 text-muted hover:text-danger" aria-label={`Excluir ${c.name}`} onClick={() => askRemove(c)}><Trash2 className="size-4" /></button>
           : <button className="p-1 text-muted hover:text-brand" aria-label={`Reativar ${c.name}`} title="Reativar" onClick={() => act.mutate({ id: c.id, on: true })}><RotateCcw className="size-4" /></button>}
       </td>
@@ -153,18 +154,18 @@ function ClientsDialog({ onClose }: { onClose: () => void }) {
   );
 
   return (
-    <Dialog open onClose={onClose} wide title="Clientes e vendedores" description="Só o ADM vê e altera esta lista. Ordem: mais dias sem pedido primeiro; quem nunca pediu fica no grupo Sem pedido.">
+    <Dialog open onClose={onClose} wide title={readOnly ? 'Meus clientes' : 'Clientes e vendedores'} description={readOnly ? 'Clientes cadastrados no seu nome, só para consulta. Ordem: mais dias sem pedido primeiro; quem nunca pediu fica no grupo Sem pedido.' : 'Só o ADM altera esta lista. Ordem: mais dias sem pedido primeiro; quem nunca pediu fica no grupo Sem pedido.'}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Input className="h-9 max-w-xs" placeholder="Buscar por código, nome ou CNPJ" value={q} onChange={(e) => setQ(e.target.value)} />
-        <Select className="h-9 w-52" value={sellerFilter} onChange={(e) => setSellerFilter(e.target.value)}>
+        {!readOnly && <Select className="h-9 w-52" value={sellerFilter} onChange={(e) => setSellerFilter(e.target.value)}>
           <option value="">Todos os vendedores</option>
           <option value="-">Sem vendedor</option>
           {sellers.data?.map((s) => <option key={s.id} value={s.id}>{s.name ?? s.email}</option>)}
-        </Select>
-        <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" className="accent-brand" checked={inativos} onChange={(e) => setInativos(e.target.checked)} />Mostrar inativos</label>
+        </Select>}
+        {!readOnly && <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" className="accent-brand" checked={inativos} onChange={(e) => setInativos(e.target.checked)} />Mostrar inativos</label>}
         <Button size="sm" variant="outline" className="ml-auto" icon={<Download className="size-4" />} onClick={exportar} disabled={!customers.data?.length}>Exportar cadastro</Button>
       </div>
-      {!sellers.data?.length && <p className="mb-3 rounded-xl bg-warn/10 p-3 text-xs">Nenhum usuário com perfil Vendedor ainda. Crie a conta do vendedor e, em Configurações → Usuários, escolha a área Vendedor.</p>}
+      {!readOnly && !sellers.data?.length && <p className="mb-3 rounded-xl bg-warn/10 p-3 text-xs">Nenhum usuário com perfil Vendedor ainda. Crie a conta do vendedor e, em Configurações → Usuários, escolha a área Vendedor.</p>}
       <div className="max-h-[55vh] overflow-auto rounded-xl border border-line">
         <Table dense>
           <thead><tr><th className="th">Código</th><th className="th">Cliente</th><th className="th">CNPJ</th><th className="th">Vendedor</th><th className="th">Desconto financeiro</th><th className="th">Último ped.</th><th className="th" /></tr></thead>
@@ -175,7 +176,7 @@ function ClientsDialog({ onClose }: { onClose: () => void }) {
           </tbody>
         </Table>
       </div>
-      <p className="mt-2 text-xs text-muted">{comPedido.length + semPedido.length} cliente(s). <Badge tone="info">Desconto</Badge> separe vários com ponto e vírgula (ex.: 3;1). Escreva "nenhum" para sem desconto. O vendedor só escolhe entre os descontos daqui, sem alterar.</p>
+      <p className="mt-2 text-xs text-muted">{comPedido.length + semPedido.length} cliente(s). {readOnly ? 'Use Exportar cadastro para conferir no Excel há quanto tempo cada cliente não pede. Os descontos são definidos pelo ADM.' : <><Badge tone="info">Desconto</Badge> separe vários com ponto e vírgula (ex.: 3;1). Escreva "nenhum" para sem desconto. O vendedor só escolhe entre os descontos daqui, sem alterar.</>}</p>
 
       {removing && (
         <Dialog open onClose={() => setRemoving(null)} title={`Excluir ${removing.c.name}?`}

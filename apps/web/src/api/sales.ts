@@ -137,6 +137,7 @@ export interface SalesOrderInput {
   status: string;
   notes: string | null;
   discount_pct: number;
+  allow_other_packaging: boolean | null;
   items: SalesItemInput[];
 }
 
@@ -159,6 +160,7 @@ export async function saveSalesOrder(input: SalesOrderInput): Promise<{ id: stri
     total_value: t.total,
     total_weight: round3(input.items.filter((i) => i.sale_unit === 'kg').reduce((s, i) => s + i.quantity, 0)) || null,
     source: 'manual',
+    allow_other_packaging: input.allow_other_packaging,
   };
   let id = input.id;
   try {
@@ -199,4 +201,9 @@ export async function saveSalesOrder(input: SalesOrderInput): Promise<{ id: stri
   });
   if (rows.length) unwrap(await supabase.from('order_items').insert(rows));
   return { id: id! };
+}
+
+/** Pedidos em aberto (aberto ou em produção) do cliente: aviso ao começar um pedido novo para quem já tem pedido. */
+export async function openOrdersOf(customerId: string): Promise<Array<{ id: string; order_number: string | null; order_date: string | null; total_value: number }>> {
+  return unwrap(await supabase.from('orders').select('id, order_number, order_date, total_value').eq('customer_id', customerId).in('status', ['aberto', 'em_producao']).order('order_date', { ascending: false }).limit(5)) as Array<{ id: string; order_number: string | null; order_date: string | null; total_value: number }>;
 }

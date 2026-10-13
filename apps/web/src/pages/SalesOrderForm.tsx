@@ -5,13 +5,13 @@ import { toast } from 'sonner';
 import { ArrowLeft, Plus, Save, Trash2, Users } from 'lucide-react';
 import { listCustomers } from '@/api/customers';
 import { listProducts } from '@/api/products';
-import { getSaleUnitRules, saveSalesOrder } from '@/api/sales';
+import { getSaleUnitRules, openOrdersOf, saveSalesOrder } from '@/api/sales';
 import { logActivity } from '@/api/activity';
-import { Button, Card, Field, Input, PageHeader, Select, Textarea } from '@/components/primitives';
+import { Button, Card, Dialog, Field, Input, PageHeader, Select, Textarea } from '@/components/primitives';
 import { SearchSelect, type SearchOption } from '@/components/SearchSelect';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { fmtCnpj, normalizeKey, orderTotals, quantityError, saleUnitFor, type SaleUnit } from '@/domain/sales';
-import { fmtBRL } from '@/lib/utils';
+import { fmtBRL, fmtDate } from '@/lib/utils';
 import type { Order, OrderItem, OrderStatus, Product } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useEditLock } from '@/hooks/useRealtime';
@@ -41,6 +41,10 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   // O status saiu desta tela (vai para outra tela): pedido novo nasce Aberto; na edição, mantém o que já tinha.
   const status: OrderStatus = existing?.status ?? 'aberto';
   const [notes, setNotes] = useState(existing?.notes ?? '');
+  // Vendas parte 4: pergunta no fim do pedido; pedido novo começa sem resposta (obrigatória para salvar)
+  const [otherPack, setOtherPack] = useState<boolean | null>(existing ? (existing.allow_other_packaging ?? null) : null);
+  // aviso de pedido em aberto para o mesmo cliente (só em pedido novo)
+  const [dupAsk, setDupAsk] = useState<{ name: string; orders: Array<{ order_number: string | null; order_date: string | null; total_value: number }> } | null>(null);
   const [lines, setLines] = useState<Line[]>(() =>
     existing?.items.length
       ? existing.items.map((it, i) => ({ key: i + 1, reference: it.product_reference ?? '', code: it.product_code ?? '', quantity: it.quantity != null ? String(it.quantity) : '', price: it.unit_price != null ? String(it.unit_price) : '' }))
@@ -87,6 +91,15 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
     setCustomerId(id);
     setDiscount(0); // ao trocar ou limpar o cliente, o desconto volta para "sem desconto"
     touch();
+    if (id && !editing) {
+      const c = customers.data?.find((x) => x.id === id);
+      openOrdersOf(id).then((os) => { if (os.length) setDupAsk({ name: c?.name ?? 'este cliente', orders: os }); }).catch(() => {});
+    }
+  }
+  /** "Não" no aviso de pedido em aberto: limpa tudo e recomeça um pedido novo do zero. */
+  function resetForm() {
+    setCustomerId(null); setDiscount(0); setOrderNumber(''); setOrderDate(new Date().toISOString().slice(0, 10)); setDeliveryDate('');
+    setNotes(''); setOtherPack(null); setLines([emptyLine()]); setShowErrors(false); setDirty(false); setDupAsk(null);
   }
 
   const unitOf = (p: Product | undefined): SaleUnit | null => (p ? saleUnitFor(p.reference, rules.data) : null);
@@ -134,8 +147,8 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   const filled = calc.filter((c) => !c.blank);
   const totals = orderTotals(calc.map((c) => ({ quantity: c.blank || Object.keys(c.errs).length ? null : c.q, unit_price: c.price })), discount);
   const lineErrors = filled.some((c) => Object.keys(c.errs).length);
-  const formErrors = { customer: !customer ? 'Selecione um cliente da lista.' : '', items: !filled.length ? 'Inclua pelo menos um item com produto, quantidade e preço.' : '' };
-  const valid = !formErrors.customer && !formErrors.items && !lineErrors;
+  const formErrors = { customer: !customer ? 'Selecione um cliente da lista.' : '', items: !filled.length ? 'Inclua pelo menos um item com produto, quantidade e preço.' : '', pack: otherPack === null ? 'Responda se pode enviar em outras embalagens.' : '' };
+  const valid = !formErrors.customer && !formErrors.items && !formErrors.pack && !lineErrors;
 
   const save = useMutation({
     mutationFn: () => saveSalesOrder({
@@ -147,6 +160,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
       status,
       notes: notes.trim() || null,
       discount_pct: discount,
+      allow_other_packaging: otherPack,
       items: filled.map((c) => ({ product: c.p!, sale_unit: c.unit!, quantity: c.q!, unit_price: c.price! })),
     }),
     onSuccess: async (r) => {
@@ -259,6 +273,25 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
           <p className="px-5 py-3 text-xs text-muted">Qtd em kg para Ander e ISA (até 3 casas decimais) e em unidade para pote temp., pote frut. e revenda (só inteiros). Vlr Ttl. = Qtd × Vlr Un.</p>
         </Card>
       </div>
+      <Card title="Perguntas do pedido" className="mt-4">
+        <fieldset>
+          <legend className="text-sm font-semibold">Pode enviar em outras embalagens de medida a quantidade solicitada?</legend>
+          <p className="mt-0.5 text-xs text-muted">Ex.: o pedido tem 10 kg de páprica defumada e há em estoque 2 embalagens de 5 kg do mesmo produto. Com "Sim", elas podem ser usadas para agilizar a entrega.</p>
+          <div className="mt-2 flex gap-2" role="radiogroup">
+            {([[true, 'Sim'], [false, 'Não']] as const).map(([v, l]) => (
+              <button key={l} type="button" role="radio" aria-checked={otherPack === v} onClick={() => { setOtherPack(v); touch(); }}
+                className={`min-w-24 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${otherPack === v ? 'border-brand bg-brand text-white' : 'border-line hover:bg-surface-2'}`}>{l}</button>
+            ))}
+          </div>
+          {err(formErrors.pack)}
+        </fieldset>
+      </Card>
+      <Dialog open={!!dupAsk} onClose={() => setDupAsk(null)} title="Você já tem pedido para esse cliente. Continuar?"
+        footer={<><Button variant="outline" onClick={resetForm}>Não</Button><Button onClick={() => setDupAsk(null)}>Sim, continuar</Button></>}>
+        <p className="text-sm">{dupAsk?.name} já tem {dupAsk && dupAsk.orders.length > 1 ? `${dupAsk.orders.length} pedidos em aberto` : 'um pedido em aberto'}:</p>
+        <ul className="mt-2 space-y-1 text-sm">{dupAsk?.orders.map((o, i) => <li key={i} className="rounded-lg bg-surface-2 px-3 py-1.5">Pedido {o.order_number ? `#${o.order_number}` : 'sem número'} · {fmtDate(o.order_date)} · {fmtBRL(o.total_value)}</li>)}</ul>
+        <p className="mt-3 text-xs text-muted">Sim: o aviso fecha e você continua este pedido. Não: a seleção é apagada e a tela volta em branco para um pedido novo.</p>
+      </Dialog>
     </>
   );
 }

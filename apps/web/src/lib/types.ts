@@ -181,6 +181,8 @@ export interface Order {
   status: OrderStatus;
   source: string;
   notes: string | null;
+  /** Vendas parte 4: pode enviar em outras embalagens de medida (ex.: 2 × 5 kg no lugar de 10 kg); null = sem resposta */
+  allow_other_packaging?: boolean | null;
   stock_posted?: boolean;
   /** Pedido de venda: quem lançou, retrato do cliente/vendedor no momento do salvamento e desconto financeiro. */
   created_by?: string | null;

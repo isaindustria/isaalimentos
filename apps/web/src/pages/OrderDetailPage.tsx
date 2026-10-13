@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, Trash2, Printer, Pencil, PackageMinus } from 'lucide-react';
+import { ArrowLeft, Trash2, Printer, Pencil, Plus } from 'lucide-react';
 import { deleteOrder, getOrder, postOrderStock, setOrderStatus } from '@/api/orders';
 import { logActivity } from '@/api/activity';
 import { Badge, Button, Card, PageHeader, Select, Spinner, Table } from '@/components/primitives';
@@ -11,7 +11,6 @@ import { STATUS_LABEL } from './OrdersPage';
 import { MatchBadge } from './OrderImportPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtime } from '@/hooks/useRealtime';
-import { EmitirNfeButton } from '@/components/EmitirNfeButton';
 
 export default function OrderDetailPage() {
   const { id = '' } = useParams();
@@ -73,11 +72,14 @@ export default function OrderDetailPage() {
         description={<span>{o.customer && !isSeller ? <Link className="text-brand font-medium" to={`/clientes/${o.customer.id}`}>{o.customer.name}</Link> : custName ?? 'Sem cliente'} · {formatCnpj(o.customer?.cnpj ?? o.customer_cnpj)}{o.seller_name ? ` · vendedor ${o.seller_name}` : ''} · emitido em {fmtDate(o.order_date)}</span>}
         actions={
           <>
-            <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(-1)}>Voltar</Button>
-            <Button variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${id}/editar`)}>Editar</Button>
-            <Button variant="outline" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Imprimir</Button>
-            {!isSeller && <EmitirNfeButton orderId={o.id} />}
-            {!o.stock_posted && !isSeller && <Button variant="outline" icon={<PackageMinus className="h-4 w-4" />} loading={post.isPending} onClick={() => confirm('Baixar do estoque (local 1) todas as unidades deste pedido?') && post.mutate()}>Baixar estoque</Button>}
+            <div className="flex w-full flex-nowrap items-center gap-1.5 sm:w-auto sm:gap-2">
+              <Button size="sm" variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(-1)}>Voltar</Button>
+              <Button size="sm" variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${id}/editar`)}>Editar</Button>
+              <Button size="sm" variant="outline" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Imprimir</Button>
+              {/* Vendas parte 4: Novo pedido logo depois de Imprimir; Baixar estoque e Emitir NF-e saíram desta tela
+                  (a baixa continua oferecida ao mudar o status para Faturado/Entregue; a NF-e é emitida em Notas fiscais). */}
+              <Button size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>
+            </div>
             <Select className="w-44" value={o.status} onChange={(e) => status.mutate(e.target.value as OrderStatus)}>
               {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </Select>
@@ -101,6 +103,11 @@ export default function OrderDetailPage() {
         )}
         <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Entrega</div><div className="font-display text-xl font-bold">{fmtDate(o.delivery_date)}</div><div className="text-xs text-muted">{o.payment_terms ? `pgto ${o.payment_terms} dias` : ''} {o.buyer ? `· ${o.buyer}` : ''}</div></div>
       </div>
+      {o.allow_other_packaging != null && (
+        <div className={`mb-4 rounded-xl border p-3 text-sm ${o.allow_other_packaging ? 'border-ok/30 bg-ok/5' : 'border-warn/30 bg-warn/5'}`}>
+          <b>Outras embalagens de medida:</b> {o.allow_other_packaging ? 'Sim, pode enviar a quantidade em outras embalagens (ex.: 2 × 5 kg no lugar de 10 kg).' : 'Não, enviar só na embalagem pedida.'}
+        </div>
+      )}
       {editors.length > 0 && (
         <div className="mb-4 flex items-center gap-3 rounded-xl border border-warn/30 bg-warn/5 p-3 text-sm"><span className="size-2 animate-pulse rounded-full bg-warn" /> {editors.map((e) => e.name).join(', ')} está editando este pedido agora.</div>
       )}

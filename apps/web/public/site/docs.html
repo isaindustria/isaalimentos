@@ -159,7 +159,18 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.9.6</span><span class="d">13/10/2026</span><span class="tag">atual</span>
+        <span class="v">v1.9.7</span><span class="d">13/10/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Novo pedido</strong>: ao escolher um cliente que já tem pedido em aberto, o sistema pergunta "Você já tem pedido para esse cliente. Continuar?". Sim continua; Não limpa a tela para um pedido novo do zero.</li>
+          <li>Pergunta no fim do pedido: <strong>"Pode enviar em outras embalagens de medida a quantidade solicitada?"</strong> (ex.: 10 kg pedidos podem sair em 2 embalagens de 5 kg). A resposta aparece na tela do pedido.</li>
+          <li>Tela do pedido: Voltar, Editar, Imprimir e <strong>Novo pedido</strong> na mesma linha. Baixar estoque e Emitir NF-e saíram daqui: a baixa continua sendo oferecida ao mudar o status para Faturado ou Entregue, e a NF-e é emitida em Notas fiscais → Notas → Emitir NF-e de um pedido.</li>
+          <li>Tela Pedidos: Como usar, Importar PDF e Novo pedido na mesma linha no alto; as abas Pedidos e Importações saíram (pedidos do PDF e manuais ficam na mesma lista, com o total no rodapé); status e cliente na mesma linha.</li>
+          <li>Vendedor: vê <strong>Meus clientes</strong> (só os cadastrados no nome dele, sem alterar), com os dias desde o último pedido e Exportar cadastro. Importar clientes fica só com o ADM.</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.9.6</span><span class="d">13/10/2026</span>
         <ul>
           <li><strong>Vídeo tutorial "Cadastro de clientes"</strong> (computador e celular) na página Tutoriais: importar a planilha do seu sistema sem modelo, escolher o campo das colunas, conferir duplicidades, código do cliente, dias desde o último pedido, exportar, excluir ou inativar e Ver produtos.</li>
           <li>As regras de venda em kg ou unidade agora reconhecem as referências do cadastro (ISA SACARIA e ANDER SACARIA em kg; ISA PT TEMP, ISA FRUT e REVENDA em unidade).</li>

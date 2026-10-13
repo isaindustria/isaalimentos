@@ -13,6 +13,9 @@ import { NFE_STATUS_LABEL, type NfeEmitente, type NfeNota } from '@/domain/nfe';
 import { fmtCnpj } from '@/domain/sales';
 import { useAuth } from '@/hooks/useAuth';
 import { gerarDanfe } from '@/domain/danfe';
+import { EmitirNfeButton } from '@/components/EmitirNfeButton';
+import { SearchSelect } from '@/components/SearchSelect';
+import { listOrders } from '@/api/orders';
 import isaLogo from '@/assets/isa-logo.png';
 
 type Aba = 'notas' | 'emitente' | 'certificado' | 'fiscal';
@@ -46,8 +49,10 @@ function Notas() {
   const danfe = async (n: NfeNota) => {
     try { downloadBlob(await gerarDanfe(n.xml ?? '', isaLogo, { inscricaoMunicipal: emitente.data?.inscricao_municipal }), `DANFE-${n.numero ?? n.chave}.pdf`); } catch (err) { toast.error(`Não foi possível gerar o DANFE: ${(err as Error).message}`); }
   };
-  if (!notas.data?.length) return <Card><EmptyState title="Nenhuma nota ainda" description="Abra um pedido e clique em Emitir NF-e. A nota entra na fila e o programa do Windows com o certificado emite." /></Card>;
   return (
+    <div className="space-y-4">
+    <EmitirDePedido />
+    {!notas.data?.length ? <Card><EmptyState title="Nenhuma nota ainda" description="Escolha um pedido acima e clique em Emitir NF-e. A nota entra na fila e o programa do Windows com o certificado emite." /></Card> : (
     <Card padded={false}>
       <Table>
         <thead><tr><th className="th">Nº / série</th><th className="th">Cliente</th><th className="th text-right">Valor</th><th className="th">Situação</th><th className="th">Quando</th><th className="th" /></tr></thead>
@@ -75,6 +80,29 @@ function Notas() {
           <Field label="Justificativa (mínimo 15 caracteres)"><Textarea value={just} onChange={(e) => setJust(e.target.value)} /></Field>
         </Dialog>
       )}
+    </Card>
+    )}
+    </div>
+  );
+}
+
+/** Emitir a NF-e de um pedido (Vendas parte 4: o botão saiu da tela do pedido e fica aqui). */
+function EmitirDePedido() {
+  const orders = useQuery({ queryKey: ['orders', 'nfe-emitir'], queryFn: () => listOrders({ status: 'todos' }) });
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const opts = (orders.data ?? []).filter((o) => o.status !== 'cancelado').map((o) => ({
+    value: o.id,
+    label: `${o.order_number ? '#' + o.order_number : 'Sem número'} · ${o.customer?.name ?? o.customer_name ?? 'sem cliente'}`,
+    sub: `${fmtBRL(o.total_value)} · ${o.order_date ? o.order_date.split('-').reverse().join('/') : ''}`,
+    search: `${o.order_number ?? ''} ${o.customer?.cnpj ?? o.customer_cnpj ?? ''}`,
+  }));
+  return (
+    <Card title="Emitir NF-e de um pedido">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1 basis-72"><SearchSelect id="nfe-pedido" ariaLabel="Pedido para emitir a nota" options={opts} value={orderId} onChange={setOrderId} placeholder="Digite o número do pedido ou o nome do cliente…" digitsSearch /></div>
+        {orderId && <EmitirNfeButton key={orderId} orderId={orderId} />}
+      </div>
+      <p className="mt-2 text-xs text-muted">O sistema confere o cadastro, coloca a nota na fila e o programa do Windows com o certificado emite. Nota rejeitada é reenviada com o mesmo número.</p>
     </Card>
   );
 }
