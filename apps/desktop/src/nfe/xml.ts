@@ -22,6 +22,8 @@ export interface Item {
   /** código de benefício fiscal da UF (SP: obrigatório com redução de base, ex.: SP020030) */
   cBenef?: string | null;
   PIS: { CST: string; pPIS?: number }; COFINS: { CST: string; pCOFINS?: number };
+  /** Reforma tributária (NT 2025.002): IBS e CBS. Em 2026 são alíquotas de teste (CBS 0,9%, IBS 0,1%). */
+  IBSCBS?: { CST: string; cClassTrib: string; pIBSUF: number; pIBSMun: number; pCBS: number } | null;
 }
 export interface NotaInput {
   ambiente: Ambiente; serie: number; nNF: number; natOp: string; dhEmi?: string;
@@ -90,9 +92,11 @@ export function montarNFe(n: NotaInput): NotaMontada {
   const dest = `<dest>${docDest}${tag('xNome', homolog ? HOMOLOG_NOME : txt(n.dest.xNome))}${endereco('enderDest', n.dest.ender)}<indIEDest>${n.dest.indIEDest}</indIEDest>${n.dest.indIEDest === 1 ? tag('IE', d(n.dest.IE)) : ''}${tag('email', txt(n.dest.email, 60))}</dest>`;
 
   let vProdT = 0, vDescT = 0, vBCT = 0, vICMST = 0, vPIST = 0, vCOFT = 0;
+  let temIBS = false, vBCIBST = 0, vIBSUFT = 0, vIBSMunT = 0, vCBST = 0;
   const det = n.itens.map((it, i) => {
     const vProd = r2(it.qCom * it.vUnCom), vDesc = r2(it.vDesc ?? 0), base = r2(vProd - vDesc);
     vProdT += vProd; vDescT += vDesc;
+    const antes = { icms: vICMST, pis: vPIST, cof: vCOFT };
     let icms: string;
     if (simples) {
       const csosn = it.CSOSN ?? '102';
@@ -113,12 +117,21 @@ export function montarNFe(n: NotaInput): NotaMontada {
     const ean = d(it.cEAN) || 'SEM GTIN';
     const xProd = homolog && i === 0 ? 'NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL' : txt(it.xProd, 120);
     const prod = `<prod><cProd>${txt(it.cProd, 60)}</cProd><cEAN>${ean}</cEAN><xProd>${xProd}</xProd><NCM>${d(it.NCM)}</NCM>${tag('CEST', d(it.CEST))}${it.cBenef ? `<cBenef>${txt(it.cBenef, 10)}</cBenef>` : ''}<CFOP>${d(it.CFOP)}</CFOP><uCom>${txt(it.uCom, 6)}</uCom><qCom>${f(it.qCom, 4)}</qCom><vUnCom>${f(it.vUnCom, 10)}</vUnCom><vProd>${f(vProd, 2)}</vProd><cEANTrib>${ean}</cEANTrib><uTrib>${txt(it.uCom, 6)}</uTrib><qTrib>${f(it.qCom, 4)}</qTrib><vUnTrib>${f(it.vUnCom, 10)}</vUnTrib>${vDesc ? `<vDesc>${f(vDesc, 2)}</vDesc>` : ''}<indTot>1</indTot></prod>`;
-    return `<det nItem="${i + 1}">${prod}<imposto>${icms}${pis}${cof}</imposto></det>`;
+    // IBS/CBS: base = valor - desconto - ICMS - PIS - COFINS do item
+    let ibscbs = '';
+    if (it.IBSCBS) {
+      const t = it.IBSCBS;
+      const bc = r2(base - (vICMST - antes.icms) - (vPIST - antes.pis) - (vCOFT - antes.cof));
+      const uf = r2((bc * t.pIBSUF) / 100), mun = r2((bc * t.pIBSMun) / 100), cbs = r2((bc * t.pCBS) / 100);
+      temIBS = true; vBCIBST += bc; vIBSUFT += uf; vIBSMunT += mun; vCBST += cbs;
+      ibscbs = `<IBSCBS><CST>${t.CST}</CST><cClassTrib>${t.cClassTrib}</cClassTrib><gIBSCBS><vBC>${f(bc, 2)}</vBC><gIBSUF><pIBSUF>${f(t.pIBSUF, 4)}</pIBSUF><vIBSUF>${f(uf, 2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>${f(t.pIBSMun, 4)}</pIBSMun><vIBSMun>${f(mun, 2)}</vIBSMun></gIBSMun><vIBS>${f(r2(uf + mun), 2)}</vIBS><gCBS><pCBS>${f(t.pCBS, 4)}</pCBS><vCBS>${f(cbs, 2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
+    }
+    return `<det nItem="${i + 1}">${prod}<imposto>${icms}${pis}${cof}${ibscbs}</imposto></det>`;
   }).join('');
 
   vProdT = r2(vProdT); vDescT = r2(vDescT);
   const vNF = r2(vProdT - vDescT);
-  const total = `<total><ICMSTot><vBC>${f(vBCT, 2)}</vBC><vICMS>${f(r2(vICMST), 2)}</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>${f(vProdT, 2)}</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>${f(vDescT, 2)}</vDesc><vII>0.00</vII><vIPI>0.00</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>${f(r2(vPIST), 2)}</vPIS><vCOFINS>${f(r2(vCOFT), 2)}</vCOFINS><vOutro>0.00</vOutro><vNF>${f(vNF, 2)}</vNF></ICMSTot></total>`;
+  const total = `<total><ICMSTot><vBC>${f(vBCT, 2)}</vBC><vICMS>${f(r2(vICMST), 2)}</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>${f(vProdT, 2)}</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>${f(vDescT, 2)}</vDesc><vII>0.00</vII><vIPI>0.00</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>${f(r2(vPIST), 2)}</vPIS><vCOFINS>${f(r2(vCOFT), 2)}</vCOFINS><vOutro>0.00</vOutro><vNF>${f(vNF, 2)}</vNF></ICMSTot>${temIBS ? `<IBSCBSTot><vBCIBSCBS>${f(r2(vBCIBST), 2)}</vBCIBSCBS><gIBS><gIBSUF><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vIBSUF>${f(r2(vIBSUFT), 2)}</vIBSUF></gIBSUF><gIBSMun><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vIBSMun>${f(r2(vIBSMunT), 2)}</vIBSMun></gIBSMun><vIBS>${f(r2(vIBSUFT + vIBSMunT), 2)}</vIBS><vCredPres>0.00</vCredPres><vCredPresCondSus>0.00</vCredPresCondSus></gIBS><gCBS><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vCBS>${f(r2(vCBST), 2)}</vCBS><vCredPres>0.00</vCredPres><vCredPresCondSus>0.00</vCredPresCondSus></gCBS></IBSCBSTot>` : ''}</total>`;
   const v = n.vol;
   const vol = v && (v.qVol || v.pesoL || v.pesoB) ? `<vol>${v.qVol ? `<qVol>${Math.round(v.qVol)}</qVol>` : ''}${tag('esp', txt(v.esp))}${v.pesoL ? `<pesoL>${f(v.pesoL, 3)}</pesoL>` : ''}${v.pesoB ? `<pesoB>${f(v.pesoB, 3)}</pesoB>` : ''}</vol>` : '';
   const transp = `<transp><modFrete>${n.modFrete}</modFrete>${vol}</transp>`;

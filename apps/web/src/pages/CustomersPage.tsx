@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Search, Building2, Upload } from 'lucide-react';
-import { ImportSheetDialog } from '@/components/ImportSheetDialog';
-import { pick } from '@/domain/parsers/sheet';
-import { bulkUpsertCustomers, type CustomerInput } from '@/api/customers';
-import { logActivity } from '@/api/activity';
+import { CustomerImportDialog } from '@/components/CustomerImportDialog';
+import { listSellers } from '@/api/sales';
 import { customerStats, listCustomers, upsertCustomer } from '@/api/customers';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Textarea } from '@/components/primitives';
 import type { Customer } from '@/lib/types';
@@ -39,12 +37,14 @@ export function CustomerForm({ value, onChange }: { value: Partial<Customer>; on
 export default function CustomersPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { isAdmin, session, profile } = useAuth();
+  const { isAdmin } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Partial<Customer> | null>(null);
   const customers = useQuery({ queryKey: ['customers'], queryFn: () => listCustomers() });
   const stats = useQuery({ queryKey: ['customer-stats'], queryFn: customerStats });
+  const allCustomers = useQuery({ queryKey: ['customers', 'all'], queryFn: () => listCustomers(true), enabled: isAdmin && importOpen });
+  const sellers = useQuery({ queryKey: ['sellers'], queryFn: listSellers, enabled: isAdmin && importOpen });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -120,53 +120,10 @@ export default function CustomersPage() {
       ) : (
         <Card><EmptyState title="Nenhum cliente" description="Importe pedidos ou cadastre um cliente manualmente." /></Card>
       )}
-      <ImportSheetDialog<CustomerInput>
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        title="Importar clientes por planilha"
-        description="Cria ou atualiza lojas pelo CNPJ. Redes com várias lojas: use a coluna Rede para agrupar."
-        templateName="modelo-clientes.xlsx"
-        columns={[
-          { key: 'name', label: 'Nome', example: 'Supermercado Exemplo · Loja Centro', required: true },
-          { key: 'cnpj', label: 'CNPJ', example: '75.315.333/0046-00' },
-          { key: 'group_name', label: 'Rede', example: 'Supermercado Exemplo' },
-          { key: 'trade_name', label: 'Nome fantasia', example: 'Exemplo Centro' },
-          { key: 'address', label: 'Endereço', example: 'Av. Nossa Senhora de Fátima, 298' },
-          { key: 'district', label: 'Bairro', example: 'Centro' },
-          { key: 'city', label: 'Cidade', example: 'Santos' },
-          { key: 'state', label: 'UF', example: 'SP' },
-          { key: 'cep', label: 'CEP', example: '11085-202' },
-          { key: 'phone', label: 'Telefone', example: '(13) 99999-0000' },
-          { key: 'email', label: 'E-mail', example: 'compras@exemplo.com.br' },
-          { key: 'contact_name', label: 'Contato', example: 'Diego' },
-        ]}
-        mapRow={(row, line) => {
-          const name = pick(row, ['nome', 'razao social', 'cliente', 'loja']);
-          if (!name) return `Linha ${line}: sem nome`;
-          return {
-            name,
-            cnpj: pick(row, ['cnpj']) || null,
-            group_name: pick(row, ['rede', 'grupo']) || null,
-            trade_name: pick(row, ['nome fantasia', 'fantasia']) || null,
-            address: pick(row, ['endereco', 'logradouro']) || null,
-            district: pick(row, ['bairro']) || null,
-            city: pick(row, ['cidade', 'municipio']) || null,
-            state: (pick(row, ['uf', 'estado']) || '').toUpperCase().slice(0, 2) || null,
-            cep: pick(row, ['cep']) || null,
-            phone: pick(row, ['telefone', 'celular', 'whatsapp', 'fone']) || null,
-            email: pick(row, ['e mail', 'email']) || null,
-            contact_name: pick(row, ['contato', 'comprador', 'responsavel']) || null,
-          };
-        }}
-        preview={(r) => [r.name, r.cnpj ?? '—', r.group_name ?? '—', r.trade_name ?? '—', r.address ?? '—', r.district ?? '—', r.city ?? '—', r.state ?? '—', r.cep ?? '—', r.phone ?? '—', r.email ?? '—', r.contact_name ?? '—']}
-        onImport={async (rows) => {
-          const n = await bulkUpsertCustomers(rows);
-          await logActivity({ kind: 'cliente', title: `${n} cliente(s) importados por planilha`, link: '/clientes', actor_id: session?.user.id, actor_name: profile?.name ?? null });
-          qc.invalidateQueries({ queryKey: ['customers'] });
-          qc.invalidateQueries({ queryKey: ['customer-stats'] });
-          return `${n} cliente(s) criados ou atualizados.`;
-        }}
-      />
+      {isAdmin && importOpen && (
+        <CustomerImportDialog open onClose={() => setImportOpen(false)} existing={allCustomers.data ?? []} sellers={sellers.data ?? []}
+          onDone={() => { qc.invalidateQueries({ queryKey: ['customers'] }); }} />
+      )}
       <Dialog open={!!editing} onClose={() => setEditing(null)} title="Novo cliente" wide footer={<><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={submit} loading={save.isPending}>Salvar</Button></>}>
         {editing && <form onSubmit={submit}><CustomerForm value={editing} onChange={setEditing} /></form>}
       </Dialog>

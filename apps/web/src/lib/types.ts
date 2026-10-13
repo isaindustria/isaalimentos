@@ -62,6 +62,9 @@ export interface Product {
   inf_fiscal?: string | null;
   /** código de benefício fiscal (cBenef) da SEFAZ-SP, ex.: SP020030 */
   c_benef?: string | null;
+  /** reforma tributária: CST e cClassTrib do IBS/CBS (vazio = padrão do emitente) */
+  ibscbs_cst?: string | null;
+  ibscbs_cclasstrib?: string | null;
   created_at: string;
   updated_at: string;
 }

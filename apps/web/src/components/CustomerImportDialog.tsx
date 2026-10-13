@@ -112,7 +112,7 @@ export function CustomerImportDialog({ open, onClose, existing, sellers, onDone 
             </Table>
           </div>
           {mapErrors.map((m) => <p key={m} className="rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{m}</p>)}
-          <p className="text-xs text-muted">Obrigatórios: nome do cliente e código ou CNPJ. Sem a coluna Vendedor ou Desconto, esses dados ficam como estão no cadastro.</p>
+          <p className="text-xs text-muted">Obrigatórios: nome do cliente e código ou CNPJ. Desconto financeiro: escolha a coluna em Campo no ISA (ex.: 3% ou 3%;1%). Sem as colunas Vendedor ou Desconto, esses dados ficam como estão e podem ser ajustados depois em Ver clientes.</p>
         </div>
       )}
 
@@ -131,7 +131,7 @@ export function CustomerImportDialog({ open, onClose, existing, sellers, onDone 
           )}
           <div className="max-h-[48vh] overflow-auto rounded-xl border border-line">
             <Table dense>
-              <thead><tr><th className="th">Linha</th><th className="th">Situação</th><th className="th">Código</th><th className="th">Cliente</th><th className="th">CNPJ</th><th className="th">Motivo / mudanças</th><th className="th" /></tr></thead>
+              <thead><tr><th className="th">Linha</th><th className="th">Situação</th><th className="th">Código</th><th className="th">Cliente</th><th className="th">CNPJ</th><th className="th">Vendedor / desconto</th><th className="th">Motivo / mudanças</th><th className="th" /></tr></thead>
               <tbody>
                 {shown.map((r) => {
                   const fix = problem(r);
@@ -142,6 +142,7 @@ export function CustomerImportDialog({ open, onClose, existing, sellers, onDone 
                       <td className="td">{fix ? <Input className="h-8 w-24 font-mono" aria-label={`Código da linha ${r.line}`} defaultValue={r.values.code ?? ''} onBlur={(e) => e.target.value !== (r.values.code ?? '') && edit(r.line, 'code', e.target.value)} /> : <span className="font-mono text-xs">{r.values.code ?? '—'}</span>}</td>
                       <td className="td">{fix ? <Input className="h-8 w-52" aria-label={`Nome da linha ${r.line}`} defaultValue={r.values.name ?? ''} onBlur={(e) => e.target.value !== (r.values.name ?? '') && edit(r.line, 'name', e.target.value)} /> : <span className="text-sm">{r.values.name}</span>}</td>
                       <td className="td">{fix ? <Input className="h-8 w-40 font-mono" aria-label={`CNPJ da linha ${r.line}`} defaultValue={r.values.cnpj ?? ''} onBlur={(e) => e.target.value.replace(/\D/g, '') !== (r.values.cnpj ?? '') && edit(r.line, 'cnpj', e.target.value)} /> : <span className="font-mono text-xs">{r.values.cnpj ? fmtCnpj(r.values.cnpj) : '—'}</span>}</td>
+                      <td className="td text-xs">{r.values.seller || '—'}<div className="text-muted">{r.discounts ? (r.discounts.length ? r.discounts.map((d) => `${String(d).replace('.', ',')}%`).join(' · ') : 'sem desconto') : 'desconto: não veio na planilha'}</div></td>
                       <td className="td text-xs">
                         {r.reason && <div className={r.status === 'erro' ? 'text-danger' : 'text-warn'}>{r.reason}</div>}
                         {r.changes.map((c) => <div key={c}>{c}</div>)}

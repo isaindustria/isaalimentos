@@ -38,8 +38,12 @@ export async function enfileirarNota(orderId: string): Promise<{ id?: string; pe
   const [e, d] = await Promise.all([getEmitente(), dadosDoPedido(orderId)]);
   const p = pendencias(d.order, d.items, d.cust, d.products, e);
   if (p.length) return { pendencias: p };
-  const ativa = (await notasDoPedido(orderId)).find((n) => ['fila', 'processando', 'autorizada'].includes(n.status));
+  const notas = await notasDoPedido(orderId);
+  const ativa = notas.find((n) => ['fila', 'processando', 'autorizada'].includes(n.status));
   if (ativa) return { pendencias: [ativa.status === 'autorizada' ? 'Este pedido já tem nota autorizada.' : 'Este pedido já está na fila de emissão.'] };
+  // nota rejeitada ou com erro: reenvia a mesma (mantém o número; número rejeitado pode ser reaproveitado)
+  const voltar = notas.find((n) => n.status === 'rejeitada' || n.status === 'erro');
+  if (voltar) { await reenfileirar(voltar.id); return { id: voltar.id, pendencias: [] }; }
   const row = unwrap(await supabase.from('nfe_notas').insert({ order_id: orderId, ambiente: e!.ambiente, status: 'fila', valor: d.order.total_value, dest_nome: d.cust?.name, dest_doc: d.cust?.cnpj }).select('id').single()) as { id: string };
   return { id: row.id, pendencias: [] };
 }
@@ -91,7 +95,7 @@ export async function cancelarNota(n: NfeNota, justificativa: string) {
   unwrap(await supabase.from('nfe_notas').update({ status: 'cancelada', xml_cancelamento: res.data.xml, justificativa_cancelamento: justificativa, cancelada_em: new Date().toISOString() }).eq('id', n.id));
 }
 
-export async function salvarFiscalProduto(code: string, patch: Partial<Pick<Product, 'ncm' | 'cest' | 'gtin' | 'origem' | 'cfop' | 'icms_cst' | 'icms_aliq' | 'icms_red_bc' | 'inf_fiscal' | 'c_benef'>>) {
+export async function salvarFiscalProduto(code: string, patch: Partial<Pick<Product, 'ncm' | 'cest' | 'gtin' | 'origem' | 'cfop' | 'icms_cst' | 'icms_aliq' | 'icms_red_bc' | 'inf_fiscal' | 'c_benef' | 'ibscbs_cst' | 'ibscbs_cclasstrib'>>) {
   unwrap(await supabase.from('products').update(patch).eq('code', code));
 }
 export async function salvarFiscalCliente(id: string, patch: Partial<Customer>) {

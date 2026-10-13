@@ -14,6 +14,7 @@ export interface NfeEmitente {
   mod_frete: number; t_pag: string; ind_pres: number; desconto_na_nota: boolean; inf_cpl: string | null;
   resp_tec_cnpj: string | null; resp_tec_contato: string | null; resp_tec_email: string | null; resp_tec_fone: string | null;
   inscricao_municipal?: string | null; peso_bruto_fator?: number | null;
+  ibscbs_ativo?: boolean; ibscbs_cst?: string; ibscbs_cclasstrib?: string; p_ibs_uf?: number; p_ibs_mun?: number; p_cbs?: number;
 }
 export type NfeStatus = 'fila' | 'processando' | 'autorizada' | 'rejeitada' | 'erro' | 'cancelada';
 export interface NfeNota {
@@ -81,6 +82,11 @@ export function montarEntrada(o: Order, items: OrderItem[], cust: Customer, prod
       orig: l.pr.origem ?? 0,
       ...(simples ? { CSOSN: e.csosn } : { CST: l.pr.icms_cst || e.cst_icms, pICMS: Number(l.pr.icms_aliq ?? e.aliq_icms), ...((l.pr.icms_cst || e.cst_icms) === '20' ? { pRedBC: Number(l.pr.icms_red_bc ?? 0) } : {}) }),
       PIS: { CST: e.pis_cst, pPIS: Number(e.pis_aliq) || undefined }, COFINS: { CST: e.cofins_cst, pCOFINS: Number(e.cofins_aliq) || undefined },
+      // reforma tributária: IBS/CBS (padrão do emitente, o produto pode ter CST e cClassTrib próprios)
+      IBSCBS: e.ibscbs_ativo === false ? null : {
+        CST: l.pr.ibscbs_cst?.trim() || e.ibscbs_cst || '000', cClassTrib: l.pr.ibscbs_cclasstrib?.trim() || e.ibscbs_cclasstrib || '000001',
+        pIBSUF: Number(e.p_ibs_uf ?? 0.1), pIBSMun: Number(e.p_ibs_mun ?? 0), pCBS: Number(e.p_cbs ?? 0.9),
+      },
     };
   });
   // textos legais dos produtos (ex.: redução de base do RICMS/SP), sem repetir

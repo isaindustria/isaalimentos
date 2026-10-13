@@ -36,11 +36,13 @@ export async function upsertCustomer(input: CustomerInput): Promise<Customer> {
 }
 
 export async function deleteCustomer(id: string) {
-  unwrap(await supabase.from('customers').delete().eq('id', id));
+  const rows = unwrap(await supabase.from('customers').delete().eq('id', id).select('id')) as Array<{ id: string }>;
+  if (!rows.length) throw new Error('o banco não permitiu a exclusão (só o ADM pode excluir clientes).');
 }
 
 export async function setCustomerActive(id: string, active: boolean) {
-  unwrap(await supabase.from('customers').update({ active }).eq('id', id));
+  const rows = unwrap(await supabase.from('customers').update({ active }).eq('id', id).select('id')) as Array<{ id: string }>;
+  if (!rows.length) throw new Error('o banco não permitiu a alteração deste cliente.');
 }
 
 /** Quantos pedidos e notas fiscais estão ligados ao cliente (o que impede a exclusão). */

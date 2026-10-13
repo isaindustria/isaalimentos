@@ -107,6 +107,8 @@ function Emitente() {
           {inp('nat_op', 'Natureza da operação', 'sm:col-span-2')}{inp('cfop_dentro', 'CFOP dentro de SP')}{inp('cfop_fora', 'CFOP fora de SP')}
           {e.crt !== 3 ? inp('csosn', 'CSOSN (Simples)') : <>{inp('cst_icms', 'CST ICMS')}{inp('aliq_icms', 'Alíquota ICMS %', '', 'number')}</>}
           {inp('pis_cst', 'CST PIS')}{inp('pis_aliq', 'Alíquota PIS %', '', 'number')}{inp('cofins_cst', 'CST COFINS')}{inp('cofins_aliq', 'Alíquota COFINS %', '', 'number')}
+          <F label="IBS e CBS (reforma tributária)" className="sm:col-span-2"><Select value={e.ibscbs_ativo ? '1' : '0'} onChange={(ev) => setE({ ...e, ibscbs_ativo: ev.target.value === '1' })}><option value="1">Informar na nota (obrigatório no regime normal)</option><option value="0">Não informar</option></Select></F>
+          {e.ibscbs_ativo && <>{inp('ibscbs_cst', 'CST IBS/CBS (ex.: 000)')}{inp('ibscbs_cclasstrib', 'cClassTrib (ex.: 000001)')}{inp('p_cbs', 'Alíquota CBS % (2026: 0,9)', '', 'number')}{inp('p_ibs_uf', 'Alíquota IBS estadual % (2026: 0,1)', '', 'number')}{inp('p_ibs_mun', 'Alíquota IBS municipal % (2026: 0)', '', 'number')}</>}
           <F label="Frete"><Select value={e.mod_frete} onChange={set('mod_frete')}><option value={0}>0 · Por conta do emitente</option><option value={1}>1 · Por conta do destinatário</option><option value={9}>9 · Sem frete</option></Select></F>
           <F label="Pagamento"><Select value={e.t_pag} onChange={set('t_pag')}><option value="15">15 · Boleto</option><option value="01">01 · Dinheiro</option><option value="17">17 · PIX</option><option value="05">05 · Crédito loja</option><option value="90">90 · Sem pagamento</option><option value="99">99 · Outros</option></Select></F>
           <F label="Desconto financeiro do pedido"><Select value={e.desconto_na_nota ? '1' : '0'} onChange={(ev) => setE({ ...e, desconto_na_nota: ev.target.value === '1' })}><option value="1">Abater na nota (desconto nos itens)</option><option value="0">Não abater (só no boleto)</option></Select></F>
@@ -218,7 +220,7 @@ function Fiscal() {
       </div>
       {modo === 'produtos' ? (
         <Table dense className="[&>table]:min-w-max">
-          <thead><tr><th className="th">Código</th><th className="th">Produto</th><th className="th">NCM</th><th className="th">CEST</th><th className="th">GTIN/EAN</th><th className="th">Origem</th><th className="th">CFOP próprio</th><th className="th">CST ICMS</th><th className="th">Alíq. %</th><th className="th">Redução BC %</th><th className="th">cBenef</th><th className="th">Texto legal (inf. complementares)</th></tr></thead>
+          <thead><tr><th className="th">Código</th><th className="th">Produto</th><th className="th">NCM</th><th className="th">CEST</th><th className="th">GTIN/EAN</th><th className="th">Origem</th><th className="th">CFOP próprio</th><th className="th">CST ICMS</th><th className="th">Alíq. %</th><th className="th">Redução BC %</th><th className="th">cBenef</th><th className="th">CST IBS/CBS</th><th className="th">cClassTrib</th><th className="th">Texto legal (inf. complementares)</th></tr></thead>
           <tbody>{filtP.map((p) => (
             <tr key={p.code}>
               <td className="td font-mono text-xs">{p.code}</td><td className="td text-sm">{p.description}<div className="text-xs text-muted">{p.reference}</div></td>
@@ -231,6 +233,8 @@ function Fiscal() {
               <td className="td">{cell(p.icms_aliq, (v) => saveP(p.code, { icms_aliq: v ? Number(v.replace(',', '.')) : null }), 'w-16', '18')}</td>
               <td className="td">{cell(p.icms_red_bc, (v) => saveP(p.code, { icms_red_bc: v ? Number(v.replace(',', '.')) : null }), 'w-20', 'ex.: 61,11')}</td>
               <td className="td">{cell(p.c_benef, (v) => saveP(p.code, { c_benef: v.toUpperCase() || null }), 'w-28', 'ex.: SP020030')}</td>
+              <td className="td">{cell(p.ibscbs_cst, (v) => saveP(p.code, { ibscbs_cst: v || null }), 'w-20', 'padrão')}</td>
+              <td className="td">{cell(p.ibscbs_cclasstrib, (v) => saveP(p.code, { ibscbs_cclasstrib: v || null }), 'w-24', 'padrão')}</td>
               <td className="td">{cell(p.inf_fiscal, (v) => saveP(p.code, { inf_fiscal: v || null }), 'w-72', 'ex.: Reducao da base de calculo nos termos do art. 3...')}</td>
             </tr>))}</tbody>
         </Table>

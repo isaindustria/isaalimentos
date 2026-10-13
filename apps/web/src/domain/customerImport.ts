@@ -20,7 +20,7 @@ export const CUSTOMER_FIELDS: Array<{ key: CustomerField; label: string; aliases
   { key: 'trade_name', label: 'Nome fantasia', aliases: ['nome fantasia', 'fantasia', 'apelido'] },
   { key: 'group_name', label: 'Rede / grupo', aliases: ['rede', 'grupo'] },
   { key: 'seller', label: 'Vendedor', aliases: ['vendedor', 'representante', 'nome do vendedor'] },
-  { key: 'discounts', label: 'Desconto financeiro', aliases: ['desconto financeiro', 'descontos', 'desconto'] },
+  { key: 'discounts', label: 'Desconto financeiro', aliases: ['desconto financeiro', 'desc financeiro', 'desconto fin', 'desc fin', 'descontos', 'desconto', 'desc'] },
   { key: 'address', label: 'Endereço', aliases: ['endereco', 'logradouro', 'rua'] },
   { key: 'address_number', label: 'Número', aliases: ['numero', 'nro', 'n'] },
   { key: 'address_complement', label: 'Complemento', aliases: ['complemento'] },
