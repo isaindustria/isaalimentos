@@ -46,12 +46,12 @@ export const TUTORIALS: Tutorial[] = [
       ] },
       { title: 'Lançar o pedido', items: [
         'Clique em Novo pedido e digite parte do nome ou do CNPJ (com ou sem pontuação). Escolha o cliente na lista: o outro campo e o vendedor são preenchidos sozinhos.',
-        'Escolha o desconto financeiro na lista; ela mostra os descontos cadastrados para esse cliente.',
+        'O vendedor aparece sozinho no topo. Escolha o desconto financeiro em Desc. Fin.; a lista mostra os descontos cadastrados para esse cliente.',
         'Em cada item, escolha a referência (opcional, filtra a lista) e o produto pelo código ou pelo nome.',
-        'A unidade de venda vem da referência: Ander e ISA em kg (até 3 casas decimais); pote temp., pote frut. e revenda em unidade (só números inteiros).',
-        'Digite a quantidade e o valor unitário. Valor total = quantidade × valor unitário. O pedido mostra subtotal, desconto e total.',
+        'Qtd Kg/Un: Ander e ISA em quilo (até 3 casas decimais); pote temp., pote frut. e revenda em unidade (só números inteiros). O sistema confere pela referência.',
+        'Digite a Qtd e o Vlr Un. O Vlr Ttl. é calculado sozinho (Qtd × Vlr Un.). Embaixo dos dados do pedido aparecem subtotal, desconto financeiro e total.',
         'Se o mesmo produto for incluído duas vezes, o sistema pergunta se junta as quantidades ou mantém as linhas separadas.',
-        'Salvar: o pedido guarda os dados daquele momento. Itens em kg entram na produção em kg, sem conversão.',
+        'Salvar: o pedido nasce Aberto e guarda os dados daquele momento. Itens em kg entram na produção em kg, sem conversão.',
       ] },
       { title: 'Vendedor', items: [
         'O vendedor cria a conta e o ADM aprova em Configurações → Usuários com a área Vendedor.',
@@ -94,7 +94,7 @@ export const TUTORIALS: Tutorial[] = [
  */
 const ORIGIN = !isDesktop && typeof window !== 'undefined' && /^https?:$/.test(window.location.protocol) ? window.location.origin : 'https://www.isaindalimentos.com.br';
 const BASE = `${ORIGIN}/site/video/`;
-export const videoUrl = (file: string) => `${BASE}${file}?v=3`;
+export const videoUrl = (file: string) => `${BASE}${file}?v=4`;
 
 /** Tutorial mais novo lançado entre duas versões (exclui `after`, inclui `upTo`). */
 export function tutorialBetween(after: string | null, upTo: string): Tutorial | undefined {

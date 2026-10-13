@@ -71,7 +71,9 @@ const pickFrom = async (p, label, text, choose) => { const i = p.getByLabel(labe
   await p.goto(U + '/pedidos/novo'); await p.waitForTimeout(1500);
   await pickFrom(p, 'CNPJ', '01234567', 'Mercado Zero');
   ok((await p.getByLabel('Cliente / loja', { exact: true }).inputValue()) === 'Mercado Zero à Esquerda', 'CNPJ sem pontuação preenche o nome');
-  ok(await p.getByText('Vendedor: Paula Vendas').isVisible(), 'vendedor aparece ao escolher cliente');
+  ok((await p.locator('#vendedor').inputValue()) === 'Paula Vendas', 'vendedor aparece ao escolher cliente');
+  ok(!(await p.locator('#status').count()), 'status saiu da tela do pedido');
+  ok(!(await p.getByText('Unidade de venda').count()), 'unidade de venda não aparece na tela');
   const discOpts = await p.locator('#desconto option').allInnerTexts();
   ok(discOpts.join('|') === 'Sem desconto|3%|1%', 'desconto lista 3% em cima e 1% embaixo: ' + discOpts.join('|'));
   await p.selectOption('#desconto', '3');
@@ -125,7 +127,7 @@ const pickFrom = async (p, label, text, choose) => { const i = p.getByLabel(labe
   await p.goto(U + '/estoque'); await p.waitForTimeout(1500);
   ok(p.url().endsWith('#/pedidos'), 'vendedor que abre /estoque volta para Pedidos');
   const nav = (await p.locator('aside a[href^="#/"]').allInnerTexts()).map((t) => t.trim()).filter(Boolean);
-  ok(nav.map((t) => t.split(/\s/)[0]).join('|') === 'Pedidos|Configurações', 'menu do vendedor só com Pedidos/Configurações: ' + nav.join('|'));
+  ok(nav.map((t) => t.split(/\s/)[0]).join('|') === 'Pedidos|Tutoriais|Configurações', 'menu do vendedor só com Pedidos/Tutoriais/Configurações: ' + nav.join('|'));
   ok(!(await p.getByText('Importar cadastro de clientes').count()), 'vendedor não vê cartão Clientes');
   ok(await p.getByRole('button', { name: 'Novo pedido' }).first().isVisible(), 'vendedor pode lançar pedido');
   await p.screenshot({ path: OUT + '/06_vendedor.png' });

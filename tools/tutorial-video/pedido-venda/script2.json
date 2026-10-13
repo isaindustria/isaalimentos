@@ -12,10 +12,10 @@
  ]},
  {"ch": "2", "title": "Lançar o pedido", "beats": [
   {"shot": "novo", "focus": "cnpj", "cursor": "cnpj", "click": true, "hl": "cnpj", "label": "Nome ou CNPJ", "say": "Em Novo pedido, digite parte do nome ou do cê ene pê jota do cliente, com ou sem pontuação, e escolha na lista."},
-  {"shot": "novo_cli", "focus": "desconto", "hl": "desconto", "label": "Descontos do cliente", "say": "O outro campo é preenchido sozinho, o vendedor aparece, e os descontos desse cliente ficam prontos para escolher."},
+  {"shot": "novo_cli", "focus": "desconto", "hl": "desconto", "label": "Vendedor e desconto", "say": "O outro campo é preenchido sozinho, o vendedor aparece no topo, e os descontos desse cliente ficam prontos para escolher."},
   {"shot": "item_ref", "focus": "ref", "cursor": "ref", "click": true, "hl": "ref", "label": "Filtre pela referência", "say": "Nos itens, escolha a referência para filtrar a lista. Depois, o produto, pelo código ou pelo nome."},
-  {"shot": "itens", "focus": "linha1", "hl": "linha1", "label": "Unidade automática", "say": "A unidade de venda vem sozinha. Os produtos Ander e Isa são vendidos em quilo. Pote de tempero, pote de fruta e revenda são vendidos em unidade."},
-  {"shot": "itens", "focus": "q1", "cursor": "q1", "click": true, "hl": "q1", "label": "10 kg × R$ 6,60 = R$ 66,00", "say": "Digite a quantidade e o valor unitário. Dez quilos a seis reais e sessenta dão sessenta e seis reais."},
+  {"shot": "itens", "focus": "linha1", "hl": "linha1", "label": "Qtd em kg ou unidade", "say": "Na quantidade, os produtos Ander e Isa vão em quilo. Pote de tempero, pote de fruta e revenda vão em unidade, e o sistema confere sozinho."},
+  {"shot": "itens", "focus": "q1", "cursor": "q1", "click": true, "hl": "q1", "label": "10 kg × R$ 6,60 = R$ 66,00", "say": "Digite a quantidade e o valor unitário. O valor total sai sozinho: dez quilos a seis reais e sessenta dão sessenta e seis reais."},
   {"shot": "totais", "focus": "totais", "hl": "totais", "label": "Subtotal − desconto = total", "say": "Embaixo, o subtotal, o desconto financeiro e o total. Trocou o desconto, o total muda na hora."},
   {"shot": "erro_un", "focus": "q2", "hl": "q2", "label": "Aviso junto do campo", "say": "Se algo estiver errado, o aviso aparece em vermelho, ao lado do campo. Um produto vendido por unidade só aceita número inteiro."},
   {"shot": "detalhe", "focus": "itens", "hl": "itens", "label": "Kg entra em kg na produção", "say": "Pedido salvo! Ele guarda os dados daquele momento, e os itens em quilo vão para a produção em quilo, sem conversão."}

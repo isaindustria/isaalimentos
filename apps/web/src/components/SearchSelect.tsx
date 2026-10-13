@@ -60,7 +60,7 @@ export function SearchSelect({ options, value, onChange, placeholder = 'Pesquisa
         aria-expanded={open}
         aria-invalid={invalid || undefined}
         disabled={disabled}
-        className={cn('h-10 w-full rounded-xl border bg-surface px-3 pr-14 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-60', invalid ? 'border-danger' : 'border-line')}
+        className={cn('h-10 w-full rounded-xl border bg-surface px-3 pr-12 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-60', invalid ? 'border-danger' : 'border-line')}
         placeholder={placeholder}
         value={text}
         onFocus={(e) => { setOpen(true); e.currentTarget.select(); }}
@@ -72,7 +72,7 @@ export function SearchSelect({ options, value, onChange, placeholder = 'Pesquisa
           else if (e.key === 'Escape') { setOpen(false); setText(selected?.label ?? ''); }
         }}
       />
-      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center gap-1 text-muted">
+      <div className="pointer-events-none absolute inset-y-0 right-1.5 flex items-center gap-0.5 text-muted">
         {value && !disabled && (
           <button type="button" className="pointer-events-auto rounded p-1 hover:text-danger" aria-label="Limpar" onClick={() => { onChange(null); setText(''); }}><X className="size-3.5" /></button>
         )}

@@ -13,7 +13,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { fmtCnpj, normalizeKey, orderTotals, quantityError, saleUnitFor, type SaleUnit } from '@/domain/sales';
 import { fmtBRL } from '@/lib/utils';
 import type { Order, OrderItem, OrderStatus, Product } from '@/lib/types';
-import { STATUS_LABEL } from './OrdersPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useEditLock } from '@/hooks/useRealtime';
 
@@ -39,7 +38,8 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   const [orderNumber, setOrderNumber] = useState(existing?.order_number ?? '');
   const [orderDate, setOrderDate] = useState(existing?.order_date ?? new Date().toISOString().slice(0, 10));
   const [deliveryDate, setDeliveryDate] = useState(existing?.delivery_date ?? '');
-  const [status, setStatus] = useState<OrderStatus>(existing?.status ?? 'aberto');
+  // O status saiu desta tela (vai para outra tela): pedido novo nasce Aberto; na edição, mantém o que já tinha.
+  const status: OrderStatus = existing?.status ?? 'aberto';
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [lines, setLines] = useState<Line[]>(() =>
     existing?.items.length
@@ -191,44 +191,42 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
       <div className="grid gap-4 min-[1700px]:grid-cols-[minmax(340px,1fr)_2.6fr]">
         <Card title="Dados do pedido">
           <div className="space-y-4">
+            {/* Ordem pedida pelo comercial (Vendas parte 2): Vendedor | Nº do pedido; Cliente; CNPJ | Desc. Fin.; Data | Entrega; Observações. O status saiu desta tela. */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Vendedor"><Input id="vendedor" value={customer ? customer.seller_name || 'sem vendedor' : ''} placeholder="—" readOnly tabIndex={-1} className="bg-surface-2" /></Field>
+              <Field label="Nº do pedido"><Input id="numero" value={orderNumber} onChange={(e) => { setOrderNumber(e.target.value); touch(); }} placeholder="opcional" /></Field>
+            </div>
             <Field label="Cliente / loja">
               <SearchSelect id="cliente" ariaLabel="Cliente / loja" options={nameOptions} value={customerId} onChange={pickCustomer} placeholder="Digite o nome do cliente…" invalid={showErrors && !!formErrors.customer} digitsSearch />
               {err(formErrors.customer)}
             </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-[2.1fr_1fr] gap-3">
               <Field label="CNPJ">
                 <SearchSelect id="cnpj" ariaLabel="CNPJ" options={cnpjOptions} value={customerId} onChange={pickCustomer} placeholder="Digite o CNPJ…" invalid={showErrors && !!formErrors.customer} digitsSearch />
               </Field>
-              <Field label="Desconto financeiro">
-                <Select id="desconto" value={String(discount)} disabled={!customer} onChange={(e) => { setDiscount(Number(e.target.value)); touch(); }}>
-                  <option value="0">Sem desconto</option>
+              <Field label="Desc. Fin.">
+                <Select id="desconto" aria-label="Desconto financeiro" value={String(discount)} disabled={!customer} onChange={(e) => { setDiscount(Number(e.target.value)); touch(); }}>
+                  <option value="0">Nenhum</option>
                   {discountOptions.map((d) => <option key={d} value={d}>{String(d).replace('.', ',')}%</option>)}
                 </Select>
               </Field>
             </div>
-            <div className="text-xs text-muted">Vendedor: <b className="text-ink">{customer ? customer.seller_name || 'sem vendedor' : '—'}</b></div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3">
               <Field label="Data"><Input id="data" type="date" value={orderDate} onChange={(e) => { setOrderDate(e.target.value); touch(); }} /></Field>
-              <Field label="Status">
-                <Select id="status" value={status} onChange={(e) => { setStatus(e.target.value as OrderStatus); touch(); }}>
-                  {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </Select>
-              </Field>
-              <Field label="Nº do pedido"><Input id="numero" value={orderNumber} onChange={(e) => { setOrderNumber(e.target.value); touch(); }} placeholder="opcional" /></Field>
               <Field label="Entrega"><Input id="entrega" type="date" value={deliveryDate} onChange={(e) => { setDeliveryDate(e.target.value); touch(); }} /></Field>
             </div>
             <Field label="Observações"><Textarea id="obs" value={notes} onChange={(e) => { setNotes(e.target.value); touch(); }} /></Field>
             <dl className="grid gap-1 rounded-xl bg-surface-2 p-3 text-sm">
               <div className="flex justify-between"><dt className="text-muted">Subtotal dos itens</dt><dd className="num">{fmtBRL(totals.subtotal)}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">Desconto financeiro{discount ? ` (${String(discount).replace('.', ',')}%)` : ''}</dt><dd className="num">− {fmtBRL(totals.discount)}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted">Desc. Financeiro{discount ? ` (${String(discount).replace('.', ',')}%)` : ''}</dt><dd className="num">− {fmtBRL(totals.discount)}</dd></div>
               <div className="flex justify-between border-t border-line pt-1 font-semibold"><dt>Total</dt><dd className="num">{fmtBRL(totals.total)}</dd></div>
             </dl>
           </div>
         </Card>
         <Card title="Itens do pedido" padded={false} action={<Button size="sm" variant="outline" icon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setLines((ls) => [...ls, emptyLine()]); touch(); }}>Adicionar item</Button>}>
           {/* Uma grade só: em telas largas parece tabela; no celular cada item vira um cartão empilhado. */}
-          <div className="hidden gap-2 border-b border-line px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted lg:grid lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_minmax(200px,2fr)_100px_110px_120px_120px_28px]">
-            <span>Referência</span><span>Código</span><span>Produto</span><span className="text-right">Quantidade</span><span>Unidade de venda</span><span className="text-right">Valor unitário</span><span className="text-right">Valor total</span><span />
+          <div className="hidden gap-2 border-b border-line px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted lg:grid lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_minmax(220px,2.2fr)_110px_120px_120px_28px]">
+            <span>Referência</span><span>Código</span><span>Produto</span><span className="text-right">Qtd Kg/Un</span><span className="text-right">Vlr Un.</span><span className="text-right">Vlr Ttl.</span><span />
           </div>
           <div className="divide-y divide-line">
             {calc.map((c, i) => {
@@ -238,28 +236,27 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
               const e = showErrors ? c.errs : {};
               const lbl = (t: string) => <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted lg:hidden">{t}</span>;
               return (
-                <div key={c.l.key} className="grid grid-cols-2 items-start gap-x-3 gap-y-3 px-4 py-4 lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_minmax(200px,2fr)_100px_110px_120px_120px_28px] lg:gap-2 lg:py-3">
-                  <div className="col-span-2 flex items-center justify-between lg:hidden"><b className="text-sm">Item {i + 1}</b><button className="p-1 text-muted hover:text-danger" onClick={() => { setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== c.l.key) : [emptyLine()])); touch(); }} aria-label={`Remover item ${i + 1}`}><Trash2 className="h-4 w-4" /></button></div>
-                  <div>{lbl('Referência')}<SearchSelect ariaLabel={`Referência da linha ${i + 1}`} options={refOptions} value={references.find((r) => normalizeKey(r) === normalizeKey(c.l.reference)) ?? null} onChange={(v) => changeRef(c.l, v)} placeholder="Todas" /></div>
-                  <div>{lbl('Código')}<SearchSelect ariaLabel={`Código da linha ${i + 1}`} options={codeOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Código" invalid={!!e.product} /></div>
-                  <div className="col-span-2 lg:col-span-1">{lbl('Produto')}<SearchSelect ariaLabel={`Produto da linha ${i + 1}`} options={nameOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Produto" invalid={!!e.product} />{err(c.errs.product)}</div>
-                  <div>{lbl('Quantidade')}
+                <div key={c.l.key} className="grid grid-cols-6 items-start gap-x-3 gap-y-3 px-4 py-4 lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_minmax(220px,2.2fr)_110px_120px_120px_28px] lg:gap-2 lg:py-3">
+                  <div className="col-span-6 flex items-center justify-between lg:hidden"><b className="text-sm">Item {i + 1}</b><button className="p-1 text-muted hover:text-danger" onClick={() => { setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== c.l.key) : [emptyLine()])); touch(); }} aria-label={`Remover item ${i + 1}`}><Trash2 className="h-4 w-4" /></button></div>
+                  <div className="col-span-3 lg:col-span-1">{lbl('Referência')}<SearchSelect ariaLabel={`Referência da linha ${i + 1}`} options={refOptions} value={references.find((r) => normalizeKey(r) === normalizeKey(c.l.reference)) ?? null} onChange={(v) => changeRef(c.l, v)} placeholder="Todas" /></div>
+                  <div className="col-span-3 lg:col-span-1">{lbl('Código')}<SearchSelect ariaLabel={`Código da linha ${i + 1}`} options={codeOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Código" invalid={!!e.product} /></div>
+                  <div className="col-span-6 lg:col-span-1">{lbl('Produto')}<SearchSelect ariaLabel={`Produto da linha ${i + 1}`} options={nameOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Produto" invalid={!!e.product} />{err(c.errs.product)}{c.p && !c.unit && <p className="mt-1 text-[11px] text-danger">Referência "{c.p.reference || 'vazia'}" sem regra de quilo ou unidade. Avise o ADM.</p>}</div>
+                  <div className="col-span-2 lg:col-span-1">{lbl('Qtd Kg/Un')}
                     <Input aria-label={`Quantidade da linha ${i + 1}`} inputMode={c.unit === 'un' ? 'numeric' : 'decimal'} type="number" min={0} step={c.unit === 'un' ? 1 : 0.001} className={`h-10 text-right ${e.quantity ? 'border-danger' : ''}`} value={c.l.quantity} onChange={(ev) => update(c.l.key, { quantity: ev.target.value })} />
                     {err(c.errs.quantity)}
                   </div>
-                  <div className="lg:pt-2.5">{lbl('Unidade de venda')}<span className="text-sm">{c.unit ? (c.unit === 'kg' ? 'kg' : 'unidade') : c.p ? <span className="text-xs text-danger">pendente</span> : '—'}</span>{c.p && !c.unit && err(c.errs.unit)}{c.p && !c.unit && !showErrors && <p className="mt-1 text-[11px] text-danger">Referência sem regra de unidade.</p>}</div>
-                  <div>{lbl('Valor unitário')}
+                  <div className="col-span-2 lg:col-span-1">{lbl('Vlr Un.')}
                     <Input aria-label={`Valor unitário da linha ${i + 1}`} type="number" min={0} step="0.01" inputMode="decimal" className={`h-10 text-right ${e.price ? 'border-danger' : ''}`} value={c.l.price} onChange={(ev) => update(c.l.key, { price: ev.target.value })} placeholder={c.unit === 'kg' ? 'R$/kg' : 'R$/un'} />
                     {err(c.errs.price)}
                   </div>
-                  <div className="text-right lg:pt-2">{lbl('Valor total')}<span className="num font-semibold">{c.q && c.price != null && !Object.keys(c.errs).length ? fmtBRL(totals.lineTotals[i]) : '—'}</span><div className="text-[11px] text-muted">{c.q && c.unit ? `${fmtQty(c.q, c.unit)} ${c.unit === 'kg' ? 'kg' : 'un'}` : ''}</div></div>
+                  <div className="col-span-2 text-right lg:col-span-1 lg:pt-2">{lbl('Vlr Ttl.')}<span className="num font-semibold">{c.q && c.price != null && !Object.keys(c.errs).length ? fmtBRL(totals.lineTotals[i]) : '—'}</span><div className="text-[11px] text-muted">{c.q && c.unit ? `${fmtQty(c.q, c.unit)} ${c.unit === 'kg' ? 'kg' : 'un'}` : ''}</div></div>
                   <div className="hidden pt-2 text-right lg:block"><button className="p-1 text-muted hover:text-danger" onClick={() => { setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== c.l.key) : [emptyLine()])); touch(); }} aria-label={`Remover linha ${i + 1}`}><Trash2 className="h-4 w-4" /></button></div>
                 </div>
               );
             })}
           </div>
           {showErrors && formErrors.items && <p className="px-5 pt-3 text-xs text-danger">{formErrors.items}</p>}
-          <p className="px-5 py-3 text-xs text-muted">A unidade de venda vem da referência do produto (Ander e ISA em kg; pote temp., pote frut. e revenda em unidade). Valor total = quantidade × valor unitário. Itens em kg entram na produção em kg, sem conversão.</p>
+          <p className="px-5 py-3 text-xs text-muted">Qtd em kg para Ander e ISA (até 3 casas decimais) e em unidade para pote temp., pote frut. e revenda (só inteiros). Vlr Ttl. = Qtd × Vlr Un.</p>
         </Card>
       </div>
     </>

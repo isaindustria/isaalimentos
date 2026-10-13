@@ -11,3 +11,4 @@ apps/web/public/version.json
 Thumbs.db
 scripts/_*.mjs
 backups/
+brag-output*/
