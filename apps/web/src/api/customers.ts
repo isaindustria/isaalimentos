@@ -39,6 +39,31 @@ export async function deleteCustomer(id: string) {
   unwrap(await supabase.from('customers').delete().eq('id', id));
 }
 
+export async function setCustomerActive(id: string, active: boolean) {
+  unwrap(await supabase.from('customers').update({ active }).eq('id', id));
+}
+
+/** Quantos pedidos e notas fiscais estão ligados ao cliente (o que impede a exclusão). */
+export async function customerLinks(id: string): Promise<{ orders: number; notas: number }> {
+  const o = await supabase.from('orders').select('id', { count: 'exact', head: true }).eq('customer_id', id);
+  if (o.error) throw o.error;
+  const ids = o.count ? (unwrap(await supabase.from('orders').select('id').eq('customer_id', id)) as Array<{ id: string }>).map((x) => x.id) : [];
+  let notas = 0;
+  if (ids.length) { const n = await supabase.from('nfe_notas').select('id', { count: 'exact', head: true }).in('order_id', ids); notas = n.count ?? 0; }
+  return { orders: o.count ?? 0, notas };
+}
+
+/** Data do último pedido enviado ao sistema por cliente (pedidos cancelados não contam). */
+export async function listLastOrders(): Promise<Map<string, string>> {
+  const v = await supabase.from('customer_last_order').select('customer_id, last_order_at');
+  if (!v.error) return new Map((v.data as Array<{ customer_id: string; last_order_at: string }>).map((r) => [r.customer_id, r.last_order_at]));
+  // sem a visão no banco: calcula pelos pedidos
+  const rows = unwrap(await supabase.from('orders').select('customer_id, created_at, status').not('customer_id', 'is', null)) as Array<{ customer_id: string; created_at: string; status: string | null }>;
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.status !== 'cancelado' && (!m.has(r.customer_id) || r.created_at > m.get(r.customer_id)!)) m.set(r.customer_id, r.created_at);
+  return m;
+}
+
 export async function listCustomerOrders(customerId: string): Promise<Order[]> {
   return unwrap(await supabase.from('orders').select('*').eq('customer_id', customerId).order('order_date', { ascending: false }));
 }

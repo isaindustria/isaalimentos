@@ -33,12 +33,14 @@ export const TUTORIALS: Tutorial[] = [
     poster: 'pedido-venda-web.jpg',
     steps: [
       { title: 'Cadastrar clientes (só o ADM)', items: [
-        'Vá em Pedidos → cartão Clientes → Importar cadastro de clientes e clique em Baixar modelo.',
-        'Preencha Vendedor, CNPJ, Nome do cliente/loja e Desconto financeiro. Sem desconto, escreva "nenhum"; mais de um, separe com ponto e vírgula (ex.: 3%;1%).',
-        'O nome do vendedor precisa ser igual ao nome ou ao e-mail da conta dele no sistema.',
-        'Solte a planilha: a prévia mostra o que é novo, o que já existe, o que está repetido e cada erro com a linha e o motivo.',
-        'Para atualizar clientes que já existem, marque a confirmação. Quem não estiver na planilha continua cadastrado.',
+        'Vá em Pedidos → cartão Clientes → Importar cadastro de clientes e solte a planilha do jeito que ela sai do seu sistema (não precisa de modelo).',
+        'O ISA reconhece as colunas (código, razão social, CPF/CNPJ, endereço, vendedor, desconto). Confira e, nas que ficaram sem campo, escolha o campo certo ou deixe em Ignorar.',
+        'Na conferência aparecem os novos, os que já existem com as mudanças, as duplicidades e as divergências. Corrija código, nome ou CNPJ na própria linha ou clique em Tirar.',
+        'O código do cliente fica exatamente como no Excel, com os zeros à esquerda. Para atualizar quem já existe, marque a confirmação. Nada é apagado.',
+        'O nome do vendedor precisa ser igual ao nome ou ao e-mail da conta dele no sistema. Desconto: mais de um, separe com ponto e vírgula (ex.: 3%;1%).',
         'Em Ver clientes você troca o vendedor e ajusta os descontos; toda troca de vendedor fica registrada.',
+        'A coluna Último ped. mostra os dias desde o último pedido (volta a 0 a cada pedido novo). A lista começa por quem está há mais tempo sem pedir; quem nunca pediu fica em Sem pedido.',
+        'Exportar cadastro baixa tudo em Excel. Na lixeira: cliente sem pedidos é excluído; com pedidos, o sistema oferece Inativar (dá para reativar em Mostrar inativos).',
       ] },
       { title: 'Cadastrar produtos', items: [
         'Cartão Produtos → Importar produtos, com as colunas Referência, Código e Nome do produto.',

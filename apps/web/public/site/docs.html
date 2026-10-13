@@ -159,7 +159,21 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.8.1</span><span class="d">13/10/2026</span><span class="tag">atual</span>
+        <span class="v">v1.9.0</span><span class="d">13/10/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Importar cadastro de clientes sem modelo</strong>: use a planilha do jeito que sai do seu sistema. O ISA reconhece as colunas (código, razão social, CPF/CNPJ, endereço, vendedor, desconto…) e, quando não reconhece, você escolhe o campo.</li>
+          <li>Antes de gravar, a conferência mostra novos, existentes com as mudanças, duplicidades e divergências (código de um cliente com CNPJ de outro). Dá para corrigir código, nome ou CNPJ na linha ou tirar a linha da importação. Nenhum cadastro existente muda sem confirmação.</li>
+          <li><strong>Código do cliente</strong> na primeira coluna da lista, mantido exatamente como no Excel (com os zeros à esquerda).</li>
+          <li><strong>Último ped.</strong>: dias desde o último pedido enviado ao sistema. Volta a 0 quando chega pedido novo. A lista vem do cliente mais tempo sem pedir para o mais recente; quem nunca pediu fica no grupo Sem pedido.</li>
+          <li><strong>Exportar cadastro</strong> em Excel, com código e dias desde o último pedido.</li>
+          <li><strong>Excluir cliente</strong> pede confirmação na própria tela. Se ele tiver pedidos, o sistema explica e oferece <strong>Inativar</strong> (sai das listas, histórico mantido); dá para reativar em Mostrar inativos.</li>
+          <li><strong>Ver produtos</strong> no cartão Produtos da tela Pedidos, também para o vendedor (só consulta).</li>
+          <li>Cadastro e manutenção de clientes ficam só com o ADM. O vendedor vê apenas os clientes e pedidos dele e escolhe entre os descontos financeiros autorizados, sem alterar.</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.8.1</span><span class="d">13/10/2026</span>
         <ul>
           <li><strong>DANFE em PDF</strong> no mesmo modelo que a ISA já usa: canhoto, logo, código de barras da chave, destinatário, impostos, transporte, produtos e dados adicionais. Botão DANFE em Notas fiscais → Notas.</li>
           <li>Impostos por produto em Notas fiscais → Dados fiscais: CST do ICMS, alíquota, redução de base (ex.: CST 20 com 61,11%) e texto legal que sai nas informações complementares. Tudo pode ser alterado a qualquer momento.</li>

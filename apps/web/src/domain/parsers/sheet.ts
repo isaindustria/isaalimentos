@@ -105,3 +105,13 @@ export function templateWorkbook(headers: string[], example: string[]): Blob {
   const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   return new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
+
+/** Planilha simples a partir de linhas (a primeira é o título). Textos ficam como texto: códigos mantêm os zeros à esquerda. */
+export function exportWorkbook(rows: Array<Array<string | number | null>>, sheetName: string): Blob {
+  const ws = XLSX.utils.aoa_to_sheet(rows.map((r) => r.map((c) => c ?? '')));
+  ws['!cols'] = (rows[0] ?? []).map((_, i) => ({ wch: Math.min(48, Math.max(10, ...rows.slice(0, 200).map((r) => String(r[i] ?? '').length + 2))) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  return new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}

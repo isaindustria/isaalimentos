@@ -107,6 +107,8 @@ export interface CurrentStock {
 
 export interface Customer {
   id: string;
+  /** Código do cliente vindo do sistema da empresa (texto: preserva zeros à esquerda). */
+  code?: string | null;
   cnpj: string | null;
   name: string;
   trade_name: string | null;

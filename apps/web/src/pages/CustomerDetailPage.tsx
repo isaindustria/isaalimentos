@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowLeft, Pencil, Phone, Mail, MapPin, Plus, Trash2, MessageCircle, PhoneCall, Users, Calendar, StickyNote, Mailbox } from 'lucide-react';
-import { addInteraction, deleteCustomer, deleteInteraction, getCustomer, listCustomerOrders, listInteractions, upsertCustomer } from '@/api/customers';
+import { addInteraction, deleteCustomer, deleteInteraction, getCustomer, listCustomerOrders, listInteractions, setCustomerActive, upsertCustomer } from '@/api/customers';
 import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Select, Spinner, Table, Textarea } from '@/components/primitives';
 import type { Customer, InteractionKind } from '@/lib/types';
 import { fmtBRL, fmtDate, fmtDateTime, formatCnpj } from '@/lib/utils';
@@ -28,6 +28,7 @@ export default function CustomerDetailPage() {
   const [editing, setEditing] = useState<Partial<Customer> | null>(null);
   const [kind, setKind] = useState<InteractionKind>('ligacao');
   const [content, setContent] = useState('');
+  const [askRemove, setAskRemove] = useState(false);
 
   const customer = useQuery({ queryKey: ['customer', id], queryFn: () => getCustomer(id) });
   const orders = useQuery({ queryKey: ['customer-orders', id], queryFn: () => listCustomerOrders(id) });
@@ -49,6 +50,16 @@ export default function CustomerDetailPage() {
       toast.success('Cliente excluído.');
       qc.invalidateQueries({ queryKey: ['customers'] });
       navigate('/clientes');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const inactivate = useMutation({
+    mutationFn: () => setCustomerActive(id, false),
+    onSuccess: () => {
+      toast.success('Cliente inativado: sai das listas e dos pedidos novos; o histórico continua.');
+      qc.invalidateQueries({ queryKey: ['customers'] });
+      qc.invalidateQueries({ queryKey: ['customer', id] });
+      setAskRemove(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -84,8 +95,8 @@ export default function CustomerDetailPage() {
         actions={
           <>
             <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate('/clientes')}>Voltar</Button>
-            <Button variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => setEditing({ ...c })}>Editar</Button>
-            {isAdmin && <Button variant="ghost" className="text-danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => confirm('Excluir este cliente? Os pedidos ficarão sem cliente.') && remove.mutate()} />}
+            {isAdmin && <Button variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => setEditing({ ...c })}>Editar</Button>}
+            {isAdmin && c.active && <Button variant="ghost" className="text-danger" aria-label="Excluir cliente" icon={<Trash2 className="h-4 w-4" />} onClick={() => setAskRemove(true)} />}
           </>
         }
       />
@@ -156,6 +167,14 @@ export default function CustomerDetailPage() {
       </div>
       <Dialog open={!!editing} onClose={() => setEditing(null)} title="Editar cliente" wide footer={<><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={submitEdit} loading={save.isPending}>Salvar</Button></>}>
         {editing && <form onSubmit={submitEdit}><CustomerForm value={editing} onChange={setEditing} /></form>}
+      </Dialog>
+      <Dialog open={askRemove} onClose={() => setAskRemove(false)} title={`Excluir ${c.name}?`}
+        footer={(orders.data?.length ?? 0) > 0
+          ? <><Button variant="outline" onClick={() => setAskRemove(false)}>Cancelar</Button><Button onClick={() => inactivate.mutate()} loading={inactivate.isPending}>Inativar cliente</Button></>
+          : <><Button variant="outline" onClick={() => setAskRemove(false)}>Cancelar</Button><Button variant="danger" onClick={() => remove.mutate()} loading={remove.isPending}>Excluir definitivamente</Button></>}>
+        {(orders.data?.length ?? 0) > 0
+          ? <p className="text-sm">Este cliente não pode ser excluído porque tem <b>{orders.data!.length} pedido(s)</b> ligados a ele. Você pode <b>inativar</b>: ele sai das listas e não aparece em pedidos novos, e o histórico continua.</p>
+          : <p className="text-sm">Este cliente não tem pedidos. A exclusão apaga o cadastro e não pode ser desfeita.</p>}
       </Dialog>
     </>
   );

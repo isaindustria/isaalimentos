@@ -73,3 +73,22 @@ export function orderTotals(items: Array<{ quantity: number | null; unit_price: 
   const discount = round2((subtotal * (discountPct || 0)) / 100);
   return { lineTotals, subtotal, discount, total: round2(subtotal - discount) };
 }
+
+/** Dias corridos desde a data (0 = hoje), contando pela data local. */
+export function daysSince(iso: string, now = new Date()): number {
+  const d = new Date(iso);
+  const a = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()), b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
+/**
+ * Ordem do cadastro de clientes: mais dias sem pedido primeiro, empate pelo nome;
+ * quem nunca enviou pedido vai para o grupo "Sem pedido", em ordem alfabética.
+ */
+export function sortByLastOrder<T extends { id: string; name: string }>(list: T[], last: Map<string, string>, now = new Date()) {
+  const byName = (a: T, b: T) => a.name.localeCompare(b.name, 'pt-BR');
+  const com = list.filter((c) => last.has(c.id)).map((c) => ({ c, days: daysSince(last.get(c.id)!, now) }));
+  com.sort((a, b) => b.days - a.days || byName(a.c, b.c));
+  const sem = list.filter((c) => !last.has(c.id)).sort(byName);
+  return { comPedido: com, semPedido: sem };
+}
