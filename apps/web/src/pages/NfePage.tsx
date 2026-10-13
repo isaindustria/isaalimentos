@@ -13,6 +13,7 @@ import { NFE_STATUS_LABEL, type NfeEmitente, type NfeNota } from '@/domain/nfe';
 import { fmtCnpj } from '@/domain/sales';
 import { useAuth } from '@/hooks/useAuth';
 import { gerarDanfe } from '@/domain/danfe';
+import isaLogo from '@/assets/isa-logo.png';
 
 type Aba = 'notas' | 'emitente' | 'certificado' | 'fiscal';
 
@@ -43,7 +44,7 @@ function Notas() {
   const canc = useMutation({ mutationFn: () => cancelarNota(cancel!, just), onSuccess: () => { toast.success('Nota cancelada na SEFAZ.'); setCancel(null); setJust(''); qc.invalidateQueries({ queryKey: ['nfe-notas'] }); }, onError: (e: Error) => toast.error(e.message) });
   const baixar = (n: NfeNota) => downloadBlob(new Blob([n.xml ?? ''], { type: 'application/xml' }), `NFe${n.chave ?? n.numero}.xml`);
   const danfe = async (n: NfeNota) => {
-    try { downloadBlob(await gerarDanfe(n.xml ?? '', '/brand/logo.png', { inscricaoMunicipal: emitente.data?.inscricao_municipal }), `DANFE-${n.numero ?? n.chave}.pdf`); } catch (err) { toast.error(`Não foi possível gerar o DANFE: ${(err as Error).message}`); }
+    try { downloadBlob(await gerarDanfe(n.xml ?? '', isaLogo, { inscricaoMunicipal: emitente.data?.inscricao_municipal }), `DANFE-${n.numero ?? n.chave}.pdf`); } catch (err) { toast.error(`Não foi possível gerar o DANFE: ${(err as Error).message}`); }
   };
   if (!notas.data?.length) return <Card><EmptyState title="Nenhuma nota ainda" description="Abra um pedido e clique em Emitir NF-e. A nota entra na fila e o programa do Windows com o certificado emite." /></Card>;
   return (

@@ -46,7 +46,17 @@ export async function gerarDanfe(xml: string, logoUrl?: string, extra: { inscric
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const L = 8, R = 202, W = R - L;
   let logo: string | null = null;
-  if (logoUrl) { try { const b = await (await fetch(logoUrl)).blob(); logo = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result as string); fr.readAsDataURL(b); }); } catch { logo = null; } }
+  // carrega por <img> (funciona no site e no programa do Windows, que abre os arquivos localmente) e converte em PNG
+  if (logoUrl) {
+    try {
+      logo = await new Promise<string>((ok, fail) => {
+        const img = new Image();
+        img.onload = () => { const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d')!.drawImage(img, 0, 0); ok(c.toDataURL('image/png')); };
+        img.onerror = () => fail(new Error('logo'));
+        img.src = logoUrl;
+      });
+    } catch { logo = null; }
+  }
 
   doc.setLineWidth(0.2);
   const box = (x: number, y: number, w: number, h: number, label: string, value = '', o: { align?: 'left' | 'right' | 'center'; size?: number; bold?: boolean } = {}) => {
