@@ -46,3 +46,11 @@ Exemplo completo em `pedido-venda/`:
 - Conferência: `python pedido-venda/check_vo.py` transcreve cada fala, aponta as erradas (regere só elas: `tts_cb.py c010 c013`) e guarda o tempo de cada palavra para a legenda.
 - Montagem: `python pedido-venda/make3.py web|mobile` usa `composer3.html` (moldura de navegador/celular, balões por passo, transições, legenda palavra a palavra, resumo final).
 - Render: `NAME=v3_web node render_tut.mjs full x saida.mp4`. Comprima com `-vf format=yuv420p -profile:v high -level 4.1`.
+
+### Cadastro de clientes (1.9.6)
+
+Pasta `cadastro-clientes/`, mesmo pipeline da 1.7.4, rodado a partir da pasta do pipeline (os scripts usam caminhos `clientes/...`, então copie a pasta como `clientes/` ao lado de `mock.mjs`).
+`setup.mjs` prepara o banco fictício (códigos com zeros à esquerda, dois vendedores, último pedido em dias variados pela visão `customer_last_order`, clientes sem pedido e um inativo).
+`pesquisa-de-pessoas-ficticio.xlsx` imita a exportação de um ERP (título "Pesquisa de Pessoas", colunas Cód., Razão Social, Fantasia, CPF/CNPJ...), com uma coluna não reconhecida ("Abat. Financeiro", escolhida como Desconto financeiro), um cliente novo, um CNPJ repetido e um CNPJ com dígito a menos; é gerada por `make_xlsx.py` a partir de `node clientes/dump.mjs > clientes/cust.json`.
+Passos: `node clientes/capture.mjs web|mobile`, `python clientes/tts_cb.py`, `python clientes/check_vo.py` (Python com `faster-whisper`) (regere as ruins com `tts_cb.py c010`, mudando a semente com `SEED=1`), `python clientes/make.py web|mobile`, `NAME=cl_web node render_tut.mjs full x saida.mp4`.
+No `script.json`, a chave `mobile` de uma fala troca a foto ou a caixa só na versão de celular.

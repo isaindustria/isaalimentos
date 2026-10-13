@@ -23,6 +23,48 @@ export interface Tutorial {
 
 export const TUTORIALS: Tutorial[] = [
   {
+    id: 'cadastro-clientes',
+    version: '1.9.6',
+    date: '2026-10-13',
+    title: 'Cadastro de clientes',
+    summary: 'Importe a planilha de clientes do seu sistema sem modelo, confira antes de gravar, veja os dias sem pedido, exporte, exclua ou inative e consulte os produtos.',
+    web: 'cadastro-clientes-web.mp4',
+    mobile: 'cadastro-clientes-mobile.mp4',
+    poster: 'cadastro-clientes-web.jpg',
+    steps: [
+      { title: 'Importar a planilha (só o ADM)', items: [
+        'Em Pedidos, no cartão Clientes, clique em Importar cadastro de clientes.',
+        'Não precisa de modelo: exporte a lista de clientes do seu sistema, do jeito que ela sai, e solte o arquivo (Excel ou CSV).',
+      ] },
+      { title: 'Conferir as colunas', items: [
+        'O ISA reconhece as colunas pelo título (código, razão social, fantasia, CPF/CNPJ, cidade, UF, vendedor e outras).',
+        'Coluna marcada como "sem campo": escolha em Campo no ISA o campo certo (por exemplo, Desconto financeiro) ou deixe em Ignorar para não importar.',
+        'É obrigatório ter o nome do cliente e o código ou o CNPJ. Depois clique em Conferir clientes.',
+      ] },
+      { title: 'Conferência antes de gravar', items: [
+        'Os filtros separam as linhas: Novas, Já existem, Duplicidades e erros e Fora da importação.',
+        'Em Já existem aparece o que vai mudar em cada cliente (por exemplo, desconto ou nome fantasia).',
+        'Em Duplicidades e erros aparece o motivo. Corrija código, nome ou CNPJ direto na linha (a conferência é refeita na hora) ou clique em Tirar; Voltar desfaz.',
+        'Para atualizar os clientes que já existem, marque a confirmação. Sem marcar, só os novos entram. Nada é apagado e campo vazio na planilha não apaga o cadastro.',
+        'Clique em Importar: o aviso mostra quantos foram incluídos e atualizados.',
+      ] },
+      { title: 'Lista de clientes', items: [
+        'Em Ver clientes, o código vem na primeira coluna, igual ao do seu sistema, com os zeros à esquerda.',
+        'Último ped. mostra os dias desde o último pedido. A lista começa por quem está há mais tempo sem pedir; quem nunca pediu fica no grupo Sem pedido, no fim.',
+        'Exportar cadastro baixa a lista inteira em Excel.',
+      ] },
+      { title: 'Excluir ou inativar', items: [
+        'Clique na lixeira do cliente. Sem pedidos: Excluir definitivamente (não dá para desfazer).',
+        'Com pedidos, não dá para excluir: use Inativar cliente. Ele sai das listas e dos pedidos novos, e o histórico continua.',
+        'Para reativar, marque Mostrar inativos e clique no botão de reativar da linha.',
+      ] },
+      { title: 'Ver produtos', items: [
+        'No cartão Produtos, Ver produtos mostra referência, código e nome dos produtos ativos, só para consulta.',
+        'O vendedor também vê essa lista. Ele vê só os clientes dele e escolhe entre os descontos liberados pelo ADM.',
+      ] },
+    ],
+  },
+  {
     id: 'pedido-de-venda',
     version: '1.7.0',
     date: '2026-10-10',

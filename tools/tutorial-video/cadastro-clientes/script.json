@@ -1,0 +1,44 @@
+[
+ {"ch": "", "title": "Cadastro de clientes", "sub": "Novidade da versão 1.9", "intro": true, "beats": [
+  {"shot": "cards", "say": "Oi! Agora o cadastro de clientes ficou bem mais fácil: você importa a planilha do seu sistema, confere tudo antes de gravar e vê há quantos dias cada cliente não pede. Vem comigo!"}
+ ]},
+ {"ch": "1", "title": "Importar sem modelo", "beats": [
+  {"shot": "cards", "focus": "imp", "cursor": "imp", "click": true, "hl": "imp", "label": "Só o ADM vê este botão", "say": "Na aba Pedidos, no cartão Clientes, clique em Importar cadastro de clientes. Só o administrador vê esse botão."},
+  {"shot": "imp_open", "focus": "drop", "cursor": "drop", "click": true, "hl": "drop", "label": "Qualquer Excel, sem modelo", "say": "Não precisa de modelo. Exporte a lista de clientes do seu sistema, do jeito que ela sai, e solte o arquivo aqui."}
+ ]},
+ {"ch": "2", "title": "Conferir as colunas", "beats": [
+  {"shot": "imp_cols", "focus": "table", "hl": "table", "label": "Colunas reconhecidas", "say": "O sistema lê os títulos e reconhece as colunas sozinho: código, razão social, cê pê éfe ou cê ene pê jota, cidade e vendedor."},
+  {"shot": "imp_cols", "focus": "abat", "hl": "abat", "label": "Coluna sem campo", "mobile": {"shot": "imp_cols_abat0", "focus": "abatName", "hl": "abatName"}, "say": "A coluna que ele não reconhece fica marcada como sem campo. Aqui, a coluna de abatimento financeiro é o desconto do cliente."},
+  {"shot": "imp_cols_set", "focus": "abatSel", "cursor": "abatSel", "click": true, "hl": "abatSel", "label": "Escolha o campo no ISA", "say": "Então é só escolher o campo certo na lista: Desconto financeiro. O que não interessa, como a situação cadastral, fica em Ignorar."},
+  {"shot": "imp_cols_set", "focus": "conferir", "cursor": "conferir", "click": true, "hl": "conferir", "label": "Conferir clientes", "say": "Tudo certo? Clique em Conferir clientes."}
+ ]},
+ {"ch": "3", "title": "Conferência antes de gravar", "beats": [
+  {"shot": "imp_conf", "focus": "chips", "hl": "chips", "label": "Nada é gravado ainda", "say": "Antes de gravar, o sistema separa as linhas: as novas, as que já existem, as duplicidades e erros, e as que ficaram fora."},
+  {"shot": "imp_exist", "focus": "mud", "hl": "mud", "label": "O que vai mudar", "say": "Em Já existem, você vê o que vai mudar em cada cliente, como um desconto novo ou outro nome fantasia."},
+  {"shot": "imp_prob", "focus": "errMot", "hl": "errMot", "label": "Linha e motivo do problema", "mobile": {"focus": "errCnpj", "hl": "errCnpj"}, "say": "Em Duplicidades e erros aparecem as linhas com problema e o motivo: um cê ene pê jota com um dígito a menos, e outro repetido na planilha."},
+  {"shot": "imp_fix", "focus": "errCnpj", "cursor": "errCnpj", "click": true, "hl": "errCnpj", "label": "Corrija na própria linha", "say": "Dá para corrigir o código, o nome ou o cê ene pê jota direto na linha. A conferência é refeita na hora."},
+  {"shot": "imp_tirar", "focus": "dupTirar", "cursor": "dupTirar", "click": true, "hl": "dupTirar", "label": "Tirar da importação", "say": "Se a linha não deve entrar, clique em Tirar. Ela fica fora da importação, e dá para voltar atrás."},
+  {"shot": "imp_ready", "focus": "check", "cursor": "check", "click": true, "hl": "check", "label": "Confirme a atualização", "say": "Para atualizar quem já existe, marque a confirmação. Sem marcar, só os clientes novos entram. E nada é apagado."},
+  {"shot": "imp_ready", "focus": "importar", "cursor": "importar", "click": true, "hl": "importar", "label": "Importar", "mobile": {"shot": "imp_ready_btn"}, "say": "Agora é só clicar em Importar."},
+  {"shot": "imp_done", "focus": "toast", "hl": "toast", "label": "Incluídos e atualizados", "say": "Pronto! O sistema mostra quantos clientes foram incluídos e quantos foram atualizados."}
+ ]},
+ {"ch": "4", "title": "Lista de clientes", "beats": [
+  {"shot": "lista", "focus": "codeCell", "hl": "codeCell", "label": "Código com os zeros", "say": "Em Ver clientes, o código vem primeiro, igualzinho ao do seu sistema, com os zeros à esquerda."},
+  {"shot": "lista", "focus": "lastCell", "hl": "lastCell", "label": "Dias sem pedido", "mobile": {"shot": "lista_last"}, "say": "A coluna Último pedido mostra há quantos dias o cliente não pede. A lista começa por quem está há mais tempo sem comprar."},
+  {"shot": "lista_sem", "focus": "sem", "hl": "sem", "label": "Grupo Sem pedido", "say": "Quem nunca fez um pedido fica no fim da lista, no grupo Sem pedido."},
+  {"shot": "exportar", "focus": "exportar", "cursor": "exportar", "click": true, "hl": "exportar", "label": "Cadastro em Excel", "say": "E o botão Exportar cadastro baixa a lista inteira em Excel."}
+ ]},
+ {"ch": "5", "title": "Excluir ou inativar", "beats": [
+  {"shot": "lixeira", "focus": "trash", "cursor": "trash", "click": true, "hl": "trash", "label": "Lixeira", "say": "Para tirar um cliente da lista, clique na lixeira."},
+  {"shot": "del_sem", "focus": "excluir", "hl": "excluir", "label": "Sem pedidos: excluir", "say": "Se ele não tem nenhum pedido, você pode excluir de vez."},
+  {"shot": "del_com", "focus": "inativar", "hl": "inativar", "label": "Com pedidos: inativar", "say": "Se ele já tem pedidos, não dá para excluir. O sistema oferece inativar: ele sai das listas e dos pedidos novos, e o histórico continua."},
+  {"shot": "inativos", "focus": "reat", "cursor": "reat", "click": true, "hl": "reat", "label": "Reativar", "say": "Para trazer de volta, marque Mostrar inativos e clique em reativar."}
+ ]},
+ {"ch": "6", "title": "Ver produtos", "beats": [
+  {"shot": "cards", "focus": "verProd", "cursor": "verProd", "click": true, "hl": "verProd", "label": "Lista de produtos", "say": "No cartão Produtos, o botão Ver produtos mostra a lista com referência, código e nome."},
+  {"shot": "vend", "focus": "verProd", "hl": "verProd", "label": "O vendedor também vê", "say": "O vendedor também vê essa lista, só para consulta. E ele vê só os clientes dele, escolhendo entre os descontos que o administrador liberou."}
+ ]},
+ {"ch": "", "title": "Pronto!", "outro": true, "end1": "Cadastro de clientes", "end2": "Este vídeo fica em Tutoriais", "summary": ["Planilha do seu sistema, sem modelo", "Você escolhe o campo das colunas", "Corrija ou tire linhas antes de gravar", "Dias sem pedido, exportar e inativar"], "beats": [
+  {"shot": "fim", "say": "Resumindo: importe a planilha do seu sistema, confira antes de gravar e acompanhe quem está sem pedir. Bom trabalho!"}
+ ]}
+]
