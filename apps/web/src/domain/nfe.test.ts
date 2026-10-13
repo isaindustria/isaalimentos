@@ -28,7 +28,16 @@ describe('NF-e a partir do pedido', () => {
     expect(Math.round(desc * 100) / 100).toBe(46.62);
     expect(n.itens[0]).toMatchObject({ uCom: 'KG', qCom: 10, CFOP: '5101', CSOSN: '102' });
     expect(n.itens[1]).toMatchObject({ uCom: 'UN', qCom: 120 });
-    expect(n.infCpl).toBe('Pedido 4580 - Vendedor Paula');
+    expect(n.infCpl).toBe('Pedido 4580 - Vendedor: Paula');
+  });
+  it('regime normal: CST 20 com redução de base e texto legal do produto', () => {
+    const p2 = new Map(prods); p2.set('A', { ...prods.get('A')!, icms_cst: '20', icms_aliq: 18, icms_red_bc: 61.11, inf_fiscal: 'Reducao da base de calculo nos termos do art. 3, inciso VI, do Anexo II do RICMS/SP', weight_g: null } as Product);
+    p2.set('B', { ...prods.get('B')!, weight_g: 200 } as Product);
+    const n = montarEntrada(order, items.map((i) => ({ ...i, quantity_units: i.sale_unit === 'un' ? i.quantity : 0 })) as OrderItem[], cust, p2, { ...emit, crt: 3, peso_bruto_fator: 1.06 }, { serie: 1, numero: 9 });
+    expect(n.itens[0]).toMatchObject({ CST: '20', pICMS: 18, pRedBC: 61.11 });
+    expect(n.itens[1]).toMatchObject({ CST: '00', pICMS: 18 });
+    expect(n.infCpl?.startsWith('Reducao da base de calculo')).toBe(true);
+    expect(n.vol).toEqual({ pesoL: 34, pesoB: 36.04 }); // 10 kg + 120 × 200 g
   });
   it('fora do estado usa o CFOP interestadual', () => {
     const n = montarEntrada(order, items, { ...cust, state: 'MG' }, prods, emit, { serie: 1, numero: 8 });

@@ -3,7 +3,7 @@
  * Também lista o que falta no cadastro antes de mandar para a fila.
  */
 import type { Customer, Order, OrderItem, Product } from '@/lib/types';
-import { round2 } from './sales';
+import { round2, round3 } from './sales';
 
 export interface NfeEmitente {
   id: number; cnpj: string | null; razao_social: string | null; nome_fantasia: string | null; ie: string | null; crt: 1 | 2 | 3;
@@ -13,6 +13,7 @@ export interface NfeEmitente {
   pis_cst: string; pis_aliq: number; cofins_cst: string; cofins_aliq: number;
   mod_frete: number; t_pag: string; ind_pres: number; desconto_na_nota: boolean; inf_cpl: string | null;
   resp_tec_cnpj: string | null; resp_tec_contato: string | null; resp_tec_email: string | null; resp_tec_fone: string | null;
+  inscricao_municipal?: string | null; peso_bruto_fator?: number | null;
 }
 export type NfeStatus = 'fila' | 'processando' | 'autorizada' | 'rejeitada' | 'erro' | 'cancelada';
 export interface NfeNota {
@@ -76,11 +77,16 @@ export function montarEntrada(o: Order, items: OrderItem[], cust: Customer, prod
       cProd: l.pr.code, cEAN: l.pr.gtin, xProd: l.it.product_name ?? l.pr.description, NCM: digits(l.pr.ncm), CEST: l.pr.cest,
       CFOP: l.pr.cfop || (interna ? e.cfop_dentro : e.cfop_fora), uCom: l.uCom, qCom: l.qCom, vUnCom: l.vUnCom, vDesc,
       orig: l.pr.origem ?? 0,
-      ...(simples ? { CSOSN: e.csosn } : { CST: e.cst_icms, pICMS: Number(e.aliq_icms) }),
+      ...(simples ? { CSOSN: e.csosn } : { CST: l.pr.icms_cst || e.cst_icms, pICMS: Number(l.pr.icms_aliq ?? e.aliq_icms), ...((l.pr.icms_cst || e.cst_icms) === '20' ? { pRedBC: Number(l.pr.icms_red_bc ?? 0) } : {}) }),
       PIS: { CST: e.pis_cst, pPIS: Number(e.pis_aliq) || undefined }, COFINS: { CST: e.cofins_cst, pCOFINS: Number(e.cofins_aliq) || undefined },
     };
   });
-  const infCpl = [o.order_number ? `Pedido ${o.order_number}` : null, o.seller_name ? `Vendedor ${o.seller_name}` : null, e.inf_cpl, o.notes].filter(Boolean).join(' - ');
+  // textos legais dos produtos (ex.: redução de base do RICMS/SP), sem repetir
+  const legais = [...new Set(linhas.map((l) => l.pr.inf_fiscal?.trim()).filter(Boolean))];
+  const infCpl = [...legais, e.inf_cpl, o.order_number ? `Pedido ${o.order_number}` : null, o.seller_name ? `Vendedor: ${o.seller_name}` : null, o.notes].filter(Boolean).join(' - ');
+  // peso líquido: kg vendidos + peso do cadastro × unidades; bruto = líquido × fator do emitente
+  const pesoL = round3(linhas.reduce((s, l) => s + (l.it.sale_unit === 'kg' ? l.qCom : (Number(l.it.quantity_units ?? (l.it.sale_unit === 'un' ? l.qCom : 0)) * Number(l.pr.weight_g ?? 0)) / 1000), 0));
+  const vol = pesoL ? { pesoL, pesoB: round3(pesoL * Number(e.peso_bruto_fator ?? 1)) } : null;
   return {
     ambiente: e.ambiente, serie: numero.serie, nNF: numero.numero, natOp: e.nat_op,
     emit: {
@@ -97,6 +103,7 @@ export function montarEntrada(o: Order, items: OrderItem[], cust: Customer, prod
     indPres: e.ind_pres, modFrete: e.mod_frete,
     pagamento: [{ tPag: e.t_pag }],
     infCpl: infCpl || null,
+    vol,
   };
 }
 

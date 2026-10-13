@@ -1,6 +1,6 @@
 {
   "name": "@isa/web",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,6 +17,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "jspdf": "^3.0.4",
     "lucide-react": "^0.446.0",
     "next-themes": "^0.4.6",
     "pdfjs-dist": "^4.6.82",

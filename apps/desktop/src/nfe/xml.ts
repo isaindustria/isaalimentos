@@ -17,6 +17,8 @@ export interface Item {
   orig: number;
   /** Simples Nacional (CRT 1/2): CSOSN; regime normal (CRT 3): CST + alíquota */
   CSOSN?: string; CST?: string; pICMS?: number;
+  /** % de redução da base de cálculo (CST 20), ex.: 61.11 */
+  pRedBC?: number;
   PIS: { CST: string; pPIS?: number }; COFINS: { CST: string; pCOFINS?: number };
 }
 export interface NotaInput {
@@ -24,6 +26,8 @@ export interface NotaInput {
   emit: Emitente; dest: Destinatario; itens: Item[];
   indFinal: 0 | 1; indPres: 0 | 1 | 2 | 3 | 4 | 5 | 9; modFrete: 0 | 1 | 2 | 3 | 4 | 9;
   pagamento: { tPag: string; vPag?: number }[]; infCpl?: string | null;
+  /** volumes transportados (peso em kg) */
+  vol?: { qVol?: number; esp?: string | null; pesoL?: number; pesoB?: number } | null;
   cNF?: string;
 }
 
@@ -78,7 +82,7 @@ export function montarNFe(n: NotaInput): NotaMontada {
   const idDest = n.dest.ender.UF.toUpperCase() === n.emit.ender.UF.toUpperCase() ? 1 : 2;
   const simples = n.emit.CRT !== 3;
 
-  const ide = `<ide><cUF>${cUF}</cUF><cNF>${cNF}</cNF>${tag('natOp', txt(n.natOp))}<mod>55</mod><serie>${n.serie}</serie><nNF>${n.nNF}</nNF><dhEmi>${dhEmi}</dhEmi><tpNF>1</tpNF><idDest>${idDest}</idDest><cMunFG>${d(n.emit.ender.cMun)}</cMunFG><tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${n.ambiente}</tpAmb><finNFe>1</finNFe><indFinal>${n.indFinal}</indFinal><indPres>${n.indPres}</indPres>${[2, 3, 4, 9].includes(n.indPres) ? '<indIntermed>0</indIntermed>' : ''}<procEmi>0</procEmi><verProc>ISA Gestao</verProc></ide>`;
+  const ide = `<ide><cUF>${cUF}</cUF><cNF>${cNF}</cNF>${tag('natOp', txt(n.natOp))}<mod>55</mod><serie>${n.serie}</serie><nNF>${n.nNF}</nNF><dhEmi>${dhEmi}</dhEmi><dhSaiEnt>${dhEmi}</dhSaiEnt><tpNF>1</tpNF><idDest>${idDest}</idDest><cMunFG>${d(n.emit.ender.cMun)}</cMunFG><tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${n.ambiente}</tpAmb><finNFe>1</finNFe><indFinal>${n.indFinal}</indFinal><indPres>${n.indPres}</indPres>${[2, 3, 4, 9].includes(n.indPres) ? '<indIntermed>0</indIntermed>' : ''}<procEmi>0</procEmi><verProc>ISA Gestao</verProc></ide>`;
   const emit = `<emit><CNPJ>${d(n.emit.CNPJ)}</CNPJ>${tag('xNome', txt(n.emit.xNome))}${tag('xFant', txt(n.emit.xFant))}${endereco('enderEmit', n.emit.ender)}<IE>${d(n.emit.IE)}</IE><CRT>${n.emit.CRT}</CRT></emit>`;
   const docDest = n.dest.CNPJ ? `<CNPJ>${d(n.dest.CNPJ)}</CNPJ>` : `<CPF>${d(n.dest.CPF)}</CPF>`;
   const dest = `<dest>${docDest}${tag('xNome', homolog ? HOMOLOG_NOME : txt(n.dest.xNome))}${endereco('enderDest', n.dest.ender)}<indIEDest>${n.dest.indIEDest}</indIEDest>${n.dest.indIEDest === 1 ? tag('IE', d(n.dest.IE)) : ''}${tag('email', txt(n.dest.email, 60))}</dest>`;
@@ -94,8 +98,9 @@ export function montarNFe(n: NotaInput): NotaMontada {
     } else {
       const cst = it.CST ?? '00', p = it.pICMS ?? 0;
       if (cst === '00') { const v = r2((base * p) / 100); vBCT += base; vICMST += v; icms = `<ICMS><ICMS00><orig>${it.orig}</orig><CST>00</CST><modBC>3</modBC><vBC>${f(base, 2)}</vBC><pICMS>${f(p, 4)}</pICMS><vICMS>${f(v, 2)}</vICMS></ICMS00></ICMS>`; }
+      else if (cst === '20') { const red = it.pRedBC ?? 0; const bc = r2(base * (1 - red / 100)); const v = r2((bc * p) / 100); vBCT += bc; vICMST += v; icms = `<ICMS><ICMS20><orig>${it.orig}</orig><CST>20</CST><modBC>3</modBC><pRedBC>${f(red, 4)}</pRedBC><vBC>${f(bc, 2)}</vBC><pICMS>${f(p, 4)}</pICMS><vICMS>${f(v, 2)}</vICMS></ICMS20></ICMS>`; }
       else if (['40', '41', '50'].includes(cst)) icms = `<ICMS><ICMS40><orig>${it.orig}</orig><CST>${cst}</CST></ICMS40></ICMS>`;
-      else throw new Error(`CST de ICMS ${cst} ainda não suportado pelo emissor (use 00, 40, 41 ou 50).`);
+      else throw new Error(`CST de ICMS ${cst} ainda não suportado pelo emissor (use 00, 20, 40, 41 ou 50).`);
     }
     const pis = it.PIS.pPIS ? (() => { const v = r2((base * it.PIS.pPIS!) / 100); vPIST += v; return `<PIS><PISAliq><CST>${it.PIS.CST}</CST><vBC>${f(base, 2)}</vBC><pPIS>${f(it.PIS.pPIS!, 4)}</pPIS><vPIS>${f(v, 2)}</vPIS></PISAliq></PIS>`; })()
       : ['04', '05', '06', '07', '08', '09'].includes(it.PIS.CST) ? `<PIS><PISNT><CST>${it.PIS.CST}</CST></PISNT></PIS>`
@@ -112,7 +117,9 @@ export function montarNFe(n: NotaInput): NotaMontada {
   vProdT = r2(vProdT); vDescT = r2(vDescT);
   const vNF = r2(vProdT - vDescT);
   const total = `<total><ICMSTot><vBC>${f(vBCT, 2)}</vBC><vICMS>${f(r2(vICMST), 2)}</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>${f(vProdT, 2)}</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>${f(vDescT, 2)}</vDesc><vII>0.00</vII><vIPI>0.00</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>${f(r2(vPIST), 2)}</vPIS><vCOFINS>${f(r2(vCOFT), 2)}</vCOFINS><vOutro>0.00</vOutro><vNF>${f(vNF, 2)}</vNF></ICMSTot></total>`;
-  const transp = `<transp><modFrete>${n.modFrete}</modFrete></transp>`;
+  const v = n.vol;
+  const vol = v && (v.qVol || v.pesoL || v.pesoB) ? `<vol>${v.qVol ? `<qVol>${Math.round(v.qVol)}</qVol>` : ''}${tag('esp', txt(v.esp))}${v.pesoL ? `<pesoL>${f(v.pesoL, 3)}</pesoL>` : ''}${v.pesoB ? `<pesoB>${f(v.pesoB, 3)}</pesoB>` : ''}</vol>` : '';
+  const transp = `<transp><modFrete>${n.modFrete}</modFrete>${vol}</transp>`;
   const pag = `<pag>${n.pagamento.map((p) => `<detPag><tPag>${p.tPag}</tPag><vPag>${f(p.tPag === '90' ? 0 : r2(p.vPag ?? vNF), 2)}</vPag></detPag>`).join('')}</pag>`;
   const inf = n.infCpl ? `<infAdic><infCpl>${txt(n.infCpl, 5000)}</infCpl></infAdic>` : '';
   const rt = n.emit.respTec ? `<infRespTec><CNPJ>${d(n.emit.respTec.CNPJ)}</CNPJ>${tag('xContato', txt(n.emit.respTec.xContato))}${tag('email', txt(n.emit.respTec.email))}${tag('fone', d(n.emit.respTec.fone))}</infRespTec>` : '';

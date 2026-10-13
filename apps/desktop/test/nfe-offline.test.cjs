@@ -52,3 +52,16 @@ ok(verificar(evSigned, c.certPem), 'evento de cancelamento assinado confere');
 const out = process.argv[2] || '.';
 fs.writeFileSync(path.join(out, 'enviNFe.xml'), lote);
 fs.writeFileSync(path.join(out, 'envEvento.xml'), `<envEvento versao="1.00" xmlns="http://www.portalfiscal.inf.br/nfe"><idLote>1</idLote>${evSigned}</envEvento>`);
+
+// Nota igual ao modelo da ISA (regime normal, CST 20 com redução de base, transferência)
+const modelo = montarNFe({ ...input, nNF: 958, cNF: '00677507', natOp: 'TRANSFERENCIA',
+  emit: { ...input.emit, CRT: 3, IE: '379646137119', ender: { xLgr: 'R CURIO', nro: '45', xBairro: 'PARQUE SAO PEDRO', cMun: '3523107', xMun: 'ITAQUAQUECETUBA', UF: 'SP', CEP: '08586100', fone: '1151982994' } },
+  itens: [{ cProd: '881', xProd: 'ALHO FRESCO NACIONAL N6 CX 10KG', NCM: '07032090', CFOP: '5152', uCom: 'CX', qCom: 250, vUnCom: 134, orig: 0, CST: '20', pICMS: 18, pRedBC: 61.11, PIS: { CST: '49' }, COFINS: { CST: '49' } }],
+  vol: { qVol: 0, pesoL: 2500, pesoB: 2650 }, infCpl: 'Reducao da base de calculo nos termos do art. 3, inciso VI, do Anexo II do RICMS/SP - Vendedor: BRUNO' });
+ok(modelo.vNF === 33500, 'modelo: total 33.500,00');
+ok(modelo.xml.includes('<vBC>13028.15</vBC>') && modelo.xml.includes('<vICMS>2345.07</vICMS>') && modelo.xml.includes('<pRedBC>61.1100</pRedBC>'), 'modelo: base reduzida 13.028,15 e ICMS 2.345,07 (igual ao DANFE da ISA)');
+const modeloSig = assinar(modelo.xml, 'infNFe', c.keyPem, c.certPem);
+ok(verificar(modeloSig, c.certPem), 'modelo: assinatura confere');
+fs.writeFileSync(path.join(out, 'enviNFe_modelo.xml'), `<enviNFe versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe"><idLote>2</idLote><indSinc>1</indSinc>${modeloSig}</enviNFe>`);
+// nfeProc de exemplo (protocolo fictício) para testar o DANFE
+fs.writeFileSync(path.join(out, 'nfeProc_modelo.xml'), `<?xml version="1.0" encoding="UTF-8"?><nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">${modeloSig}<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb><verAplic>SP_NFE_PL009_V4</verAplic><chNFe>${modelo.chave}</chNFe><dhRecbto>2026-10-13T10:00:05-03:00</dhRecbto><nProt>135263641214858</nProt><digVal>x</digVal><cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe></nfeProc>`);

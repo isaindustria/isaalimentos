@@ -56,6 +56,10 @@ export interface Product {
   gtin?: string | null;
   origem?: number | null;
   cfop?: string | null;
+  icms_cst?: string | null;
+  icms_aliq?: number | null;
+  icms_red_bc?: number | null;
+  inf_fiscal?: string | null;
   created_at: string;
   updated_at: string;
 }

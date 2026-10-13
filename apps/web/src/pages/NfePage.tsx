@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Download, KeyRound, RefreshCw, ShieldCheck, Trash2, Wifi, XCircle } from 'lucide-react';
+import { Download, FileText, KeyRound, RefreshCw, ShieldCheck, Trash2, Wifi, XCircle } from 'lucide-react';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Select, Table, Tabs, Textarea } from '@/components/primitives';
 import { cancelarNota, getCertPublico, getEmitente, listNotas, reenfileirar, salvarFiscalCliente, salvarFiscalProduto, saveEmitente, setCertPublico } from '@/api/nfe';
 import { listProducts } from '@/api/products';
@@ -12,6 +12,7 @@ import { downloadBlob, fmtBRL, fmtDateTime } from '@/lib/utils';
 import { NFE_STATUS_LABEL, type NfeEmitente, type NfeNota } from '@/domain/nfe';
 import { fmtCnpj } from '@/domain/sales';
 import { useAuth } from '@/hooks/useAuth';
+import { gerarDanfe } from '@/domain/danfe';
 
 type Aba = 'notas' | 'emitente' | 'certificado' | 'fiscal';
 
@@ -35,11 +36,15 @@ export default function NfePage() {
 function Notas() {
   const qc = useQueryClient();
   const notas = useQuery({ queryKey: ['nfe-notas'], queryFn: () => listNotas(), refetchInterval: 15000 });
+  const emitente = useQuery({ queryKey: ['nfe-emitente'], queryFn: getEmitente });
   const [cancel, setCancel] = useState<NfeNota | null>(null);
   const [just, setJust] = useState('');
   const re = useMutation({ mutationFn: reenfileirar, onSuccess: () => { toast.success('Nota de volta para a fila.'); qc.invalidateQueries({ queryKey: ['nfe-notas'] }); } });
   const canc = useMutation({ mutationFn: () => cancelarNota(cancel!, just), onSuccess: () => { toast.success('Nota cancelada na SEFAZ.'); setCancel(null); setJust(''); qc.invalidateQueries({ queryKey: ['nfe-notas'] }); }, onError: (e: Error) => toast.error(e.message) });
   const baixar = (n: NfeNota) => downloadBlob(new Blob([n.xml ?? ''], { type: 'application/xml' }), `NFe${n.chave ?? n.numero}.xml`);
+  const danfe = async (n: NfeNota) => {
+    try { downloadBlob(await gerarDanfe(n.xml ?? '', '/brand/logo.png', { inscricaoMunicipal: emitente.data?.inscricao_municipal }), `DANFE-${n.numero ?? n.chave}.pdf`); } catch (err) { toast.error(`Não foi possível gerar o DANFE: ${(err as Error).message}`); }
+  };
   if (!notas.data?.length) return <Card><EmptyState title="Nenhuma nota ainda" description="Abra um pedido e clique em Emitir NF-e. A nota entra na fila e o programa do Windows com o certificado emite." /></Card>;
   return (
     <Card padded={false}>
@@ -54,6 +59,7 @@ function Notas() {
               <td className="td"><Badge tone={NFE_STATUS_LABEL[n.status].tone} dot>{NFE_STATUS_LABEL[n.status].label}</Badge>{n.motivo && <div className="mt-1 max-w-[360px] text-xs text-muted">{n.cstat ? `${n.cstat} · ` : ''}{n.motivo}</div>}</td>
               <td className="td text-xs text-muted">{fmtDateTime(n.processado_em ?? n.created_at)}{n.computador && <div>{n.computador}</div>}</td>
               <td className="td whitespace-nowrap text-right">
+                {n.xml && <Button size="sm" variant="ghost" icon={<FileText className="size-4" />} onClick={() => void danfe(n)}>DANFE</Button>}
                 {n.xml && <Button size="sm" variant="ghost" icon={<Download className="size-4" />} onClick={() => baixar(n)}>XML</Button>}
                 {['erro', 'rejeitada'].includes(n.status) && <Button size="sm" variant="ghost" icon={<RefreshCw className="size-4" />} onClick={() => re.mutate(n.id)}>Tentar de novo</Button>}
                 {n.status === 'autorizada' && desktop?.nfe && <Button size="sm" variant="ghost" className="text-danger" icon={<XCircle className="size-4" />} onClick={() => setCancel(n)}>Cancelar</Button>}
@@ -89,7 +95,7 @@ function Emitente() {
         <div className="grid gap-3 sm:grid-cols-2">
           {inp('cnpj', 'CNPJ')}{inp('ie', 'Inscrição estadual')}{inp('razao_social', 'Razão social', 'sm:col-span-2')}{inp('nome_fantasia', 'Nome fantasia', 'sm:col-span-2')}
           {inp('logradouro', 'Logradouro', 'sm:col-span-2')}{inp('numero', 'Número')}{inp('complemento', 'Complemento')}{inp('bairro', 'Bairro')}{inp('cep', 'CEP')}
-          {inp('municipio', 'Município')}{inp('municipio_ibge', 'Código IBGE do município (7 dígitos)')}{inp('uf', 'UF')}{inp('fone', 'Telefone')}
+          {inp('municipio', 'Município')}{inp('municipio_ibge', 'Código IBGE do município (7 dígitos)')}{inp('uf', 'UF')}{inp('fone', 'Telefone')}{inp('inscricao_municipal', 'Inscrição municipal')}{inp('peso_bruto_fator', 'Peso bruto = líquido × (ex.: 1,06)', '', 'number')}
           <F label="Regime tributário (CRT)"><Select value={e.crt} onChange={set('crt')}><option value={1}>1 · Simples Nacional</option><option value={2}>2 · Simples, excesso de sublimite</option><option value={3}>3 · Regime normal</option></Select></F>
         </div>
       </Card>
@@ -211,7 +217,7 @@ function Fiscal() {
       </div>
       {modo === 'produtos' ? (
         <Table dense>
-          <thead><tr><th className="th">Código</th><th className="th">Produto</th><th className="th">NCM</th><th className="th">CEST</th><th className="th">GTIN/EAN</th><th className="th">Origem</th><th className="th">CFOP próprio</th></tr></thead>
+          <thead><tr><th className="th">Código</th><th className="th">Produto</th><th className="th">NCM</th><th className="th">CEST</th><th className="th">GTIN/EAN</th><th className="th">Origem</th><th className="th">CFOP próprio</th><th className="th">CST ICMS</th><th className="th">Alíq. %</th><th className="th">Redução BC %</th><th className="th">Texto legal (inf. complementares)</th></tr></thead>
           <tbody>{filtP.map((p) => (
             <tr key={p.code}>
               <td className="td font-mono text-xs">{p.code}</td><td className="td text-sm">{p.description}<div className="text-xs text-muted">{p.reference}</div></td>
@@ -220,6 +226,10 @@ function Fiscal() {
               <td className="td">{cell(p.gtin, (v) => saveP(p.code, { gtin: v || null }), 'w-36')}</td>
               <td className="td"><Select className="h-8 w-24" defaultValue={p.origem ?? 0} onChange={(ev) => saveP(p.code, { origem: Number(ev.target.value) })}>{[0, 1, 2, 3, 4, 5, 6, 7, 8].map((o) => <option key={o} value={o}>{o}{o === 0 ? ' · nacional' : ''}</option>)}</Select></td>
               <td className="td">{cell(p.cfop, (v) => saveP(p.code, { cfop: v || null }), 'w-20', 'padrão')}</td>
+              <td className="td">{cell(p.icms_cst, (v) => saveP(p.code, { icms_cst: v || null }), 'w-16', 'padrão')}</td>
+              <td className="td">{cell(p.icms_aliq, (v) => saveP(p.code, { icms_aliq: v ? Number(v.replace(',', '.')) : null }), 'w-16', '18')}</td>
+              <td className="td">{cell(p.icms_red_bc, (v) => saveP(p.code, { icms_red_bc: v ? Number(v.replace(',', '.')) : null }), 'w-20', 'ex.: 61,11')}</td>
+              <td className="td">{cell(p.inf_fiscal, (v) => saveP(p.code, { inf_fiscal: v || null }), 'w-72', 'ex.: Reducao da base de calculo nos termos do art. 3...')}</td>
             </tr>))}</tbody>
         </Table>
       ) : (
