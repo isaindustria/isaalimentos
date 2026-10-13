@@ -60,6 +60,8 @@ export interface Product {
   icms_aliq?: number | null;
   icms_red_bc?: number | null;
   inf_fiscal?: string | null;
+  /** código de benefício fiscal (cBenef) da SEFAZ-SP, ex.: SP020030 */
+  c_benef?: string | null;
   created_at: string;
   updated_at: string;
 }

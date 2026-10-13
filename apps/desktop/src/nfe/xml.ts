@@ -19,6 +19,8 @@ export interface Item {
   CSOSN?: string; CST?: string; pICMS?: number;
   /** % de redução da base de cálculo (CST 20), ex.: 61.11 */
   pRedBC?: number;
+  /** código de benefício fiscal da UF (SP: obrigatório com redução de base, ex.: SP020030) */
+  cBenef?: string | null;
   PIS: { CST: string; pPIS?: number }; COFINS: { CST: string; pCOFINS?: number };
 }
 export interface NotaInput {
@@ -110,7 +112,7 @@ export function montarNFe(n: NotaInput): NotaMontada {
       : `<COFINS><COFINSOutr><CST>${it.COFINS.CST}</CST><vBC>0.00</vBC><pCOFINS>0.0000</pCOFINS><vCOFINS>0.00</vCOFINS></COFINSOutr></COFINS>`;
     const ean = d(it.cEAN) || 'SEM GTIN';
     const xProd = homolog && i === 0 ? 'NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL' : txt(it.xProd, 120);
-    const prod = `<prod><cProd>${txt(it.cProd, 60)}</cProd><cEAN>${ean}</cEAN><xProd>${xProd}</xProd><NCM>${d(it.NCM)}</NCM>${tag('CEST', d(it.CEST))}<CFOP>${d(it.CFOP)}</CFOP><uCom>${txt(it.uCom, 6)}</uCom><qCom>${f(it.qCom, 4)}</qCom><vUnCom>${f(it.vUnCom, 10)}</vUnCom><vProd>${f(vProd, 2)}</vProd><cEANTrib>${ean}</cEANTrib><uTrib>${txt(it.uCom, 6)}</uTrib><qTrib>${f(it.qCom, 4)}</qTrib><vUnTrib>${f(it.vUnCom, 10)}</vUnTrib>${vDesc ? `<vDesc>${f(vDesc, 2)}</vDesc>` : ''}<indTot>1</indTot></prod>`;
+    const prod = `<prod><cProd>${txt(it.cProd, 60)}</cProd><cEAN>${ean}</cEAN><xProd>${xProd}</xProd><NCM>${d(it.NCM)}</NCM>${tag('CEST', d(it.CEST))}${it.cBenef ? `<cBenef>${txt(it.cBenef, 10)}</cBenef>` : ''}<CFOP>${d(it.CFOP)}</CFOP><uCom>${txt(it.uCom, 6)}</uCom><qCom>${f(it.qCom, 4)}</qCom><vUnCom>${f(it.vUnCom, 10)}</vUnCom><vProd>${f(vProd, 2)}</vProd><cEANTrib>${ean}</cEANTrib><uTrib>${txt(it.uCom, 6)}</uTrib><qTrib>${f(it.qCom, 4)}</qTrib><vUnTrib>${f(it.vUnCom, 10)}</vUnTrib>${vDesc ? `<vDesc>${f(vDesc, 2)}</vDesc>` : ''}<indTot>1</indTot></prod>`;
     return `<det nItem="${i + 1}">${prod}<imposto>${icms}${pis}${cof}</imposto></det>`;
   }).join('');
 

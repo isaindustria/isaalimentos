@@ -91,7 +91,7 @@ export async function cancelarNota(n: NfeNota, justificativa: string) {
   unwrap(await supabase.from('nfe_notas').update({ status: 'cancelada', xml_cancelamento: res.data.xml, justificativa_cancelamento: justificativa, cancelada_em: new Date().toISOString() }).eq('id', n.id));
 }
 
-export async function salvarFiscalProduto(code: string, patch: Partial<Pick<Product, 'ncm' | 'cest' | 'gtin' | 'origem' | 'cfop' | 'icms_cst' | 'icms_aliq' | 'icms_red_bc' | 'inf_fiscal'>>) {
+export async function salvarFiscalProduto(code: string, patch: Partial<Pick<Product, 'ncm' | 'cest' | 'gtin' | 'origem' | 'cfop' | 'icms_cst' | 'icms_aliq' | 'icms_red_bc' | 'inf_fiscal' | 'c_benef'>>) {
   unwrap(await supabase.from('products').update(patch).eq('code', code));
 }
 export async function salvarFiscalCliente(id: string, patch: Partial<Customer>) {

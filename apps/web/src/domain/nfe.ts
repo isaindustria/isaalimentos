@@ -49,6 +49,8 @@ export function pendencias(o: Order, items: OrderItem[], cust: Customer | null, 
     if (!pr) { p.push(`Produto ${it.product_code} não está no cadastro.`); continue; }
     if (digits(pr.ncm).length !== 8) p.push(`Produto ${nome}: NCM (8 dígitos).`);
     if (it.unit_price == null || Number(it.unit_price) <= 0) p.push(`Produto ${nome}: valor unitário.`);
+    const cst = pr.icms_cst || e.cst_icms;
+    if (e.crt === 3 && (e.uf ?? 'SP').toUpperCase() === 'SP' && ['20', '30', '40', '41', '50', '51', '70', '90'].includes(cst) && !pr.c_benef?.trim()) p.push(`Produto ${nome}: código de benefício fiscal (cBenef), obrigatório em SP para o CST ${cst}.`);
   }
   if (o.status === 'cancelado') p.push('Pedido cancelado não pode ter nota.');
   return [...new Set(p)];
@@ -74,7 +76,7 @@ export function montarEntrada(o: Order, items: OrderItem[], cust: Customer, prod
     resto = round2(resto - vDesc);
     const simples = e.crt !== 3;
     return {
-      cProd: l.pr.code, cEAN: l.pr.gtin, xProd: l.it.product_name ?? l.pr.description, NCM: digits(l.pr.ncm), CEST: l.pr.cest,
+      cProd: l.pr.code, cEAN: l.pr.gtin, xProd: l.it.product_name ?? l.pr.description, NCM: digits(l.pr.ncm), CEST: l.pr.cest, cBenef: l.pr.c_benef?.trim() || null,
       CFOP: l.pr.cfop || (interna ? e.cfop_dentro : e.cfop_fora), uCom: l.uCom, qCom: l.qCom, vUnCom: l.vUnCom, vDesc,
       orig: l.pr.origem ?? 0,
       ...(simples ? { CSOSN: e.csosn } : { CST: l.pr.icms_cst || e.cst_icms, pICMS: Number(l.pr.icms_aliq ?? e.aliq_icms), ...((l.pr.icms_cst || e.cst_icms) === '20' ? { pRedBC: Number(l.pr.icms_red_bc ?? 0) } : {}) }),

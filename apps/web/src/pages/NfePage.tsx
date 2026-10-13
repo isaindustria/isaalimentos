@@ -217,7 +217,7 @@ function Fiscal() {
       </div>
       {modo === 'produtos' ? (
         <Table dense className="[&>table]:min-w-max">
-          <thead><tr><th className="th">Código</th><th className="th">Produto</th><th className="th">NCM</th><th className="th">CEST</th><th className="th">GTIN/EAN</th><th className="th">Origem</th><th className="th">CFOP próprio</th><th className="th">CST ICMS</th><th className="th">Alíq. %</th><th className="th">Redução BC %</th><th className="th">Texto legal (inf. complementares)</th></tr></thead>
+          <thead><tr><th className="th">Código</th><th className="th">Produto</th><th className="th">NCM</th><th className="th">CEST</th><th className="th">GTIN/EAN</th><th className="th">Origem</th><th className="th">CFOP próprio</th><th className="th">CST ICMS</th><th className="th">Alíq. %</th><th className="th">Redução BC %</th><th className="th">cBenef</th><th className="th">Texto legal (inf. complementares)</th></tr></thead>
           <tbody>{filtP.map((p) => (
             <tr key={p.code}>
               <td className="td font-mono text-xs">{p.code}</td><td className="td text-sm">{p.description}<div className="text-xs text-muted">{p.reference}</div></td>
@@ -229,6 +229,7 @@ function Fiscal() {
               <td className="td">{cell(p.icms_cst, (v) => saveP(p.code, { icms_cst: v || null }), 'w-16', 'padrão')}</td>
               <td className="td">{cell(p.icms_aliq, (v) => saveP(p.code, { icms_aliq: v ? Number(v.replace(',', '.')) : null }), 'w-16', '18')}</td>
               <td className="td">{cell(p.icms_red_bc, (v) => saveP(p.code, { icms_red_bc: v ? Number(v.replace(',', '.')) : null }), 'w-20', 'ex.: 61,11')}</td>
+              <td className="td">{cell(p.c_benef, (v) => saveP(p.code, { c_benef: v.toUpperCase() || null }), 'w-28', 'ex.: SP020030')}</td>
               <td className="td">{cell(p.inf_fiscal, (v) => saveP(p.code, { inf_fiscal: v || null }), 'w-72', 'ex.: Reducao da base de calculo nos termos do art. 3...')}</td>
             </tr>))}</tbody>
         </Table>
