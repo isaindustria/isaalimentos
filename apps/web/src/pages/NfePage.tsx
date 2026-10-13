@@ -213,10 +213,10 @@ function Fiscal() {
       <div className="flex flex-wrap items-center gap-2 p-4">
         <Tabs value={modo} onChange={setModo} items={[{ value: 'produtos', label: 'Produtos' }, { value: 'clientes', label: 'Clientes' }]} />
         <Input className="h-9 max-w-xs" placeholder="Buscar" value={q} onChange={(e) => setQ(e.target.value)} />
-        <span className="text-xs text-muted">Salva ao sair de cada campo.</span>
+        <span className="text-xs text-muted">Salva ao sair de cada campo. Arraste a tabela para o lado para ver todas as colunas.</span>
       </div>
       {modo === 'produtos' ? (
-        <Table dense>
+        <Table dense className="[&>table]:min-w-max">
           <thead><tr><th className="th">Código</th><th className="th">Produto</th><th className="th">NCM</th><th className="th">CEST</th><th className="th">GTIN/EAN</th><th className="th">Origem</th><th className="th">CFOP próprio</th><th className="th">CST ICMS</th><th className="th">Alíq. %</th><th className="th">Redução BC %</th><th className="th">Texto legal (inf. complementares)</th></tr></thead>
           <tbody>{filtP.map((p) => (
             <tr key={p.code}>
@@ -233,7 +233,7 @@ function Fiscal() {
             </tr>))}</tbody>
         </Table>
       ) : (
-        <Table dense>
+        <Table dense className="[&>table]:min-w-max">
           <thead><tr><th className="th">Cliente</th><th className="th">Contribuinte</th><th className="th">IE</th><th className="th">Endereço</th><th className="th">Número</th><th className="th">Compl.</th><th className="th">Bairro</th><th className="th">Cidade / UF</th><th className="th">CEP</th><th className="th">IBGE</th></tr></thead>
           <tbody>{filtC.map((c) => (
             <tr key={c.id}>
