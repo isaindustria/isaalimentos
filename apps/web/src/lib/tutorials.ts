@@ -23,6 +23,41 @@ export interface Tutorial {
 
 export const TUTORIALS: Tutorial[] = [
   {
+    id: 'vendedor-pedidos',
+    version: '1.9.8',
+    date: '2026-10-13',
+    title: 'Vendedor: clientes e pedidos',
+    summary: 'Para o vendedor: veja os seus clientes e há quantos dias cada um não pede, exporte a lista, lance o pedido com o desconto autorizado, responda a pergunta das outras embalagens e consulte os seus pedidos.',
+    web: 'vendedor-web.mp4',
+    mobile: 'vendedor-mobile.mp4',
+    poster: 'vendedor-web.jpg',
+    steps: [
+      { title: 'O que o vendedor faz no sistema', items: [
+        'Na aba Pedidos ficam o cartão Meus clientes, o cartão Produtos e a lista com todos os seus pedidos (do PDF e manuais).',
+        'No alto da tela: Como usar abre os tutoriais e Novo pedido começa um pedido.',
+      ] },
+      { title: 'Meus clientes', items: [
+        'No cartão Meus clientes, clique em Ver clientes. Aparecem só os clientes cadastrados no seu nome, só para consulta.',
+        'Último ped. mostra há quantos dias o cliente não pede. Quem está há mais tempo sem pedir vem primeiro; quem nunca pediu fica no grupo Sem pedido, no fim.',
+        'Os descontos financeiros de cada cliente são definidos pelo ADM.',
+        'Exportar cadastro baixa a lista em Excel, com a coluna de dias desde o último pedido, para conferir quem precisa de visita.',
+      ] },
+      { title: 'Pedido novo', items: [
+        'Clique em Novo pedido e escolha o cliente pelo nome ou pelo CNPJ. O vendedor vem preenchido.',
+        'Se o cliente já tem pedido em aberto, aparece "Você já tem pedido para esse cliente. Continuar?". Não apaga tudo e a tela volta em branco; Sim, continuar segue com o pedido.',
+        'Em Desc. Fin., escolha só entre os descontos autorizados para o cliente.',
+        'Nos itens, procure o produto pela referência, pelo código ou pelo nome. Informe a quantidade (em kg ou em unidade, conforme o produto) e o valor unitário; o total é calculado sozinho.',
+        'Em Perguntas do pedido, responda Sim ou Não: pode enviar em outras embalagens de medida a quantidade solicitada? A resposta é obrigatória.',
+        'Clique em Salvar pedido.',
+      ] },
+      { title: 'Consultar pedidos', items: [
+        'O pedido salvo abre na hora, com Voltar, Editar, Imprimir e Novo pedido na mesma linha, e a resposta sobre as outras embalagens registrada.',
+        'Em Pedidos, a lista mostra todos os seus pedidos, do PDF e manuais, com o total no rodapé.',
+        'Use os filtros de status e de cliente; clique no pedido para abrir, imprimir ou editar.',
+      ] },
+    ],
+  },
+  {
     id: 'cadastro-clientes',
     version: '1.9.6',
     date: '2026-10-13',

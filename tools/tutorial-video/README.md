@@ -54,3 +54,9 @@ Pasta `cadastro-clientes/`, mesmo pipeline da 1.7.4, rodado a partir da pasta do
 `pesquisa-de-pessoas-ficticio.xlsx` imita a exportação de um ERP (título "Pesquisa de Pessoas", colunas Cód., Razão Social, Fantasia, CPF/CNPJ...), com uma coluna não reconhecida ("Abat. Financeiro", escolhida como Desconto financeiro), um cliente novo, um CNPJ repetido e um CNPJ com dígito a menos; é gerada por `make_xlsx.py` a partir de `node clientes/dump.mjs > clientes/cust.json`.
 Passos: `node clientes/capture.mjs web|mobile`, `python clientes/tts_cb.py`, `python clientes/check_vo.py` (Python com `faster-whisper`) (regere as ruins com `tts_cb.py c010`, mudando a semente com `SEED=1`), `python clientes/make.py web|mobile`, `NAME=cl_web node render_tut.mjs full x saida.mp4`.
 No `script.json`, a chave `mobile` de uma fala troca a foto ou a caixa só na versão de celular.
+
+### Vendedor: clientes e pedidos (1.9.8, Vendas parte 4)
+
+Pasta `vendedor/`, mesmo pipeline do cadastro de clientes (copie a pasta como `vendedor/` ao lado de `mock.mjs`).
+`setup.mjs` transforma a sessão do simulador na vendedora fictícia Paula (perfil `vendedor`, acesso `editor`, sem superadmin, como exige `isSeller`), deixa só os clientes dela (como a RLS faz no banco real), com códigos, descontos autorizados, último pedido em dias variados, dois sem pedido e um pedido em aberto para o Empório Boa Vista (aviso "Você já tem pedido para esse cliente"); as referências dos produtos viram ISA (kg) e POTE TEMP (unidade).
+Passos: `node vendedor/capture.mjs web|mobile`, `python vendedor/tts_cb.py` (Python 3.11 com `chatterbox-tts`), `python vendedor/check_vo.py` (regere as ruins com `SEED=1 python vendedor/tts_cb.py c010`), `python vendedor/make.py web|mobile`, `NAME=vd_web node render_tut.mjs full x saida.mp4` (idem `vd_mobile`). `sheet.py` monta folhas de contato das fotos com as caixas desenhadas, para conferir.

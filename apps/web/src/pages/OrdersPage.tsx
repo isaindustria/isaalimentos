@@ -64,37 +64,38 @@ export default function OrdersPage() {
 
       <Card padded={false}>
         {orders.data?.length ? (
-          <Table>
+          <Table className="[&>table]:min-w-0">
             <thead>
               <tr>
                 <th className="th">Pedido</th>
                 <th className="th">Cliente</th>
-                <th className="th">Data</th>
-                <th className="th">Entrega</th>
+                <th className="th hidden sm:table-cell">Data</th>
+                <th className="th hidden sm:table-cell">Entrega</th>
                 <th className="th text-right">Valor</th>
-                <th className="th">Status</th>
+                <th className="th hidden sm:table-cell">Status</th>
               </tr>
             </thead>
             <tbody>
               {orders.data.map((o) => (
                 <tr key={o.id} className="hover:bg-surface-2/60 cursor-pointer" onClick={() => navigate(`/pedidos/${o.id}`)}>
-                  <td className="td font-semibold">#{o.order_number ?? '—'}<div className="text-[11px] font-normal text-muted">{o.import_id ? 'PDF' : 'manual'}</div></td>
+                  <td className="td font-semibold">#{o.order_number ?? '—'}<div className="text-[11px] font-normal text-muted">{o.import_id ? 'PDF' : 'manual'}<span className="sm:hidden"> · {fmtDate(o.order_date)}</span></div></td>
                   <td className="td">
                     <div className="font-medium">{o.customer?.name ?? o.customer_name ?? '—'}</div>
                     <div className="text-xs text-muted">{[o.customer?.city, o.customer?.state].filter(Boolean).join(' - ')}</div>
                   </td>
-                  <td className="td text-muted">{fmtDate(o.order_date)}</td>
-                  <td className="td text-muted">{fmtDate(o.delivery_date)}</td>
-                  <td className="td text-right num font-semibold">{fmtBRL(o.total_value)}</td>
-                  <td className="td"><Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge></td>
+                  <td className="td hidden text-muted sm:table-cell">{fmtDate(o.order_date)}</td>
+                  <td className="td hidden text-muted sm:table-cell">{fmtDate(o.delivery_date)}</td>
+                  <td className="td text-right num font-semibold">{fmtBRL(o.total_value)}<div className="mt-1 sm:hidden"><Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge></div></td>
+                  <td className="td hidden sm:table-cell"><Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge></td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className="bg-surface-2/50">
-                <td className="td font-semibold" colSpan={4}>{fmtInt(orders.data.length)} pedido(s) · {fmtInt(orders.data.filter((o) => o.import_id).length)} do PDF · {fmtInt(orders.data.filter((o) => !o.import_id).length)} manuais</td>
+                <td className="td font-semibold sm:hidden" colSpan={2}>{fmtInt(orders.data.length)} pedido(s)</td>
+                <td className="td hidden font-semibold sm:table-cell" colSpan={4}>{fmtInt(orders.data.length)} pedido(s) · {fmtInt(orders.data.filter((o) => o.import_id).length)} do PDF · {fmtInt(orders.data.filter((o) => !o.import_id).length)} manuais</td>
                 <td className="td text-right num font-bold">{fmtBRL(totalValue)}</td>
-                <td className="td" />
+                <td className="td hidden sm:table-cell" />
               </tr>
             </tfoot>
           </Table>

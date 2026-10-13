@@ -1,0 +1,204 @@
+[
+ {
+  "ch": "",
+  "title": "Vendedor: clientes e pedidos",
+  "sub": "Novidade da versão 1.9",
+  "intro": true,
+  "beats": [
+   {
+    "shot": "pedidos",
+    "say": "Oi, vendedor! Neste vídeo você vai ver como acompanhar os seus clientes e lançar os seus pedidos no ISA. Vem comigo!"
+   }
+  ]
+ },
+ {
+  "ch": "1",
+  "title": "O que o vendedor faz",
+  "beats": [
+   {
+    "shot": "pedidos",
+    "focus": "cards",
+    "hl": "cards",
+    "label": "Seus clientes e produtos",
+    "say": "Na aba Pedidos ficam os seus clientes, os produtos e todos os seus pedidos, numa lista só."
+   }
+  ]
+ },
+ {
+  "ch": "2",
+  "title": "Meus clientes",
+  "beats": [
+   {
+    "shot": "pedidos",
+    "focus": "verCli",
+    "cursor": "verCli",
+    "click": true,
+    "hl": "verCli",
+    "label": "Só os seus clientes",
+    "say": "No cartão Meus clientes, clique em Ver clientes. Aparecem só os clientes cadastrados no seu nome."
+   },
+   {
+    "shot": "lista",
+    "focus": "lastCol",
+    "hl": "lastCol",
+    "label": "Dias sem pedido",
+    "mobile": {
+     "shot": "lista_last"
+    },
+    "say": "A coluna Último pedido mostra há quantos dias cada cliente não compra. Quem está há mais tempo sem pedir vem primeiro."
+   },
+   {
+    "shot": "lista_sem",
+    "focus": "sem",
+    "hl": "semGroup",
+    "label": "Nunca pediu",
+    "say": "Quem ainda não fez nenhum pedido fica no fim, no grupo Sem pedido."
+   },
+   {
+    "shot": "exportar",
+    "focus": "exportar",
+    "cursor": "exportar",
+    "click": true,
+    "hl": "exportar",
+    "label": "Lista no Excel",
+    "say": "E o botão Exportar cadastro baixa a lista em Excel, para você conferir com calma quem precisa de uma visita."
+   }
+  ]
+ },
+ {
+  "ch": "3",
+  "title": "Pedido novo",
+  "beats": [
+   {
+    "shot": "pedidos",
+    "focus": "novo",
+    "cursor": "novo",
+    "click": true,
+    "hl": "novo",
+    "label": "Novo pedido",
+    "say": "Para lançar um pedido, clique em Novo pedido, lá no alto. Do lado dele, Como usar abre estes tutoriais."
+   },
+   {
+    "shot": "form_cli",
+    "focus": "cliente",
+    "hl": "cliente",
+    "label": "Nome ou CNPJ",
+    "say": "Escolha o cliente pelo nome ou pelo cê ene pê jota. Comece a digitar e clique nele na lista."
+   },
+   {
+    "shot": "dup",
+    "focus": "dialog",
+    "hl": "botoes",
+    "label": "Pedido em aberto",
+    "say": "Se o cliente já tem um pedido em aberto, o sistema avisa. Não limpa tudo e recomeça. Sim, continuar segue com o pedido.",
+    "cursor": "sim",
+    "click": true
+   },
+   {
+    "shot": "form_disc",
+    "focus": "vendDesc",
+    "hl": "desconto",
+    "cursor": "desconto",
+    "click": true,
+    "label": "Desconto autorizado",
+    "say": "O vendedor já vem preenchido. No desconto financeiro, você escolhe só entre os descontos autorizados para esse cliente."
+   },
+   {
+    "shot": "form_busca",
+    "focus": "prod2",
+    "hl": "refs",
+    "label": "Referência, código ou nome",
+    "say": "Nos itens, procure o produto pela referência, pelo código ou pelo nome."
+   },
+   {
+    "shot": "form_itens",
+    "focus": "qtd",
+    "hl": "qtd",
+    "label": "Quilo ou unidade",
+    "mobile": {
+     "shot": "form_itens2",
+     "focus": "qtd2",
+     "hl": "qtd2"
+    },
+    "say": "Informe a quantidade, em quilos ou em unidades, conforme o produto, e o valor unitário. O total é calculado sozinho."
+   },
+   {
+    "shot": "form_perg_sim",
+    "focus": "perg",
+    "hl": "perg",
+    "label": "Outras embalagens",
+    "say": "No fim, responda: pode enviar em outras embalagens de medida? Por exemplo, dois pacotes de cinco quilos no lugar de um de dez. A resposta é obrigatória.",
+    "cursor": "sim",
+    "click": true
+   },
+   {
+    "shot": "form_salvar",
+    "focus": "salvar",
+    "cursor": "salvar",
+    "click": true,
+    "hl": "salvar",
+    "label": "Salvar pedido",
+    "say": "Tudo certo? Clique em Salvar pedido."
+   }
+  ]
+ },
+ {
+  "ch": "4",
+  "title": "Consultar pedidos",
+  "beats": [
+   {
+    "shot": "detalhe",
+    "focus": "acoes",
+    "hl": "acoes",
+    "label": "Tudo numa linha",
+    "say": "O pedido salvo abre na hora. No alto ficam Voltar, Editar, Imprimir e Novo pedido."
+   },
+   {
+    "shot": "detalhe",
+    "focus": "pack",
+    "hl": "pack",
+    "label": "Resposta registrada",
+    "mobile": {
+     "shot": "detalhe_pack"
+    },
+    "say": "E a resposta sobre as outras embalagens fica registrada no pedido."
+   },
+   {
+    "shot": "lista_rodape",
+    "focus": "rodape",
+    "hl": "rodape",
+    "label": "PDF e manuais juntos",
+    "mobile": {
+     "shot": "lista_valor"
+    },
+    "say": "Na aba Pedidos, a lista mostra todos os seus pedidos, do PDF e manuais, com o total no rodapé."
+   },
+   {
+    "shot": "filtros",
+    "focus": "filtros",
+    "hl": "filtros",
+    "label": "Status e cliente",
+    "say": "Use os filtros para ver apenas um status, ou apenas um cliente. Clique no pedido para abrir, imprimir ou editar."
+   }
+  ]
+ },
+ {
+  "ch": "",
+  "title": "Pronto!",
+  "outro": true,
+  "end1": "Vendedor: clientes e pedidos",
+  "end2": "Este vídeo fica em Tutoriais",
+  "summary": [
+   "Meus clientes: dias sem pedido e Excel",
+   "Aviso de pedido em aberto",
+   "Desconto só entre os autorizados",
+   "Responda a pergunta das embalagens"
+  ],
+  "beats": [
+   {
+    "shot": "fim",
+    "say": "Resumindo: confira os seus clientes, lance o pedido com o desconto certo e responda a pergunta das embalagens. Boas vendas!"
+   }
+  ]
+ }
+]
