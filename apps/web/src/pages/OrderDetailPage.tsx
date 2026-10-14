@@ -4,10 +4,10 @@ import { toast } from 'sonner';
 import { ArrowLeft, Trash2, Printer, Pencil, Plus } from 'lucide-react';
 import { deleteOrder, getOrder, postOrderStock, setOrderStatus } from '@/api/orders';
 import { logActivity } from '@/api/activity';
-import { Badge, Button, Card, PageHeader, Select, Spinner, Table } from '@/components/primitives';
+import { Button, Card, PageHeader, Select, Spinner, Table } from '@/components/primitives';
 import { fmtBRL, fmtDate, fmtDec, fmtInt, formatCnpj } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
-import { STATUS_LABEL } from './OrdersPage';
+import { STATUS_LABEL, StatusBadge } from './OrdersPage';
 import { MatchBadge } from './OrderImportPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtime } from '@/hooks/useRealtime';
@@ -77,7 +77,7 @@ export default function OrderDetailPage() {
               <Button size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>
             </div>
             <div className="flex items-center gap-2">
-              <Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge>
+              <StatusBadge status={o.status} />
               {/* Vendas parte 5: o vendedor só pode passar o pedido para Cancelado (e só enquanto estiver Aberto) */}
               {(!isSeller || o.status === 'aberto') && (
                 <Select aria-label="Mudar status" className="w-44" value={o.status} onChange={(e) => { const v = e.target.value as OrderStatus; if (v !== o.status && (!isSeller || confirm('Cancelar este pedido?'))) status.mutate(v); }}>

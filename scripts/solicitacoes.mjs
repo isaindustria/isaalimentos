@@ -10,6 +10,7 @@
 //   node scripts/solicitacoes.mjs concluir <numero> <versao> "o que foi feito"
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const REF = 'exbhhwrutvzpwcjxqikp';
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
@@ -38,6 +39,8 @@ if (cmd === 'fila' || !cmd) {
   const alvo = cmd === 'baixar' ? `numero = ${num}` : `status in ('aprovada', 'em_andamento')`;
   const reqs = await sql(`select id, numero, titulo, descricao, prioridade, status, created_by_name, to_char(created_at at time zone 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') pedido_em from update_requests where ${alvo} order by created_at`);
   if (!reqs.length) console.log(cmd === 'baixar' ? `Solicitação #${num} não encontrada.` : 'Nenhuma solicitação aprovada para trazer.');
+  // recusadas e concluídas não precisam mais dos arquivos no banco: fica só o registro
+  if (cmd === 'sincronizar') await sql(`update update_request_files f set content_b64 = null, removed_from_db_at = now() from update_requests r where r.id = f.request_id and r.status in ('recusada', 'concluida') and f.content_b64 is not null`);
   for (const r of reqs) {
     if (r.status === 'nova' || r.status === 'recusada') { console.warn(`#${r.numero} está "${r.status}" (não aprovada): não baixado.`); continue; }
     const slug = r.titulo.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
@@ -61,6 +64,12 @@ ${r.descricao || '(sem texto)'}
           novos++;
         }
       } else if (!fs.existsSync(dest)) console.warn(`  ${f.file_name}: já saiu do banco e não está nesta pasta (${f.local_path ?? 'sem caminho'}).`);
+    }
+    // áudios: transcreve para texto (arquivo .txt ao lado), para o atendimento ler
+    const audios = fs.readdirSync(dir).filter((n) => /\.(mp3|m4a|ogg|opus|wav|webm)$/i.test(n) && !fs.existsSync(path.join(dir, n + '.txt'))).map((n) => path.join(dir, n));
+    if (audios.length) {
+      try { execFileSync('python', [path.resolve('scripts/transcrever.py'), ...audios], { stdio: 'inherit' }); }
+      catch { console.warn('  não consegui transcrever os áudios (precisa de Python com faster-whisper).'); }
     }
     console.log(`#${r.numero} ${r.titulo}: ${dir} (${files.length} arquivo(s), ${novos} trazido(s) agora e removido(s) do banco).`);
   }

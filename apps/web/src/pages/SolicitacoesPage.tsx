@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Check, Clock, ShieldCheck, Download, HardDrive, Paperclip, Play, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
+import { Check, Clock, Mic, Square, ShieldCheck, Download, HardDrive, Paperclip, Play, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Select, Tabs, Textarea } from '@/components/primitives';
 import { ACCEPT, MAX_BYTES, SOLICITACAO_STATUS, apagarSolicitacao, baixarArquivo, decidir, enviarSolicitacao, listSolicitacoes, type Solicitacao } from '@/api/solicitacoes';
 import { logActivity } from '@/api/activity';
@@ -152,10 +152,50 @@ function NovaSolicitacao({ onClose, onDone }: { onClose: () => void; onDone: (nu
             </label>
           </Field>
         </div>
+        <Gravador onAudio={(f) => setFiles((fs) => [...fs, f])} />
         {files.length > 0 && (
-          <ul className="space-y-1">{files.map((f, i) => <li key={i} className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-sm"><Paperclip className="size-3.5 text-muted" /><span className="min-w-0 flex-1 truncate">{f.name}</span><span className="text-xs text-muted">{kb(f.size)}</span><button type="button" className="text-muted hover:text-danger" aria-label={`Tirar ${f.name}`} onClick={() => setFiles((fs) => fs.filter((_, j) => j !== i))}><X className="size-4" /></button></li>)}</ul>
+          <ul className="space-y-1">{files.map((f, i) => <li key={i} className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-sm"><Paperclip className="size-3.5 text-muted" /><span className="min-w-0 flex-1 truncate">{f.name}</span>{f.type.startsWith('audio/') && <audio controls src={URL.createObjectURL(f)} className="h-8 max-w-[220px]" />}<span className="text-xs text-muted">{kb(f.size)}</span><button type="button" className="text-muted hover:text-danger" aria-label={`Tirar ${f.name}`} onClick={() => setFiles((fs) => fs.filter((_, j) => j !== i))}><X className="size-4" /></button></li>)}</ul>
         )}
       </div>
     </Dialog>
+  );
+}
+
+/** Grava um comentário em áudio pelo microfone (o arquivo entra junto com os anexos da solicitação). */
+function Gravador({ onAudio }: { onAudio: (f: File) => void }) {
+  const [rec, setRec] = useState<MediaRecorder | null>(null);
+  const [seg, setSeg] = useState(0);
+  const chunks = useRef<Blob[]>([]);
+  useEffect(() => { if (!rec) return; const t = setInterval(() => setSeg((s) => s + 1), 1000); return () => clearInterval(t); }, [rec]);
+  async function start() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const type = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
+      const r = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 48000 } : undefined);
+      chunks.current = [];
+      r.ondataavailable = (e) => { if (e.data.size) chunks.current.push(e.data); };
+      r.onstop = () => {
+        stream.getTracks().forEach((tr) => tr.stop());
+        const blob = new Blob(chunks.current, { type: r.mimeType || 'audio/webm' });
+        if (blob.size > MAX_BYTES) { toast.error('O áudio passou de 8 MB. Grave em partes menores.'); return; }
+        const d = new Date(); const pad = (n: number) => String(n).padStart(2, '0');
+        onAudio(new File([blob], `audio-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.webm`, { type: blob.type }));
+        toast.success('Áudio gravado e anexado.');
+      };
+      r.start(1000); setSeg(0); setRec(r);
+    } catch {
+      toast.error('Não foi possível usar o microfone. Libere o acesso ao microfone no navegador e tente de novo.');
+    }
+  }
+  function stop() { rec?.stop(); setRec(null); }
+  const mm = `${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`;
+  return rec ? (
+    <button type="button" onClick={stop} className="flex w-full items-center justify-center gap-2 rounded-xl border border-danger bg-danger/5 px-3 py-2.5 text-sm font-semibold text-danger">
+      <span className="size-2.5 animate-pulse rounded-full bg-danger" /> Gravando {mm} · clique para parar <Square className="size-4" />
+    </button>
+  ) : (
+    <button type="button" onClick={start} className="flex w-full items-center justify-center gap-2 rounded-xl border border-line px-3 py-2.5 text-sm font-semibold hover:bg-surface-2">
+      <Mic className="size-4 text-brand" /> Gravar um comentário em áudio
+    </button>
   );
 }

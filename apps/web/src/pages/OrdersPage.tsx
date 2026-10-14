@@ -10,13 +10,27 @@ import type { OrderStatus } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import { SalesCards } from '@/components/SalesCards';
 
-export const STATUS_LABEL: Record<OrderStatus, { label: string; tone: 'info' | 'brand' | 'ok' | 'neutral' | 'danger' }> = {
-  aberto: { label: 'Aberto', tone: 'info' },
-  em_producao: { label: 'Em produção', tone: 'brand' },
+export const STATUS_LABEL: Record<OrderStatus, { label: string; tone: 'info' | 'brand' | 'ok' | 'neutral' | 'danger' | 'warn' }> = {
+  aberto: { label: 'Aberto', tone: 'danger' },
+  em_producao: { label: 'Em produção', tone: 'warn' },
   faturado: { label: 'Faturado', tone: 'ok' },
-  entregue: { label: 'Entregue', tone: 'neutral' },
+  entregue: { label: 'Entregue', tone: 'info' },
   cancelado: { label: 'Cancelado', tone: 'danger' },
 };
+
+/** Vendas parte 6: vermelho = aberto, amarelo = produção, verde = faturado, azul = entregue, rosa com letra vermelha = cancelado. */
+export const STATUS_COLOR: Record<OrderStatus, string> = {
+  aberto: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
+  em_producao: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-400/20 dark:text-yellow-200',
+  faturado: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300',
+  entregue: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300',
+  cancelado: 'bg-pink-100 text-red-600 dark:bg-pink-500/20 dark:text-red-300',
+};
+export function StatusBadge({ status }: { status: OrderStatus }) {
+  return <Badge className={STATUS_COLOR[status]} dot>{STATUS_LABEL[status].label}</Badge>;
+}
+/** linha de pedido cancelado: fundo rosa e toda a escrita em vermelho */
+export const CANCELADO_ROW = 'bg-pink-50 text-red-600 dark:bg-pink-500/10 dark:text-red-300 [&_*]:!text-red-600 dark:[&_*]:!text-red-300';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
@@ -77,7 +91,7 @@ export default function OrdersPage() {
             </thead>
             <tbody>
               {orders.data.map((o) => (
-                <tr key={o.id} className="hover:bg-surface-2/60 cursor-pointer" onClick={() => navigate(`/pedidos/${o.id}`)}>
+                <tr key={o.id} className={`cursor-pointer ${o.status === 'cancelado' ? CANCELADO_ROW : 'hover:bg-surface-2/60'}`} onClick={() => navigate(`/pedidos/${o.id}`)}>
                   <td className="td font-semibold">#{o.order_number ?? '—'}<div className="text-[11px] font-normal text-muted">{o.import_id ? 'PDF' : 'manual'}<span className="sm:hidden"> · {fmtDate(o.order_date)}</span></div></td>
                   <td className="td">
                     <div className="font-medium">{o.customer?.name ?? o.customer_name ?? '—'}</div>
@@ -85,8 +99,8 @@ export default function OrdersPage() {
                   </td>
                   <td className="td hidden text-muted sm:table-cell">{fmtDate(o.order_date)}</td>
                   <td className="td hidden text-muted sm:table-cell">{fmtDate(o.delivery_date)}</td>
-                  <td className="td text-right num font-semibold">{fmtBRL(o.total_value)}<div className="mt-1 sm:hidden"><Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge></div></td>
-                  <td className="td hidden sm:table-cell"><Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge></td>
+                  <td className="td text-right num font-semibold">{fmtBRL(o.total_value)}<div className="mt-1 sm:hidden"><StatusBadge status={o.status} /></div></td>
+                  <td className="td hidden sm:table-cell"><StatusBadge status={o.status} /></td>
                 </tr>
               ))}
             </tbody>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Download, Eye, Package, RotateCcw, Trash2, Upload, Users } from 'lucide-react';
+import { Download, RotateCcw, Trash2, Upload, Users } from 'lucide-react';
 import { Badge, Button, Dialog, Input, Select, Table } from '@/components/primitives';
 import { SalesImportDialog } from '@/components/SalesImportDialog';
 import { CustomerImportDialog } from '@/components/CustomerImportDialog';
@@ -45,18 +45,7 @@ export function SalesCards() {
             {isAdmin && <Button size="sm" icon={<Upload className="size-4" />} onClick={() => setDlg('imp-cli')}>Importar cadastro de clientes</Button>}
           </section>
         )}
-        {/* Vendas parte 5: o cartão Produtos saiu do acesso do vendedor */}
-        {canProducts && (
-          <section className="card flex flex-wrap items-center gap-3 p-4">
-            <span className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand"><Package className="size-5" /></span>
-            <div className="min-w-0 flex-1">
-              <div className="font-display font-bold">Produtos</div>
-              <div className="text-xs text-muted">{(products.data ?? []).filter((p) => p.active).length} cadastrado(s)</div>
-            </div>
-            <Button size="sm" variant="outline" icon={<Eye className="size-4" />} onClick={() => setDlg('list-prod')}>Ver produtos</Button>
-            {canProducts && <Button size="sm" icon={<Upload className="size-4" />} onClick={() => setDlg('imp-prod')}>Importar produtos</Button>}
-          </section>
-        )}
+        {/* Vendas parte 6: o cartão Produtos saiu da tela Pedidos (o cadastro de produtos fica na aba Produtos) */}
       </div>
 
       {isAdmin && dlg === 'imp-cli' && (

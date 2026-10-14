@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowLeft, Pencil, Phone, Mail, MapPin, Plus, Trash2, MessageCircle, PhoneCall, Users, Calendar, StickyNote, Mailbox } from 'lucide-react';
 import { addInteraction, deleteCustomer, deleteInteraction, getCustomer, listCustomerOrders, listInteractions, setCustomerActive, upsertCustomer } from '@/api/customers';
-import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Select, Spinner, Table, Textarea } from '@/components/primitives';
+import { Button, Card, Dialog, EmptyState, PageHeader, Select, Spinner, Table, Textarea } from '@/components/primitives';
 import type { Customer, InteractionKind } from '@/lib/types';
 import { fmtBRL, fmtDate, fmtDateTime, formatCnpj } from '@/lib/utils';
-import { STATUS_LABEL } from './OrdersPage';
+import { StatusBadge } from './OrdersPage';
 import { CustomerForm } from './CustomersPage';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -138,7 +138,7 @@ export default function CustomerDetailPage() {
                       <td className="td text-muted">{fmtDate(o.order_date)}</td>
                       <td className="td text-muted">{fmtDate(o.delivery_date)}</td>
                       <td className="td text-right num">{fmtBRL(o.total_value)}</td>
-                      <td className="td"><Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge></td>
+                      <td className="td"><StatusBadge status={o.status} /></td>
                     </tr>
                   ))}
                 </tbody>

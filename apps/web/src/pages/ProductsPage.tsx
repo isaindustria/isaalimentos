@@ -189,7 +189,6 @@ export default function ProductsPage() {
           { key: 'reference', label: 'Referência', example: 'ISA POTE C/ST' },
           { key: 'units_per_box', label: 'Unidades por caixa', example: '48' },
           { key: 'weight_g', label: 'Peso', example: '60 g ou 1,5 kg' },
-          { key: 'category', label: 'Categoria', example: 'Temperos' },
         ]}
         mapRow={(row, line) => {
           const code = pick(row, ['codigo', 'cod', 'code']);
@@ -204,11 +203,10 @@ export default function ProductsPage() {
             reference: pick(row, ['referencia', 'ref']) || null,
             units_per_box: toNumber(upbRaw, upbDesc ? Number(upbDesc) : 48) || 48,
             weight_g: parseWeightG(pick(row, ['peso', 'peso g', 'peso (g)', 'peso kg', 'peso (kg)', 'gramas', 'quilos'])) ?? (Number(description.match(/(\d+)\s*g/i)?.[1] ?? 0) || null),
-            category: pick(row, ['categoria', 'linha']) || null,
             min_stock: toNumber(pick(row, ['estoque minimo', 'minimo']), 0),
           };
         }}
-        preview={(r) => [r.code, r.description, r.reference ?? '—', String(r.units_per_box), fmtWeight(r.weight_g), r.category ?? '—']}
+        preview={(r) => [r.code, r.description, r.reference ?? '—', String(r.units_per_box), fmtWeight(r.weight_g)]}
         onImport={async (rows) => {
           const n = await bulkUpsertProducts(rows);
           await logActivity({ kind: 'sistema', title: `${n} produto(s) importados por planilha`, link: '/produtos', actor_id: session?.user.id, actor_name: profile?.name ?? null });
@@ -253,9 +251,6 @@ export default function ProductsPage() {
                 <Input type="number" min={0} step="any" className="flex-1" value={weightUnit === 'kg' ? (editing.weight_g != null ? editing.weight_g / 1000 : '') : (editing.weight_g ?? '')} onChange={(e) => { const v = e.target.value === '' ? null : Number(e.target.value); setEditing({ ...editing, weight_g: v == null ? null : Math.round(weightUnit === 'kg' ? v * 1000 : v) }); }} />
                 <Select className="w-24" value={weightUnit} onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg')}><option value="g">g</option><option value="kg">kg</option></Select>
               </div>
-            </Field>
-            <Field label="Categoria">
-              <Input value={editing.category ?? ''} onChange={(e) => setEditing({ ...editing, category: e.target.value })} placeholder="Ex.: Temperos, Caldos" />
             </Field>
             <label className="col-span-2 flex items-center gap-2 text-sm">
               <input type="checkbox" checked={editing.active ?? true} onChange={(e) => setEditing({ ...editing, active: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--brand))]" />

@@ -19,7 +19,7 @@ export const SOLICITACAO_STATUS: Record<SolicitacaoStatus, { label: string; tone
 };
 
 /** Tipos aceitos: documentos, planilhas, imagens e áudios (até 8 MB cada). */
-export const ACCEPT = '.pdf,.doc,.docx,.txt,.md,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp,.mp3,.m4a,.ogg,.opus,.wav';
+export const ACCEPT = '.pdf,.doc,.docx,.txt,.md,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp,.mp3,.m4a,.ogg,.opus,.wav,.webm';
 export const MAX_BYTES = 8 * 1024 * 1024;
 
 export async function listSolicitacoes(): Promise<Solicitacao[]> {
