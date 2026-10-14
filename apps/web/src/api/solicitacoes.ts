@@ -1,11 +1,11 @@
 import { supabase, unwrap } from '@/lib/supabase';
 
-export type SolicitacaoStatus = 'nova' | 'aprovada' | 'em_andamento' | 'concluida' | 'recusada';
+export type SolicitacaoStatus = 'nova' | 'aprovada' | 'em_andamento' | 'concluida' | 'recusada' | 'adiada';
 export interface Solicitacao {
   id: string; numero: number; titulo: string; descricao: string; prioridade: 'normal' | 'urgente'; status: SolicitacaoStatus;
   created_by: string | null; created_by_name: string | null; created_at: string;
   decided_at: string | null; decision_note: string | null; started_at: string | null; done_at: string | null; done_version: string | null; done_note: string | null;
-  files: Array<{ id: string; file_name: string; mime: string | null; size_bytes: number }>;
+  files: Array<{ id: string; file_name: string; mime: string | null; size_bytes: number; removed_from_db_at: string | null }>;
 }
 
 export const SOLICITACAO_STATUS: Record<SolicitacaoStatus, { label: string; tone: 'info' | 'warn' | 'ok' | 'danger' | 'neutral' | 'brand' }> = {
@@ -14,6 +14,7 @@ export const SOLICITACAO_STATUS: Record<SolicitacaoStatus, { label: string; tone
   em_andamento: { label: 'Em andamento', tone: 'brand' },
   concluida: { label: 'Concluída', tone: 'ok' },
   recusada: { label: 'Recusada', tone: 'neutral' },
+  adiada: { label: 'Para depois', tone: 'neutral' },
 };
 
 /** Tipos aceitos: documentos, planilhas, imagens e áudios (até 8 MB cada). */
@@ -21,7 +22,7 @@ export const ACCEPT = '.pdf,.doc,.docx,.txt,.md,.xlsx,.xls,.csv,.png,.jpg,.jpeg,
 export const MAX_BYTES = 8 * 1024 * 1024;
 
 export async function listSolicitacoes(): Promise<Solicitacao[]> {
-  return unwrap(await supabase.from('update_requests').select('*, files:update_request_files(id, file_name, mime, size_bytes)').order('created_at', { ascending: true })) as Solicitacao[];
+  return unwrap(await supabase.from('update_requests').select('*, files:update_request_files(id, file_name, mime, size_bytes, removed_from_db_at)').order('created_at', { ascending: true })) as Solicitacao[];
 }
 
 const toB64 = (f: File) => new Promise<string>((ok, fail) => {
@@ -46,7 +47,8 @@ export async function enviarSolicitacao(input: { titulo: string; descricao: stri
 }
 
 export async function baixarArquivo(fileId: string): Promise<{ blob: Blob; name: string }> {
-  const r = unwrap(await supabase.from('update_request_files').select('file_name, mime, content_b64').eq('id', fileId).single()) as { file_name: string; mime: string | null; content_b64: string };
+  const r = unwrap(await supabase.from('update_request_files').select('file_name, mime, content_b64').eq('id', fileId).single()) as { file_name: string; mime: string | null; content_b64: string | null };
+  if (!r.content_b64) throw new Error('Este arquivo já foi levado para o computador do responsável e saiu do banco.');
   const bin = atob(r.content_b64); const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return { blob: new Blob([bytes], { type: r.mime || 'application/octet-stream' }), name: r.file_name };

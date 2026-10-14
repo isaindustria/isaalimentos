@@ -18,14 +18,15 @@ import { useEditLock } from '@/hooks/useRealtime';
 
 interface Line { key: number; reference: string; code: string; quantity: string; price: string }
 const emptyLine = (): Line => ({ key: Date.now() + Math.random(), reference: '', code: '', quantity: '', price: '' });
-const num = (s: string) => (s.trim() === '' ? null : Number(s.replace(',', '.')));
+/** Aceita vírgula (padrão brasileiro) ou ponto; "1.234,50" também vale. */
+const num = (s: string) => { const t = s.trim(); if (t === '') return null; const n = t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t; return /^-?\d*\.?\d+$/.test(n) ? Number(n) : NaN; };
 const fmtQty = (n: number, u: SaleUnit | null) => (u === 'kg' ? n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 3 }) : String(n));
 
 /** Formulário do pedido de venda: cliente por nome ou CNPJ, desconto financeiro do cadastro e itens em kg ou unidade. */
 export default function SalesOrderForm({ existing }: { existing?: Order & { items: OrderItem[] } }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { session, profile } = useAuth();
+  const { session, profile, isSeller } = useAuth();
   const editing = Boolean(existing);
   const editors = useEditLock(existing ? `order:${existing.id}` : 'order:new');
 
@@ -47,7 +48,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   const [dupAsk, setDupAsk] = useState<{ name: string; orders: Array<{ order_number: string | null; order_date: string | null; total_value: number }> } | null>(null);
   const [lines, setLines] = useState<Line[]>(() =>
     existing?.items.length
-      ? existing.items.map((it, i) => ({ key: i + 1, reference: it.product_reference ?? '', code: it.product_code ?? '', quantity: it.quantity != null ? String(it.quantity) : '', price: it.unit_price != null ? String(it.unit_price) : '' }))
+      ? existing.items.map((it, i) => ({ key: i + 1, reference: it.product_reference ?? '', code: it.product_code ?? '', quantity: it.quantity != null ? String(it.quantity) : '', price: it.unit_price != null ? String(it.unit_price).replace('.', ',') : '' }))
       : [emptyLine()],
   );
   const [dirty, setDirty] = useState(false);
@@ -122,9 +123,8 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
         return;
       }
     }
-    const u = unitOf(p);
     let q = l.quantity;
-    if (u === 'un' && q && !Number.isInteger(num(q))) q = '';
+    if (q && !Number.isInteger(num(q))) q = ''; // kg e unidade: só inteiro
     const ref = references.find((r) => normalizeKey(r) === normalizeKey(p.reference)) ?? p.reference ?? '';
     update(l.key, { code, reference: ref, quantity: q });
   }
@@ -139,7 +139,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
       if (!p) errs.product = 'Escolha o produto na lista.';
       else if (!unit) errs.unit = `Referência "${p.reference || 'vazia'}" sem unidade de venda cadastrada.`;
       const qe = quantityError(q, unit); if (p && qe) errs.quantity = qe;
-      if (price == null || !Number.isFinite(price)) errs.price = 'Informe o valor unitário.';
+      if (price == null || !Number.isFinite(price)) errs.price = 'Informe o valor unitário (ex.: 38,50).';
       else if (price < 0) errs.price = 'O valor não pode ser negativo.';
     }
     return { l, p, unit, q, price, errs, blank };
@@ -147,7 +147,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   const filled = calc.filter((c) => !c.blank);
   const totals = orderTotals(calc.map((c) => ({ quantity: c.blank || Object.keys(c.errs).length ? null : c.q, unit_price: c.price })), discount);
   const lineErrors = filled.some((c) => Object.keys(c.errs).length);
-  const formErrors = { customer: !customer ? 'Selecione um cliente da lista.' : '', items: !filled.length ? 'Inclua pelo menos um item com produto, quantidade e preço.' : '', pack: otherPack === null ? 'Responda se pode enviar em outras embalagens.' : '' };
+  const formErrors = { customer: !customer ? 'Selecione um cliente da lista.' : '', items: !filled.length ? 'Inclua pelo menos um item com produto, quantidade e preço.' : '', pack: otherPack === null ? 'Responda se pode trocar a embalagem.' : '' };
   const valid = !formErrors.customer && !formErrors.items && !formErrors.pack && !lineErrors;
 
   const save = useMutation({
@@ -184,10 +184,19 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   function back() { if (!dirty || window.confirm('Há alterações não salvas neste pedido. Sair mesmo assim?')) { setDirty(false); navigate(-1); } }
   const err = (m?: string) => (showErrors && m ? <p className="mt-1 text-xs text-danger">{m}</p> : null);
 
+  // Vendas parte 5: depois que o pedido sai de Aberto, o vendedor não edita mais
+  if (editing && isSeller && existing && existing.status !== 'aberto') {
+    return (
+      <Card title="Este pedido não pode mais ser editado">
+        <p className="text-sm text-muted">O pedido já saiu de Aberto ({existing.status.replace('_', ' ')}). Para mudar alguma coisa, fale com o escritório.</p>
+        <Button className="mt-3" variant="outline" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${existing.id}`)}>Voltar ao pedido</Button>
+      </Card>
+    );
+  }
+
   return (
     <>
       <PageHeader
-        eyebrow="Pedidos"
         title={editing ? `Editar pedido ${existing?.order_number ? '#' + existing.order_number : ''}` : 'Novo pedido'}
         description="Pedido de venda: escolha o cliente pelo nome ou CNPJ e os produtos pela referência, código ou nome."
         actions={<>
@@ -237,7 +246,8 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
             </dl>
           </div>
         </Card>
-        <Card title="Itens do pedido" padded={false} action={<Button size="sm" variant="outline" icon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setLines((ls) => [...ls, emptyLine()]); touch(); }}>Adicionar item</Button>}>
+        <div className="space-y-4">
+        <Card title="Itens do pedido" padded={false}>
           {/* Uma grade só: em telas largas parece tabela; no celular cada item vira um cartão empilhado. */}
           <div className="hidden gap-2 border-b border-line px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted lg:grid lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_minmax(220px,2.2fr)_110px_120px_120px_28px]">
             <span>Referência</span><span>Código</span><span>Produto</span><span className="text-right">Qtd Kg/Un</span><span className="text-right">Vlr Un.</span><span className="text-right">Vlr Ttl.</span><span />
@@ -256,11 +266,11 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
                   <div className="col-span-3 lg:col-span-1">{lbl('Código')}<SearchSelect ariaLabel={`Código da linha ${i + 1}`} options={codeOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Código" invalid={!!e.product} /></div>
                   <div className="col-span-6 lg:col-span-1">{lbl('Produto')}<SearchSelect ariaLabel={`Produto da linha ${i + 1}`} options={nameOpts} value={c.l.code || null} onChange={(v) => pickProduct(c.l, v)} placeholder="Produto" invalid={!!e.product} />{err(c.errs.product)}{c.p && !c.unit && <p className="mt-1 text-[11px] text-danger">Referência "{c.p.reference || 'vazia'}" sem regra de quilo ou unidade. Avise o ADM.</p>}</div>
                   <div className="col-span-2 lg:col-span-1">{lbl('Qtd Kg/Un')}
-                    <Input aria-label={`Quantidade da linha ${i + 1}`} inputMode={c.unit === 'un' ? 'numeric' : 'decimal'} type="number" min={0} step={c.unit === 'un' ? 1 : 0.001} className={`h-10 text-right ${e.quantity ? 'border-danger' : ''}`} value={c.l.quantity} onChange={(ev) => update(c.l.key, { quantity: ev.target.value })} />
+                    <Input aria-label={`Quantidade da linha ${i + 1}`} inputMode="numeric" type="number" min={0} step={1} className={`h-10 text-right ${e.quantity ? 'border-danger' : ''}`} value={c.l.quantity} onChange={(ev) => update(c.l.key, { quantity: ev.target.value })} />
                     {err(c.errs.quantity)}
                   </div>
                   <div className="col-span-2 lg:col-span-1">{lbl('Vlr Un.')}
-                    <Input aria-label={`Valor unitário da linha ${i + 1}`} type="number" min={0} step="0.01" inputMode="decimal" className={`h-10 text-right ${e.price ? 'border-danger' : ''}`} value={c.l.price} onChange={(ev) => update(c.l.key, { price: ev.target.value })} placeholder={c.unit === 'kg' ? 'R$/kg' : 'R$/un'} />
+                    <Input aria-label={`Valor unitário da linha ${i + 1}`} type="text" inputMode="decimal" className={`h-10 text-right ${e.price ? 'border-danger' : ''}`} value={c.l.price} onChange={(ev) => update(c.l.key, { price: ev.target.value.replace(/[^\d.,]/g, '') })} onBlur={(ev) => { const v = num(ev.target.value); if (v != null && Number.isFinite(v)) update(c.l.key, { price: v.toFixed(2).replace('.', ',') }); }} placeholder={c.unit === 'kg' ? 'R$/kg' : 'R$/un'} />
                     {err(c.errs.price)}
                   </div>
                   <div className="col-span-2 text-right lg:col-span-1 lg:pt-2">{lbl('Vlr Ttl.')}<span className="num font-semibold">{c.q && c.price != null && !Object.keys(c.errs).length ? fmtBRL(totals.lineTotals[i]) : '—'}</span><div className="text-[11px] text-muted">{c.q && c.unit ? `${fmtQty(c.q, c.unit)} ${c.unit === 'kg' ? 'kg' : 'un'}` : ''}</div></div>
@@ -269,16 +279,20 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
               );
             })}
           </div>
-          {showErrors && formErrors.items && <p className="px-5 pt-3 text-xs text-danger">{formErrors.items}</p>}
-          <p className="px-5 py-3 text-xs text-muted">Qtd em kg para Ander e ISA (até 3 casas decimais) e em unidade para pote temp., pote frut. e revenda (só inteiros). Vlr Ttl. = Qtd × Vlr Un.</p>
+          {showErrors && formErrors.items && <p className="px-5 py-3 text-xs text-danger">{formErrors.items}</p>}
         </Card>
+        {/* Vendas parte 5: Adicionar item em cartão separado, abaixo dos itens */}
+        <button type="button" onClick={() => { setLines((ls) => [...ls, emptyLine()]); touch(); }}
+          className="card flex w-full items-center justify-center gap-2 p-4 text-sm font-semibold text-brand hover:bg-brand-soft/30">
+          <Plus className="h-4 w-4" /> Adicionar item
+        </button>
+        </div>
       </div>
       <Card title="Perguntas do pedido" className="mt-4">
         <fieldset>
-          <legend className="text-sm font-semibold">Pode enviar em outras embalagens de medida a quantidade solicitada?</legend>
-          <p className="mt-0.5 text-xs text-muted">Ex.: o pedido tem 10 kg de páprica defumada e há em estoque 2 embalagens de 5 kg do mesmo produto. Com "Sim", elas podem ser usadas para agilizar a entrega.</p>
+          <legend className="text-sm font-semibold">Se precisar, posso trocar a embalagem?</legend>
           <div className="mt-2 flex gap-2" role="radiogroup">
-            {([[true, 'Sim'], [false, 'Não']] as const).map(([v, l]) => (
+            {([[true, 'SIM'], [false, 'NÃO']] as const).map(([v, l]) => (
               <button key={l} type="button" role="radio" aria-checked={otherPack === v} onClick={() => { setOtherPack(v); touch(); }}
                 className={`min-w-24 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${otherPack === v ? 'border-brand bg-brand text-white' : 'border-line hover:bg-surface-2'}`}>{l}</button>
             ))}

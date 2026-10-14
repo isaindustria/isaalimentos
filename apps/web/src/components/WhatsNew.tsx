@@ -10,10 +10,10 @@ const KEY = 'isa-tutorial-visto';
 
 /** Ao entrar numa versão nova que tem tutorial, mostra o vídeo uma vez por aparelho (fica depois em Tutoriais). */
 export function WhatsNew() {
-  const { profile } = useAuth();
+  const { profile, isSeller } = useAuth();
   // versão do último tutorial já visto neste aparelho; o mais novo ainda não visto aparece uma vez
   const [seen, setSeen] = useState<string | null>(() => { try { return localStorage.getItem(KEY) ?? '1.6.9'; } catch { return APP_VERSION; } });
-  const t = tutorialBetween(seen, APP_VERSION);
+  const t = tutorialBetween(seen, APP_VERSION, isSeller);
   if (!t || !profile || (t.roles?.length && !t.roles.includes(profile.role))) return null;
   const close = () => { try { localStorage.setItem(KEY, t.version); } catch { /* ignore */ } setSeen(t.version); };
   return (

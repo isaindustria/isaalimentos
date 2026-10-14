@@ -45,7 +45,8 @@ export function SalesCards() {
             {isAdmin && <Button size="sm" icon={<Upload className="size-4" />} onClick={() => setDlg('imp-cli')}>Importar cadastro de clientes</Button>}
           </section>
         )}
-        {(canProducts || isSeller) && (
+        {/* Vendas parte 5: o cartão Produtos saiu do acesso do vendedor */}
+        {canProducts && (
           <section className="card flex flex-wrap items-center gap-3 p-4">
             <span className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand"><Package className="size-5" /></span>
             <div className="min-w-0 flex-1">

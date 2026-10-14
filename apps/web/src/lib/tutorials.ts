@@ -19,11 +19,14 @@ export interface Tutorial {
   steps: Array<{ title: string; items: string[] }>;
   /** só aparece na janela de novidades para estes perfis; vazio = todos */
   roles?: string[];
+  /** Vendas parte 5: o vendedor vê só os tutoriais marcados para ele (cliente e pedido) */
+  forSeller?: boolean;
 }
 
 export const TUTORIALS: Tutorial[] = [
   {
     id: 'vendedor-pedidos',
+    forSeller: true,
     version: '1.9.8',
     date: '2026-10-13',
     title: 'Vendedor: clientes e pedidos',
@@ -101,6 +104,7 @@ export const TUTORIALS: Tutorial[] = [
   },
   {
     id: 'pedido-de-venda',
+    forSeller: true,
     version: '1.7.0',
     date: '2026-10-10',
     title: 'Pedido de venda',
@@ -176,8 +180,11 @@ const BASE = `${ORIGIN}/site/video/`;
 export const videoUrl = (file: string) => `${BASE}${file}?v=4`;
 
 /** Tutorial mais novo lançado entre duas versões (exclui `after`, inclui `upTo`). */
-export function tutorialBetween(after: string | null, upTo: string): Tutorial | undefined {
-  return [...TUTORIALS]
+/** Tutoriais que o perfil vê: o vendedor só os marcados para ele. */
+export const tutorialsFor = (isSeller: boolean) => TUTORIALS.filter((t) => !isSeller || t.forSeller);
+
+export function tutorialBetween(after: string | null, upTo: string, isSeller = false): Tutorial | undefined {
+  return tutorialsFor(isSeller)
     .filter((t) => compareVersions(t.version, upTo) <= 0 && (!after || compareVersions(t.version, after) > 0))
     .sort((a, b) => compareVersions(b.version, a.version))[0];
 }

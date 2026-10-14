@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { PlayCircle } from 'lucide-react';
 import { Badge, Card, PageHeader } from '@/components/primitives';
 import { TutorialPlayer } from '@/components/TutorialPlayer';
-import { TUTORIALS } from '@/lib/tutorials';
+import { tutorialsFor } from '@/lib/tutorials';
+import { useAuth } from '@/hooks/useAuth';
 import { APP_VERSION } from '@/lib/desktop';
 import { fmtDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 /** Página Tutoriais: um vídeo para cada atualização, o mais novo primeiro. */
 export default function TutorialsPage() {
+  const { isSeller } = useAuth();
+  const TUTORIALS = tutorialsFor(isSeller);
   const [sel, setSel] = useState(TUTORIALS[0]?.id);
   const cur = TUTORIALS.find((t) => t.id === sel) ?? TUTORIALS[0];
   return (

@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Check, Download, Paperclip, Play, Plus, Send, Trash2, X } from 'lucide-react';
+import { Check, Clock, Download, HardDrive, Paperclip, Play, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Select, Tabs, Textarea } from '@/components/primitives';
 import { ACCEPT, MAX_BYTES, SOLICITACAO_STATUS, apagarSolicitacao, baixarArquivo, decidir, enviarSolicitacao, listSolicitacoes, type Solicitacao } from '@/api/solicitacoes';
 import { logActivity } from '@/api/activity';
 import { downloadBlob, fmtDateTime } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
-type Aba = 'fila' | 'nova' | 'concluida' | 'recusada';
+type Aba = 'fila' | 'nova' | 'adiada' | 'concluida' | 'recusada';
 const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
 /**
@@ -32,6 +32,7 @@ export default function SolicitacoesPage() {
   const grupos: Record<Aba, Solicitacao[]> = {
     fila,
     nova: all.filter((s) => s.status === 'nova'),
+    adiada: all.filter((s) => s.status === 'adiada'),
     concluida: all.filter((s) => s.status === 'concluida').reverse(),
     recusada: all.filter((s) => s.status === 'recusada').reverse(),
   };
@@ -62,7 +63,9 @@ export default function SolicitacoesPage() {
           {s.descricao && <p className="mt-2 whitespace-pre-wrap text-sm">{s.descricao}</p>}
           {s.files.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {s.files.map((f) => <button key={f.id} type="button" onClick={() => baixar(f.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 text-xs hover:bg-surface-2"><Paperclip className="size-3.5" />{f.file_name}<span className="text-muted">{kb(f.size_bytes)}</span><Download className="size-3.5 text-muted" /></button>)}
+              {s.files.map((f) => f.removed_from_db_at
+                ? <span key={f.id} title="O arquivo foi levado para o computador do responsável e saiu do banco; aqui fica só o registro." className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-line px-2.5 py-1 text-xs text-muted"><HardDrive className="size-3.5" />{f.file_name}<span>{kb(f.size_bytes)} · no computador do responsável</span></span>
+                : <button key={f.id} type="button" onClick={() => baixar(f.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 text-xs hover:bg-surface-2"><Paperclip className="size-3.5" />{f.file_name}<span className="text-muted">{kb(f.size_bytes)}</span><Download className="size-3.5 text-muted" /></button>)}
             </div>
           )}
           {s.decision_note && <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs"><b>Resposta:</b> {s.decision_note}</p>}
@@ -75,6 +78,8 @@ export default function SolicitacoesPage() {
           </>}
           {isResp && s.status === 'aprovada' && <Button size="sm" variant="outline" icon={<Play className="size-4" />} onClick={() => mudar.mutate({ id: s.id, patch: { status: 'em_andamento' } })}>Começar</Button>}
           {isResp && (s.status === 'aprovada' || s.status === 'em_andamento') && <Button size="sm" variant="outline" icon={<Check className="size-4" />} onClick={() => setAcao({ s, tipo: 'concluir' })}>Concluir</Button>}
+          {isResp && (s.status === 'nova' || s.status === 'aprovada') && <Button size="sm" variant="ghost" icon={<Clock className="size-4" />} onClick={() => mudar.mutate({ id: s.id, patch: { status: 'adiada' } })}>Para depois</Button>}
+          {isResp && s.status === 'adiada' && <Button size="sm" variant="outline" icon={<Undo2 className="size-4" />} onClick={() => mudar.mutate({ id: s.id, patch: { status: 'aprovada' } })}>Voltar para a fila</Button>}
           {s.status === 'nova' && (isResp || s.created_by === session?.user.id) && <Button size="sm" variant="ghost" className="text-danger" aria-label={`Apagar solicitação ${s.numero}`} icon={<Trash2 className="size-4" />} onClick={() => apagar.mutate(s.id)} />}
         </div>
       </div>
@@ -85,7 +90,7 @@ export default function SolicitacoesPage() {
     <>
       <PageHeader title="Solicitações" description="Peça uma atualização do sistema com texto e arquivos (Word, PDF, texto, imagem ou áudio). Depois de aprovada, ela entra na fila na ordem da data e hora do pedido."
         actions={<Button icon={<Plus className="size-4" />} onClick={() => setNovo(true)}>Nova solicitação</Button>} />
-      <div className="mb-4"><Tabs value={aba} onChange={setAba} items={[{ value: 'fila', label: 'Fila', count: grupos.fila.length }, { value: 'nova', label: 'Aguardando aprovação', count: grupos.nova.length }, { value: 'concluida', label: 'Concluídas', count: grupos.concluida.length }, { value: 'recusada', label: 'Recusadas', count: grupos.recusada.length }]} /></div>
+      <div className="mb-4"><Tabs value={aba} onChange={setAba} items={[{ value: 'fila', label: 'Fila', count: grupos.fila.length }, { value: 'nova', label: 'Aguardando aprovação', count: grupos.nova.length }, { value: 'adiada', label: 'Para depois', count: grupos.adiada.length }, { value: 'concluida', label: 'Concluídas', count: grupos.concluida.length }, { value: 'recusada', label: 'Recusadas', count: grupos.recusada.length }]} /></div>
       {grupos[aba].length ? (
         <div className="space-y-3">{grupos[aba].map((s, i) => card(s, aba === 'fila' ? i + 1 : undefined))}</div>
       ) : (

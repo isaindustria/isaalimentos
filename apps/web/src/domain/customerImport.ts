@@ -95,6 +95,8 @@ export function buildPreview(rows: Record<string, string>[], lines: number[], ma
     Object.assign(values, edits[line] ?? {});
     const row: ImportRow = { line, values, status: 'nova', changes: [], include: !excluded.has(line) };
     if (values.cnpj) values.cnpj = digits(values.cnpj);
+    // alguns sistemas exportam o nome com o começo do CNPJ na frente ("48.262.419 MERCADO X"): tira o prefixo
+    if (values.name) { const m = values.name.match(/^(\d{2}\.?\d{3}\.?\d{3})\s+(.+)$/); if (m && (!values.cnpj || values.cnpj.startsWith(digits(m[1])))) values.name = m[2].trim(); }
     if (values.code !== undefined) values.code = values.code.trim();
     if (values.state) values.state = values.state.toUpperCase();
     if (values.cep) values.cep = digits(values.cep);

@@ -24,10 +24,11 @@ describe('vendas', () => {
     expect(parseDiscounts('abc').error).toMatch(/inválido/);
   });
   it('quantidade por unidade de venda', () => {
-    expect(quantityError(10.5, 'kg')).toBeNull();
+    expect(quantityError(10, 'kg')).toBeNull();
+    expect(quantityError(10.5, 'kg')).toMatch(/inteiro/);
     expect(quantityError(10.5, 'un')).toMatch(/inteiro/);
     expect(quantityError(0, 'kg')).toMatch(/maior que zero/);
-    expect(quantityError(1.2345, 'kg')).toMatch(/3 casas/);
+    expect(quantityError(1.2345, 'kg')).toMatch(/inteiro/);
   });
   it('totais: 10 kg × R$ 6,60 com 3% de desconto', () => {
     const t = orderTotals([{ quantity: 10, unit_price: 6.6 }, { quantity: 3, unit_price: 1.333 }], 3);

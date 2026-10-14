@@ -57,6 +57,15 @@ describe('importação livre de clientes', () => {
   });
 });
 
+describe('nome com o começo do CNPJ', () => {
+  it('tira o prefixo do CNPJ do nome', () => {
+    const h = ['Nome', 'CNPJ'];
+    const r = [{ nome: '48.262.419 MERCADO X', cnpj: '48.262.419/0001-10' }];
+    const p = buildPreview(r, [2], autoMap(h, r), [], [], {}, new Set());
+    expect(p[0].values.name).toBe('MERCADO X');
+  });
+});
+
 describe('dias desde o último pedido', () => {
   const now = new Date(2026, 9, 13, 15, 0);
   it('conta dias corridos e zera no dia do pedido', () => {

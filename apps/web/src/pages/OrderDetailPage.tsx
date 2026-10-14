@@ -57,55 +57,43 @@ export default function OrderDetailPage() {
   if (order.isLoading) return <div className="grid place-items-center py-20"><Spinner /></div>;
   if (!order.data) return <p className="text-muted">Pedido não encontrado.</p>;
   const o = order.data;
-  const boxes = o.items.reduce((s, i) => s + Number(i.quantity_boxes), 0);
-  const units = o.items.reduce((s, i) => s + Number(i.quantity_units), 0);
   const unresolved = o.items.filter((i) => !i.product_code).length;
   const sales = o.items.length > 0 && o.items.every((i) => i.sale_unit);
-  const kg = o.items.filter((i) => i.sale_unit === 'kg').reduce((s, i) => s + Number(i.quantity ?? 0), 0);
   const custName = o.customer?.name ?? o.customer_name;
 
   return (
     <>
       <PageHeader
-        eyebrow="Pedido"
-        title={`Pedido #${o.order_number ?? '—'}`}
-        description={<span>{o.customer && !isSeller ? <Link className="text-brand font-medium" to={`/clientes/${o.customer.id}`}>{o.customer.name}</Link> : custName ?? 'Sem cliente'} · {formatCnpj(o.customer?.cnpj ?? o.customer_cnpj)}{o.seller_name ? ` · vendedor ${o.seller_name}` : ''} · emitido em {fmtDate(o.order_date)}</span>}
+        title="Revisar pedido"
+        description={<span>{o.order_number ? <b className="text-fg">Nº {o.order_number} · </b> : null}{o.customer && !isSeller ? <Link className="text-brand font-medium" to={`/clientes/${o.customer.id}`}>{o.customer.name}</Link> : custName ?? 'Sem cliente'} · {formatCnpj(o.customer?.cnpj ?? o.customer_cnpj)}{o.seller_name ? ` · vendedor ${o.seller_name}` : ''} · emitido em {fmtDate(o.order_date)}</span>}
         actions={
           <>
             <div className="flex w-full flex-nowrap items-center gap-1.5 sm:w-auto sm:gap-2">
               <Button size="sm" variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(-1)}>Voltar</Button>
-              <Button size="sm" variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${id}/editar`)}>Editar</Button>
+              {(!isSeller || o.status === 'aberto') && <Button size="sm" variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${id}/editar`)}>Editar</Button>}
               <Button size="sm" variant="outline" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Imprimir</Button>
               {/* Vendas parte 4: Novo pedido logo depois de Imprimir; Baixar estoque e Emitir NF-e saíram desta tela
                   (a baixa continua oferecida ao mudar o status para Faturado/Entregue; a NF-e é emitida em Notas fiscais). */}
               <Button size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => navigate('/pedidos/novo')}>Novo pedido</Button>
             </div>
-            <Select className="w-44" value={o.status} onChange={(e) => status.mutate(e.target.value as OrderStatus)}>
-              {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </Select>
+            <div className="flex items-center gap-2">
+              <Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge>
+              {/* Vendas parte 5: o vendedor só pode passar o pedido para Cancelado (e só enquanto estiver Aberto) */}
+              {(!isSeller || o.status === 'aberto') && (
+                <Select aria-label="Mudar status" className="w-44" value={o.status} onChange={(e) => { const v = e.target.value as OrderStatus; if (v !== o.status && (!isSeller || confirm('Cancelar este pedido?'))) status.mutate(v); }}>
+                  {Object.entries(STATUS_LABEL).filter(([k]) => !isSeller || k === o.status || k === 'cancelado').map(([k, v]) => <option key={k} value={k}>{isSeller && k === o.status ? `${v.label} (atual)` : v.label}</option>)}
+                </Select>
+              )}
+            </div>
             {isAdmin && <Button variant="ghost" className="text-danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => confirm('Excluir este pedido?') && remove.mutate()} />}
           </>
         }
       />
-      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-        <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Status</div><div className="mt-1"><Badge tone={STATUS_LABEL[o.status].tone} dot>{STATUS_LABEL[o.status].label}</Badge></div></div>
-        <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Valor</div><div className="font-display text-xl font-bold num">{fmtBRL(o.total_value)}</div></div>
-        {sales ? (
-          <>
-            <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Quilos</div><div className="font-display text-xl font-bold num">{kg.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}</div></div>
-            <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Unidades</div><div className="font-display text-xl font-bold num">{fmtInt(units)}</div></div>
-          </>
-        ) : (
-          <>
-            <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Caixas</div><div className="font-display text-xl font-bold num">{fmtInt(boxes)}</div></div>
-            <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Unidades</div><div className="font-display text-xl font-bold num">{fmtInt(units)}</div></div>
-          </>
-        )}
-        <div className="card p-4"><div className="text-xs text-muted uppercase font-semibold">Entrega</div><div className="font-display text-xl font-bold">{fmtDate(o.delivery_date)}</div><div className="text-xs text-muted">{o.payment_terms ? `pgto ${o.payment_terms} dias` : ''} {o.buyer ? `· ${o.buyer}` : ''}</div></div>
-      </div>
+      {/* Vendas parte 5: saíram os cartões Status, Valor, Quilos e Unidades (o status fica na linha dos botões; os valores, na tabela) */}
+      <p className="mb-4 text-sm text-muted">Entrega: <b className="text-fg">{fmtDate(o.delivery_date)}</b>{o.payment_terms ? ` · pgto ${o.payment_terms} dias` : ''}{o.buyer ? ` · ${o.buyer}` : ''}</p>
       {o.allow_other_packaging != null && (
         <div className={`mb-4 rounded-xl border p-3 text-sm ${o.allow_other_packaging ? 'border-ok/30 bg-ok/5' : 'border-warn/30 bg-warn/5'}`}>
-          <b>Outras embalagens de medida:</b> {o.allow_other_packaging ? 'Sim, pode enviar a quantidade em outras embalagens (ex.: 2 × 5 kg no lugar de 10 kg).' : 'Não, enviar só na embalagem pedida.'}
+          <b>Se precisar, pode trocar a embalagem?</b> {o.allow_other_packaging ? 'SIM' : 'NÃO'}
         </div>
       )}
       {editors.length > 0 && (

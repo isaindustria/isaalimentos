@@ -33,11 +33,11 @@ export default function OrdersPage() {
   return (
     <>
       <PageHeader title="Pedidos" description="Pedidos das lojas e dos vendedores, importados do PDF ou lançados manualmente: todos ficam na mesma lista." />
-      {/* Vendas parte 4: Como usar, Importar PDF e Novo pedido na mesma linha, no alto da tela */}
+      {/* Vendas parte 4/5: Como usar, Novo pedido e Importar PDF na mesma linha, no alto da tela */}
       <div className="-mt-3 mb-4 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
         <Link to="/tutoriais" className="shrink-0"><Button size="sm" variant="ghost" icon={<PlayCircle className="h-4 w-4" />}>Como usar</Button></Link>
-        {canWriteArea('compras') && <Link to="/pedidos/importar" className="shrink-0"><Button size="sm" variant="outline" icon={<FileText className="h-4 w-4" />}>Importar PDF</Button></Link>}
         {canNew && <Link to="/pedidos/novo" className="shrink-0"><Button size="sm" icon={<Plus className="h-4 w-4" />}>Novo pedido</Button></Link>}
+        {canWriteArea('compras') && <Link to="/pedidos/importar" className="shrink-0"><Button size="sm" variant="outline" icon={<FileText className="h-4 w-4" />}>Importar PDF</Button></Link>}
         {!!pending.data?.length && !isSeller && (
           <Link to="/pedidos/conferencia" className="ml-auto shrink-0"><Button size="sm" variant="outline" icon={<AlertTriangle className="h-4 w-4 text-warn" />}>Conferir {pending.data.length} item(ns)</Button></Link>
         )}

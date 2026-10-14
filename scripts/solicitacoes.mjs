@@ -2,7 +2,8 @@
 // Usa a API de gerenciamento do Supabase com SUPABASE_ACCESS_TOKEN no ambiente (nunca grave o token em arquivo).
 //
 //   node scripts/solicitacoes.mjs fila              lista a fila (aprovadas e em andamento, pela data e hora do pedido)
-//   node scripts/solicitacoes.mjs baixar <numero>   salva texto e anexos em solicitacoes/<numero>-<titulo>/ (pasta fora do git)
+//   node scripts/solicitacoes.mjs sincronizar       traz todas as aprovadas para solicitacoes/ (fora do git) e tira os anexos do banco
+//   node scripts/solicitacoes.mjs baixar <numero>   idem, só uma
 //   node scripts/solicitacoes.mjs iniciar <numero>  marca como em andamento
 //   node scripts/solicitacoes.mjs concluir <numero> <versao> "o que foi feito"
 import fs from 'node:fs';
@@ -26,24 +27,41 @@ const num = Number(arg);
 
 if (cmd === 'fila' || !cmd) {
   const rows = await sql(`select r.numero, r.status, r.prioridade, r.titulo, r.created_by_name, to_char(r.created_at at time zone 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') pedido_em, (select count(*) from update_request_files f where f.request_id = r.id) arquivos
-    from update_requests r where r.status in ('aprovada', 'em_andamento', 'nova') order by (r.status = 'nova'), (r.status <> 'em_andamento'), r.created_at`);
+    from update_requests r where r.status in ('aprovada', 'em_andamento', 'nova', 'adiada') order by (r.status = 'adiada'), (r.status = 'nova'), (r.status <> 'em_andamento'), r.created_at`);
   if (!rows.length) console.log('Nenhuma solicitação aberta.');
   let pos = 0;
-  for (const r of rows) console.log(`${r.status === 'nova' ? '  -' : String(++pos).padStart(3)}  #${r.numero}  [${r.status}${r.prioridade === 'urgente' ? ', URGENTE' : ''}]  ${r.pedido_em}  ${r.titulo}  (${r.created_by_name ?? '—'}, ${r.arquivos} arquivo(s))`);
-} else if (cmd === 'baixar' && num) {
-  const [r] = await sql(`select id, numero, titulo, descricao, prioridade, status, created_by_name, to_char(created_at at time zone 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') pedido_em from update_requests where numero = ${num}`);
-  if (!r) throw new Error(`Solicitação #${num} não encontrada.`);
-  if (r.status === 'nova' || r.status === 'recusada') console.warn(`Atenção: a solicitação #${num} está "${r.status}" (não aprovada).`);
-  const slug = r.titulo.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
-  const dir = path.resolve('solicitacoes', `${String(r.numero).padStart(4, '0')}-${slug}`);
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'pedido.md'), `# #${r.numero} ${r.titulo}\n\nPedido por ${r.created_by_name ?? '—'} em ${r.pedido_em} · prioridade ${r.prioridade} · situação ${r.status}\n\n${r.descricao || '(sem texto)'}\n`);
-  const files = await sql(`select file_name, content_b64 from update_request_files where request_id = ${lit(r.id)} order by created_at`);
-  for (const f of files) {
-    const safe = path.basename(f.file_name).replace(/[<>:"/\\|?*]/g, '_');
-    fs.writeFileSync(path.join(dir, safe), Buffer.from(f.content_b64, 'base64'));
+  for (const r of rows) console.log(`${r.status === 'nova' || r.status === 'adiada' ? '  -' : String(++pos).padStart(3)}  #${r.numero}  [${r.status}${r.prioridade === 'urgente' ? ', URGENTE' : ''}]  ${r.pedido_em}  ${r.titulo}  (${r.created_by_name ?? '—'}, ${r.arquivos} arquivo(s))`);
+} else if ((cmd === 'baixar' && num) || cmd === 'sincronizar') {
+  // traz para a pasta solicitacoes/ (fora do git) e tira o conteúdo dos anexos do banco: lá fica só o registro
+  const alvo = cmd === 'baixar' ? `numero = ${num}` : `status in ('aprovada', 'em_andamento')`;
+  const reqs = await sql(`select id, numero, titulo, descricao, prioridade, status, created_by_name, to_char(created_at at time zone 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') pedido_em from update_requests where ${alvo} order by created_at`);
+  if (!reqs.length) console.log(cmd === 'baixar' ? `Solicitação #${num} não encontrada.` : 'Nenhuma solicitação aprovada para trazer.');
+  for (const r of reqs) {
+    if (r.status === 'nova' || r.status === 'recusada') { console.warn(`#${r.numero} está "${r.status}" (não aprovada): não baixado.`); continue; }
+    const slug = r.titulo.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+    const dir = path.resolve('solicitacoes', `${String(r.numero).padStart(4, '0')}-${slug}`);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'pedido.md'), `# #${r.numero} ${r.titulo}
+
+Pedido por ${r.created_by_name ?? '—'} em ${r.pedido_em} · prioridade ${r.prioridade} · situação ${r.status}
+
+${r.descricao || '(sem texto)'}
+`);
+    const files = await sql(`select id, file_name, content_b64, local_path from update_request_files where request_id = ${lit(r.id)} order by created_at`);
+    let novos = 0;
+    for (const f of files) {
+      const safe = path.basename(f.file_name).replace(/[<>:"/\|?*]/g, '_');
+      const dest = path.join(dir, safe);
+      if (f.content_b64) {
+        fs.writeFileSync(dest, Buffer.from(f.content_b64, 'base64'));
+        if (fs.statSync(dest).size > 0) {
+          await sql(`update update_request_files set content_b64 = null, local_path = ${lit(dest)}, removed_from_db_at = now() where id = ${lit(f.id)}`);
+          novos++;
+        }
+      } else if (!fs.existsSync(dest)) console.warn(`  ${f.file_name}: já saiu do banco e não está nesta pasta (${f.local_path ?? 'sem caminho'}).`);
+    }
+    console.log(`#${r.numero} ${r.titulo}: ${dir} (${files.length} arquivo(s), ${novos} trazido(s) agora e removido(s) do banco).`);
   }
-  console.log(`Salvo em ${dir} (${files.length} arquivo(s)).`);
 } else if (cmd === 'iniciar' && num) {
   await sql(`update update_requests set status = 'em_andamento', started_at = now() where numero = ${num} and status = 'aprovada'`);
   console.log(`#${num} em andamento.`);

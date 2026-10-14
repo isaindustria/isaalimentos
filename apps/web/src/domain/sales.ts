@@ -59,7 +59,8 @@ export function quantityError(q: number | null | undefined, unit: SaleUnit | nul
   if (q == null || !Number.isFinite(q)) return 'Informe a quantidade.';
   if (q <= 0) return 'A quantidade precisa ser maior que zero.';
   if (unit === 'un' && !Number.isInteger(q)) return 'Produto vendido por unidade: use número inteiro.';
-  if (unit === 'kg' && round3(q) !== q) return 'Use no máximo 3 casas decimais.';
+  // Vendas parte 5: quilo também só inteiro (as embalagens têm peso exato, sem gramas)
+  if (unit === 'kg' && !Number.isInteger(q)) return 'Produto vendido por quilo: use número inteiro (sem gramas).';
   return null;
 }
 
