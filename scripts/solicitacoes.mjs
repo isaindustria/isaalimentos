@@ -2,6 +2,8 @@
 // Usa a API de gerenciamento do Supabase com SUPABASE_ACCESS_TOKEN no ambiente (nunca grave o token em arquivo).
 //
 //   node scripts/solicitacoes.mjs fila              lista a fila (aprovadas e em andamento, pela data e hora do pedido)
+//   node scripts/solicitacoes.mjs proxima           a próxima para o atendimento automático (NADA se não houver)
+//   node scripts/solicitacoes.mjs triagem <n> ok|bloqueada "motivo"   grava a análise de segurança
 //   node scripts/solicitacoes.mjs sincronizar       traz todas as aprovadas para solicitacoes/ (fora do git) e tira os anexos do banco
 //   node scripts/solicitacoes.mjs baixar <numero>   idem, só uma
 //   node scripts/solicitacoes.mjs iniciar <numero>  marca como em andamento
@@ -69,6 +71,18 @@ ${r.descricao || '(sem texto)'}
   const [versao, ...nota] = rest;
   await sql(`update update_requests set status = 'concluida', done_at = now(), done_version = ${versao ? lit(versao) : 'null'}, done_note = ${nota.length ? lit(nota.join(' ')) : 'null'} where numero = ${num} and status in ('aprovada', 'em_andamento')`);
   console.log(`#${num} concluída${versao ? ` na versão ${versao}` : ''}.`);
+} else if (cmd === 'proxima') {
+  // a próxima da fila para o atendimento automático: aprovada, sem bloqueio na análise, mais antiga primeiro
+  const [r] = await sql(`select numero, titulo, status, triage_status from update_requests
+    where status in ('em_andamento', 'aprovada') and coalesce(triage_status, '') <> 'bloqueada'
+    order by (status <> 'em_andamento'), created_at limit 1`);
+  console.log(r ? `PROXIMA #${r.numero} [${r.status}${r.triage_status ? `, análise ${r.triage_status}` : ''}] ${r.titulo}` : 'NADA');
+} else if (cmd === 'triagem' && num) {
+  // grava a análise de segurança: ok | bloqueada "motivo" (aparece no painel para o responsável)
+  const [res, ...motivo] = rest;
+  if (!['ok', 'bloqueada'].includes(res)) throw new Error('Use: triagem <n> ok|bloqueada "motivo"');
+  await sql(`update update_requests set triage_status = ${lit(res)}, triage_note = ${motivo.length ? lit(motivo.join(' ')) : 'null'}, triage_at = now() where numero = ${num}`);
+  console.log(`#${num}: análise ${res}.`);
 } else if (cmd === 'registrar' && arg) {
   // pedido feito direto ao desenvolvimento (chat): entra já aprovado, para ficar no mesmo controle
   //   node scripts/solicitacoes.mjs registrar "título" "descrição" ["quem pediu"] [aprovada|concluida <versao> "nota"] [AAAA-MM-DD HH:MM]

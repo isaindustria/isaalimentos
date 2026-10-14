@@ -5,6 +5,7 @@ export interface Solicitacao {
   id: string; numero: number; titulo: string; descricao: string; prioridade: 'normal' | 'urgente'; status: SolicitacaoStatus;
   created_by: string | null; created_by_name: string | null; created_at: string;
   decided_at: string | null; decision_note: string | null; started_at: string | null; done_at: string | null; done_version: string | null; done_note: string | null;
+  triage_status: 'ok' | 'bloqueada' | 'liberada' | null; triage_note: string | null; triage_at: string | null;
   files: Array<{ id: string; file_name: string; mime: string | null; size_bytes: number; removed_from_db_at: string | null }>;
 }
 
@@ -55,7 +56,7 @@ export async function baixarArquivo(fileId: string): Promise<{ blob: Blob; name:
 }
 
 /** Só o responsável (superadmin): aprovar, recusar, marcar em andamento ou concluída. */
-export async function decidir(id: string, patch: Partial<Pick<Solicitacao, 'status' | 'decision_note' | 'done_version' | 'done_note'>> & { userId?: string }) {
+export async function decidir(id: string, patch: Partial<Pick<Solicitacao, 'status' | 'decision_note' | 'done_version' | 'done_note' | 'triage_status'>> & { userId?: string }) {
   const now = new Date().toISOString();
   const { userId, ...p } = patch;
   const extra: Record<string, unknown> = {};

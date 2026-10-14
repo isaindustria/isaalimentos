@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Check, Clock, Download, HardDrive, Paperclip, Play, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
+import { Check, Clock, ShieldCheck, Download, HardDrive, Paperclip, Play, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Select, Tabs, Textarea } from '@/components/primitives';
 import { ACCEPT, MAX_BYTES, SOLICITACAO_STATUS, apagarSolicitacao, baixarArquivo, decidir, enviarSolicitacao, listSolicitacoes, type Solicitacao } from '@/api/solicitacoes';
 import { logActivity } from '@/api/activity';
@@ -68,6 +68,11 @@ export default function SolicitacoesPage() {
                 : <button key={f.id} type="button" onClick={() => baixar(f.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 text-xs hover:bg-surface-2"><Paperclip className="size-3.5" />{f.file_name}<span className="text-muted">{kb(f.size_bytes)}</span><Download className="size-3.5 text-muted" /></button>)}
             </div>
           )}
+          {s.triage_status && s.status !== 'concluida' && (
+            <p className={`mt-2 rounded-lg px-3 py-2 text-xs ${s.triage_status === 'bloqueada' ? 'border border-warn/40 bg-warn/10' : 'bg-ok/5'}`}>
+              <b>{s.triage_status === 'bloqueada' ? 'Análise de segurança: precisa de você' : s.triage_status === 'liberada' ? 'Análise de segurança: liberada pelo responsável' : 'Análise de segurança: ok'}</b>{s.triage_note ? ` · ${s.triage_note}` : ''}
+            </p>
+          )}
           {s.decision_note && <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs"><b>Resposta:</b> {s.decision_note}</p>}
           {s.done_note && <p className="mt-2 rounded-lg bg-ok/5 px-3 py-2 text-xs"><b>O que foi feito:</b> {s.done_note}</p>}
         </div>
@@ -76,6 +81,7 @@ export default function SolicitacoesPage() {
             <Button size="sm" icon={<Check className="size-4" />} loading={mudar.isPending} onClick={() => mudar.mutate({ id: s.id, patch: { status: 'aprovada' } })}>Aprovar</Button>
             <Button size="sm" variant="outline" icon={<X className="size-4" />} onClick={() => setAcao({ s, tipo: 'recusar' })}>Recusar</Button>
           </>}
+          {isResp && s.triage_status === 'bloqueada' && (s.status === 'aprovada' || s.status === 'em_andamento') && <Button size="sm" icon={<ShieldCheck className="size-4" />} onClick={() => mudar.mutate({ id: s.id, patch: { triage_status: 'liberada' } })}>Liberar</Button>}
           {isResp && s.status === 'aprovada' && <Button size="sm" variant="outline" icon={<Play className="size-4" />} onClick={() => mudar.mutate({ id: s.id, patch: { status: 'em_andamento' } })}>Começar</Button>}
           {isResp && (s.status === 'aprovada' || s.status === 'em_andamento') && <Button size="sm" variant="outline" icon={<Check className="size-4" />} onClick={() => setAcao({ s, tipo: 'concluir' })}>Concluir</Button>}
           {isResp && (s.status === 'nova' || s.status === 'aprovada') && <Button size="sm" variant="ghost" icon={<Clock className="size-4" />} onClick={() => mudar.mutate({ id: s.id, patch: { status: 'adiada' } })}>Para depois</Button>}
