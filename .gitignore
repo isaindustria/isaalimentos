@@ -12,3 +12,6 @@ Thumbs.db
 scripts/_*.mjs
 backups/
 brag-output*/
+
+# anexos baixados das solicitações (dados internos da empresa)
+solicitacoes/

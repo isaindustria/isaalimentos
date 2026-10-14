@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen, PlayCircle, ReceiptText } from 'lucide-react';
+  LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen, PlayCircle, MessageSquarePlus, ReceiptText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { WhatsNew } from './WhatsNew';
 import { NfeWorker } from './NfeWorker';
@@ -30,6 +30,7 @@ const NAV = [
   { to: '/notas-fiscais', label: 'Notas fiscais', icon: ReceiptText, module: 'nfe' as const },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3, module: 'relatorios' as const },
   { to: '/auditoria', label: 'Auditoria', icon: History, module: 'auditoria' as const },
+  { to: '/solicitacoes', label: 'Solicitações', icon: MessageSquarePlus },
   { to: '/tutoriais', label: 'Tutoriais', icon: PlayCircle },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ];

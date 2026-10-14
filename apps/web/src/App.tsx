@@ -14,6 +14,7 @@ import SetupPage from './pages/SetupPage';
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const TutorialsPage = lazy(() => import('./pages/TutorialsPage'));
+const SolicitacoesPage = lazy(() => import('./pages/SolicitacoesPage'));
 const NfePage = lazy(() => import('./pages/NfePage'));
 const ProductsPage = lazy(() => import('./pages/ProductsPage'));
 const StockPage = lazy(() => import('./pages/StockPage'));
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="relatorios" element={<ReportsPage />} />
             <Route path="auditoria" element={<AuditPage />} />
             <Route path="tutoriais" element={<TutorialsPage />} />
+            <Route path="solicitacoes" element={<SolicitacoesPage />} />
             <Route path="notas-fiscais" element={<NfePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
