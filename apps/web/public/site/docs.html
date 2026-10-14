@@ -159,7 +159,18 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.10.2</span><span class="d">14/10/2026</span><span class="tag">atual</span>
+        <span class="v">v1.11.0</span><span class="d">14/10/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Vendas parte 6 (2ª etapa): os pedidos alimentam a Produção.</strong> Cada item segue sozinho: revenda e o que o estoque já atende vão direto para o <strong>Faturamento</strong> (aba Rotas de entrega); o que precisa produzir vai para a <strong>Produção</strong>. Um mesmo pedido pode ficar parcial (parte em Faturamento, parte em Produção).</li>
+          <li>Produção → <strong>Pedido / Necessidade de produção</strong>: soma por código, prioridade pela entrega mais próxima; necessidade = pedido − estoque (unidades × equivalência) − semiacabado em estoque; produto alternativo só se cobrir tudo e o vendedor marcou SIM; abaixo da produção mínima do semiacabado, produz o mínimo.</li>
+          <li><strong>Importar cadastro da produção</strong> (aba Produção): Código, Referência, Descrição, Und venda, Equivalência, Código semiacabado, Descrição, Estoque alternativo e Quantidade mínima. Semiacabados entram no cadastro com a referência SEMIACABADO (aparecem no Estoque, não no pedido de venda). Também dá para editar em Produtos → Editar.</li>
+          <li>Status: o PCP, na Produção, passa <strong>Aberto → Em produção → Faturamento</strong>; o faturamento, em Rotas de entrega, passa <strong>Aberto → Faturamento (ciente) → Entregue</strong>. Os dois podem voltar para Aberto para liberar o vendedor. "Faturado" passou a se chamar <strong>Faturamento</strong>.</li>
+          <li>A tela do pedido virou só consulta, com a etapa de cada item; o vendedor só cancela enquanto nada saiu de Aberto.</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.10.2</span><span class="d">14/10/2026</span>
         <ul>
           <li><strong>Solicitações com áudio</strong>: em Nova solicitação, o botão "Gravar um comentário em áudio" grava pelo microfone e anexa o áudio. O desenvolvimento transcreve o áudio sozinho, e os arquivos saem do banco depois de baixados (fica só o registro).</li>
           <li><strong>Vendas parte 6 (1ª etapa)</strong>: cores dos status: vermelho = aberto, amarelo = produção, verde = faturado, azul = entregue; pedido cancelado fica com fundo rosa e toda a escrita em vermelho.</li>

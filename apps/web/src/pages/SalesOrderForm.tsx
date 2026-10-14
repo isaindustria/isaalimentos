@@ -70,7 +70,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
     return () => { window.removeEventListener('beforeunload', onUnload); document.removeEventListener('click', onClick, true); };
   }, [dirty]);
 
-  const productList = products.data ?? [];
+  const productList = useMemo(() => (products.data ?? []).filter((p) => !p.is_semi), [products.data]); // semiacabado não se vende
   const byCode = useMemo(() => new Map(productList.map((p) => [p.code, p])), [productList]);
   const references = useMemo(() => {
     const m = new Map<string, string>();
@@ -185,7 +185,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   const err = (m?: string) => (showErrors && m ? <p className="mt-1 text-xs text-danger">{m}</p> : null);
 
   // Vendas parte 5: depois que o pedido sai de Aberto, o vendedor não edita mais
-  if (editing && isSeller && existing && existing.status !== 'aberto') {
+  if (editing && isSeller && existing && (existing.status !== 'aberto' || existing.items.some((i) => (i.stage ?? 'aberto') !== 'aberto'))) {
     return (
       <Card title="Este pedido não pode mais ser editado">
         <p className="text-sm text-muted">O pedido já saiu de Aberto ({existing.status.replace('_', ' ')}). Para mudar alguma coisa, fale com o escritório.</p>

@@ -8,6 +8,8 @@ import { logActivity } from '@/api/activity';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Tabs } from '@/components/primitives';
 import { fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { FluxoPedidos } from '@/components/FluxoPedidos';
+import { carregarPlanejamento } from '@/api/planejamento';
 import type { DeliveryRoute, Order, RouteStatus } from '@/lib/types';
 
 const RSTATUS: Record<RouteStatus, { label: string; tone: 'info' | 'brand' | 'ok' }> = { planejada: { label: 'Planejada', tone: 'info' }, em_rota: { label: 'Em rota', tone: 'brand' }, concluida: { label: 'Concluída', tone: 'ok' } };
@@ -20,7 +22,8 @@ function CodeLabel({ text }: { text: string }) {
 export default function RoutesPage() {
   const qc = useQueryClient();
   const { canWriteArea, session, profile } = useAuth();
-  const [tab, setTab] = useState<'montar' | 'rotas'>('rotas');
+  const [tab, setTab] = useState<'faturamento' | 'montar' | 'rotas'>('faturamento');
+  const plano = useQuery({ queryKey: ['planejamento'], queryFn: carregarPlanejamento, refetchInterval: 30000 });
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [name, setName] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -54,8 +57,13 @@ export default function RoutesPage() {
 
   return (
     <>
-      <PageHeader title="Rotas de entrega" description="Agrupe pedidos por cidade ou rede, gere o romaneio para o motorista e as etiquetas de caixa." actions={<Tabs value={tab} onChange={setTab} items={[{ value: 'rotas', label: 'Rotas', count: routes.data?.length }, { value: 'montar', label: 'Montar rota' }]} />} />
-      {tab === 'montar' ? (
+      <PageHeader title="Rotas de entrega" description="Agrupe pedidos por cidade ou rede, gere o romaneio para o motorista e as etiquetas de caixa." actions={<Tabs value={tab} onChange={setTab} items={[{ value: 'faturamento', label: 'Faturamento', count: plano.data?.faturamento.length }, { value: 'rotas', label: 'Rotas', count: routes.data?.length }, { value: 'montar', label: 'Montar rota' }]} />} />
+      {tab === 'faturamento' ? (
+        <>
+          <p className="mb-3 text-sm text-muted">Revenda, itens que o estoque já atende e o que a Produção liberou. O faturamento marca <b>Faturamento ciente</b> (verde) e depois <b>Entregue</b> (azul). Para liberar o vendedor a mudar o pedido, use Voltar para aberto.</p>
+          <FluxoPedidos fluxo="faturamento" pedidos={plano.data?.faturamento ?? []} podeMudar={canWriteArea('compras')} />
+        </>
+      ) : tab === 'montar' ? (
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <Card title="Pedidos aguardando entrega" padded={false}>
             {byCity.length ? byCity.map(([city, list]) => (

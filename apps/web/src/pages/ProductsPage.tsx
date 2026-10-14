@@ -252,6 +252,20 @@ export default function ProductsPage() {
                 <Select className="w-24" value={weightUnit} onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg')}><option value="g">g</option><option value="kg">kg</option></Select>
               </div>
             </Field>
+            {/* Vendas parte 6: cadastro da produção (também importado na aba Produção) */}
+            <Field label="Equivalência (kg por unidade)" hint="Ex.: 10 para a caixa de 10 kg. Vazio = usa o peso.">
+              <Input type="number" min={0} step="any" value={editing.equivalence_kg ?? ''} onChange={(e) => setEditing({ ...editing, equivalence_kg: e.target.value === '' ? null : Number(e.target.value) })} />
+            </Field>
+            {editing.is_semi ? (
+              <Field label="Produção mínima (kg)" hint="Este produto é um semiacabado.">
+                <Input type="number" min={0} step="any" value={editing.min_production_kg ?? ''} onChange={(e) => setEditing({ ...editing, min_production_kg: e.target.value === '' ? null : Number(e.target.value) })} />
+              </Field>
+            ) : (
+              <>
+                <Field label="Código do semiacabado"><Input value={editing.semi_code ?? ''} onChange={(e) => setEditing({ ...editing, semi_code: e.target.value.trim() || null })} placeholder="ex.: 429" /></Field>
+                <Field label="Produto alternativo" hint="Mesma base, outra embalagem."><Input value={editing.alt_code ?? ''} onChange={(e) => setEditing({ ...editing, alt_code: e.target.value.trim() || null })} placeholder="ex.: 264" /></Field>
+              </>
+            )}
             <label className="col-span-2 flex items-center gap-2 text-sm">
               <input type="checkbox" checked={editing.active ?? true} onChange={(e) => setEditing({ ...editing, active: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--brand))]" />
               Produto ativo

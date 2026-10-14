@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Trash2, Printer, Pencil, Plus } from 'lucide-react';
 import { deleteOrder, getOrder, postOrderStock, setOrderStatus } from '@/api/orders';
 import { logActivity } from '@/api/activity';
-import { Button, Card, PageHeader, Select, Spinner, Table } from '@/components/primitives';
+import { Button, Card, PageHeader, Spinner, Table } from '@/components/primitives';
 import { fmtBRL, fmtDate, fmtDec, fmtInt, formatCnpj } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
 import { STATUS_LABEL, StatusBadge } from './OrdersPage';
@@ -78,11 +78,10 @@ export default function OrderDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge status={o.status} />
-              {/* Vendas parte 5: o vendedor só pode passar o pedido para Cancelado (e só enquanto estiver Aberto) */}
-              {(!isSeller || o.status === 'aberto') && (
-                <Select aria-label="Mudar status" className="w-44" value={o.status} onChange={(e) => { const v = e.target.value as OrderStatus; if (v !== o.status && (!isSeller || confirm('Cancelar este pedido?'))) status.mutate(v); }}>
-                  {Object.entries(STATUS_LABEL).filter(([k]) => !isSeller || k === o.status || k === 'cancelado').map(([k, v]) => <option key={k} value={k}>{isSeller && k === o.status ? `${v.label} (atual)` : v.label}</option>)}
-                </Select>
+              {/* Vendas parte 6: a tela do pedido é só consulta. O status muda na Produção (PCP) e em Rotas de entrega (faturamento).
+                  O vendedor só cancela, e só enquanto nada saiu de Aberto. */}
+              {isSeller && o.status === 'aberto' && o.items.every((i) => (i.stage ?? 'aberto') === 'aberto') && (
+                <Button size="sm" variant="outline" className="text-danger" onClick={() => confirm('Cancelar este pedido?') && status.mutate('cancelado')}>Cancelar pedido</Button>
               )}
             </div>
             {isAdmin && <Button variant="ghost" className="text-danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => confirm('Excluir este pedido?') && remove.mutate()} />}
@@ -108,7 +107,7 @@ export default function OrderDetailPage() {
       {sales && (
         <Card title="Itens do pedido" padded={false}>
           <Table>
-            <thead><tr><th className="th">Referência</th><th className="th">Código</th><th className="th">Produto</th><th className="th text-right">Quantidade</th><th className="th">Unidade de venda</th><th className="th text-right">Valor unitário</th><th className="th text-right">Valor total</th></tr></thead>
+            <thead><tr><th className="th">Referência</th><th className="th">Código</th><th className="th">Produto</th><th className="th text-right">Quantidade</th><th className="th">Unidade de venda</th><th className="th text-right">Valor unitário</th><th className="th text-right">Valor total</th><th className="th">Etapa</th></tr></thead>
             <tbody>
               {o.items.map((it) => (
                 <tr key={it.id}>
@@ -119,6 +118,7 @@ export default function OrderDetailPage() {
                   <td className="td">{it.sale_unit === 'kg' ? 'kg' : 'unidade'}</td>
                   <td className="td text-right num">{fmtBRL(it.unit_price)}</td>
                   <td className="td text-right num font-semibold">{fmtBRL(it.total_price)}</td>
+                  <td className="td"><StatusBadge status={(it.stage ?? 'aberto') as OrderStatus} /></td>
                 </tr>
               ))}
             </tbody>

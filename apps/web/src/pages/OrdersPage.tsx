@@ -13,7 +13,7 @@ import { SalesCards } from '@/components/SalesCards';
 export const STATUS_LABEL: Record<OrderStatus, { label: string; tone: 'info' | 'brand' | 'ok' | 'neutral' | 'danger' | 'warn' }> = {
   aberto: { label: 'Aberto', tone: 'danger' },
   em_producao: { label: 'Em produção', tone: 'warn' },
-  faturado: { label: 'Faturado', tone: 'ok' },
+  faturado: { label: 'Faturamento', tone: 'ok' },
   entregue: { label: 'Entregue', tone: 'info' },
   cancelado: { label: 'Cancelado', tone: 'danger' },
 };

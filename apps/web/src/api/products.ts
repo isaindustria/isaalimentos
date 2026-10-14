@@ -21,6 +21,11 @@ export async function upsertProduct(input: ProductInput): Promise<Product> {
     category: input.category ?? null,
     min_stock: input.min_stock ?? 0,
     active: input.active ?? true,
+    // cadastro da produção: só grava quando veio do formulário (a importação de produtos não apaga esses campos)
+    ...(input.equivalence_kg !== undefined ? { equivalence_kg: input.equivalence_kg } : {}),
+    ...(input.semi_code !== undefined ? { semi_code: input.semi_code } : {}),
+    ...(input.alt_code !== undefined ? { alt_code: input.alt_code } : {}),
+    ...(input.min_production_kg !== undefined ? { min_production_kg: input.min_production_kg } : {}),
   };
   return unwrap(await supabase.from('products').upsert(payload, { onConflict: 'code' }).select('*').single());
 }

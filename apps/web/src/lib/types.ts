@@ -62,6 +62,12 @@ export interface Product {
   inf_fiscal?: string | null;
   /** código de benefício fiscal (cBenef) da SEFAZ-SP, ex.: SP020030 */
   c_benef?: string | null;
+  /** Vendas parte 6 (cadastro da produção) */
+  equivalence_kg?: number | null;
+  semi_code?: string | null;
+  alt_code?: string | null;
+  min_production_kg?: number | null;
+  is_semi?: boolean;
   /** reforma tributária: CST e cClassTrib do IBS/CBS (vazio = padrão do emitente) */
   ibscbs_cst?: string | null;
   ibscbs_cclasstrib?: string | null;
@@ -221,6 +227,8 @@ export interface OrderItem {
   product_name?: string | null;
   product?: Pick<Product, 'code' | 'description'> | null;
   order?: Pick<Order, 'id' | 'order_number' | 'order_date' | 'customer_id'> & { customer?: Pick<Customer, 'name'> | null };
+  /** Vendas parte 6: etapa do item (o pedido pode ficar parcial) */
+  stage?: 'aberto' | 'em_producao' | 'faturado' | 'entregue';
 }
 
 export type RunStatus = 'planejado' | 'em_andamento' | 'concluido';
