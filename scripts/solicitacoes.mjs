@@ -51,6 +51,15 @@ if (cmd === 'fila' || !cmd) {
   const [versao, ...nota] = rest;
   await sql(`update update_requests set status = 'concluida', done_at = now(), done_version = ${versao ? lit(versao) : 'null'}, done_note = ${nota.length ? lit(nota.join(' ')) : 'null'} where numero = ${num} and status in ('aprovada', 'em_andamento')`);
   console.log(`#${num} concluída${versao ? ` na versão ${versao}` : ''}.`);
+} else if (cmd === 'registrar' && arg) {
+  // pedido feito direto ao desenvolvimento (chat): entra já aprovado, para ficar no mesmo controle
+  //   node scripts/solicitacoes.mjs registrar "título" "descrição" ["quem pediu"] [aprovada|concluida <versao> "nota"] [AAAA-MM-DD HH:MM]
+  const [descricao = '', quem = 'Erick (pelo chat)', status = 'aprovada', versao, nota, quando] = rest;
+  const at = quando ? `${lit(quando)}::timestamp at time zone 'America/Sao_Paulo'` : 'now()';
+  const done = status === 'concluida';
+  const [r] = await sql(`insert into update_requests (titulo, descricao, status, created_by, created_by_name, created_at, decided_at, done_at, done_version, done_note)
+    values (${lit(arg)}, ${lit(descricao)}, ${lit(done ? 'concluida' : 'aprovada')}, null, ${lit(quem)}, ${at}, ${at}, ${done ? 'now()' : 'null'}, ${versao ? lit(versao) : 'null'}, ${nota ? lit(nota) : 'null'}) returning numero`);
+  console.log(`Registrada #${r.numero} (${done ? 'concluída' : 'aprovada, na fila'}).`);
 } else {
   console.log('Uso: node scripts/solicitacoes.mjs fila | baixar <n> | iniciar <n> | concluir <n> <versao> "nota"');
 }
