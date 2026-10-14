@@ -39,7 +39,7 @@ export function FluxoPedidos({ fluxo, pedidos, podeMudar }: { fluxo: 'producao' 
         };
         return (
           <Card key={p.orderId}>
-            <div className="flex flex-wrap items-start gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Link to={`/pedidos/${p.orderId}`} className="font-display font-bold hover:text-brand">Pedido {p.orderNumber ? `#${p.orderNumber}` : 'sem número'}</Link>
@@ -58,7 +58,7 @@ export function FluxoPedidos({ fluxo, pedidos, podeMudar }: { fluxo: 'producao' 
                   ))}
                 </ul>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-[45%] sm:justify-end">
                 {fluxo === 'producao' ? <>
                   {btn('em_producao', ['aberto'], 'Em produção', <Factory className="size-4" />)}
                   {btn('faturado', ['em_producao'], 'Pronto: Faturamento', <CheckCircle2 className="size-4" />)}

@@ -25,6 +25,51 @@ export interface Tutorial {
 
 export const TUTORIALS: Tutorial[] = [
   {
+    id: 'producao-faturamento',
+    version: '1.11.1',
+    date: '2026-10-14',
+    title: 'Produção e Faturamento',
+    summary: 'Os pedidos agora alimentam a Produção e o Faturamento: veja para onde vai cada item, como é calculada a necessidade de produção, como o PCP e o faturamento mudam a etapa, as cores dos status e como importar o cadastro da produção.',
+    web: 'producao-faturamento-web.mp4',
+    mobile: 'producao-faturamento-mobile.mp4',
+    poster: 'producao-faturamento-web.jpg',
+    steps: [
+      { title: 'Para onde vai cada item do pedido', items: [
+        'Produto de revenda vai direto para o Faturamento, em Rotas de entrega.',
+        'Item que o estoque já atende inteiro também vai direto para o Faturamento.',
+        'O que precisa ser fabricado vai para a Produção, na aba Pedidos na produção.',
+        'Um pedido misto fica parcial: em Revisar pedido, a coluna Etapa mostra onde está cada item.',
+      ] },
+      { title: 'Necessidade de produção', items: [
+        'Em Produção, a aba Pedido / Necessidade de produção soma os pedidos de cada código, começando pela entrega mais próxima.',
+        'Necessidade = pedido − estoque − semiacabado em estoque. Exemplo da páprica defumada: 150 kg pedidos − 20 kg em estoque − 100 kg de semiacabado = 30 kg.',
+        'Se a necessidade for menor que a produção mínima do semiacabado, produz o mínimo: com mínimo de 50 kg, a coluna Produzir mostra 50 kg.',
+        'O produto alternativo (a mesma base em outra embalagem) só entra se cobrir tudo e se o vendedor marcou SIM em "Se precisar, posso trocar a embalagem?".',
+        'Quando o estoque cobre o pedido, a linha aparece como atendido.',
+      ] },
+      { title: 'PCP: Em produção e Pronto', items: [
+        'Na aba Pedidos na produção, o PCP clica em Em produção quando começa a fabricar (o item fica amarelo).',
+        'Ao terminar, clique em Pronto: Faturamento. O item passa para Rotas de entrega, junto com o resto do pedido.',
+        'Voltar para aberto desfaz a etapa.',
+      ] },
+      { title: 'Faturamento', items: [
+        'Em Rotas de entrega, aba Faturamento, quem fatura clica em Faturamento ciente (o item fica verde).',
+        'Depois da entrega, clique em Entregue (o item fica azul).',
+        'Voltar para aberto devolve o item e libera o vendedor para editar o pedido.',
+      ] },
+      { title: 'Cores dos status', items: [
+        'Na tela Pedidos: vermelho = Aberto, amarelo = Em produção, verde = Faturamento, azul = Entregue.',
+        'Pedido cancelado fica com fundo rosa e letras vermelhas.',
+      ] },
+      { title: 'Importar o cadastro da produção', items: [
+        'Em Produção, clique em Importar cadastro da produção e escolha a planilha.',
+        'Colunas: Código, Referência, Descrição do Produto, Und venda, Equivalência, Código semiacabado, Descrição, Estoque alternativo e Quantidade mínima a produzir.',
+        'Escolha Incluir (acrescenta ao cadastro) ou Substituir (limpa os dados de produção de todos os produtos e aplica a planilha). Nenhum produto é apagado.',
+        'Os semiacabados entram no cadastro com a referência SEMIACABADO e aparecem no Estoque, não no pedido de venda.',
+      ] },
+    ],
+  },
+  {
     id: 'vendedor-pedidos',
     forSeller: true,
     version: '1.9.8',

@@ -106,17 +106,17 @@ export default function OrderDetailPage() {
       )}
       {sales && (
         <Card title="Itens do pedido" padded={false}>
-          <Table>
-            <thead><tr><th className="th">Referência</th><th className="th">Código</th><th className="th">Produto</th><th className="th text-right">Quantidade</th><th className="th">Unidade de venda</th><th className="th text-right">Valor unitário</th><th className="th text-right">Valor total</th><th className="th">Etapa</th></tr></thead>
+          <Table className="[&>table]:min-w-0">
+            <thead><tr><th className="th hidden sm:table-cell">Referência</th><th className="th">Código</th><th className="th">Produto</th><th className="th text-right">Quantidade</th><th className="th hidden sm:table-cell">Unidade de venda</th><th className="th hidden text-right sm:table-cell">Valor unitário</th><th className="th text-right">Valor total</th><th className="th">Etapa</th></tr></thead>
             <tbody>
               {o.items.map((it) => (
                 <tr key={it.id}>
-                  <td className="td text-xs">{it.product_reference ?? '—'}</td>
+                  <td className="td hidden text-xs sm:table-cell">{it.product_reference ?? '—'}</td>
                   <td className="td font-mono text-xs">{it.product_code}</td>
                   <td className="td">{it.product_name ?? it.raw_description}</td>
-                  <td className="td text-right num">{Number(it.quantity ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })}</td>
-                  <td className="td">{it.sale_unit === 'kg' ? 'kg' : 'unidade'}</td>
-                  <td className="td text-right num">{fmtBRL(it.unit_price)}</td>
+                  <td className="td text-right num">{Number(it.quantity ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })}<span className="sm:hidden"> {it.sale_unit === 'kg' ? 'kg' : 'un'}</span></td>
+                  <td className="td hidden sm:table-cell">{it.sale_unit === 'kg' ? 'kg' : 'unidade'}</td>
+                  <td className="td hidden text-right num sm:table-cell">{fmtBRL(it.unit_price)}</td>
                   <td className="td text-right num font-semibold">{fmtBRL(it.total_price)}</td>
                   <td className="td"><StatusBadge status={(it.stage ?? 'aberto') as OrderStatus} /></td>
                 </tr>

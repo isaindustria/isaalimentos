@@ -1,0 +1,111 @@
+[
+ {
+  "ch": "",
+  "title": "Produção e Faturamento",
+  "sub": "Novidade da versão 1.11",
+  "intro": true,
+  "beats": [
+   { "shot": "nec", "say": "Olá! Agora os pedidos alimentam a Produção e o Faturamento. Vamos ver como funciona." }
+  ]
+ },
+ {
+  "ch": "1",
+  "title": "Para onde vai cada item",
+  "beats": [
+   { "shot": "fat", "focus": "revenda", "hl": "revenda", "label": "Revenda: Faturamento",
+     "say": "Cada item do pedido segue o seu caminho. Produto de revenda vai direto para o Faturamento, em Rotas de entrega." },
+   { "shot": "fat", "focus": "estoque", "hl": "estoque", "label": "O estoque atende",
+     "mobile": { "shot": "fat_est" },
+     "say": "Se o estoque já atende o item inteiro, ele também vai direto para o Faturamento." },
+   { "shot": "prod", "focus": "cards", "hl": "cards", "label": "Precisa produzir",
+     "mobile": { "focus": "c1", "hl": "c1" },
+     "say": "O que precisa ser fabricado vai para a Produção, na aba Pedidos na produção." },
+   { "shot": "detalhe", "focus": "etapa", "hl": "etapa", "label": "Etapa de cada item",
+     "mobile": { "shot": "detalhe_etapa" },
+     "say": "Por isso um pedido misto fica parcial. Em Revisar pedido, a coluna Etapa mostra onde está cada item." }
+  ]
+ },
+ {
+  "ch": "2",
+  "title": "Necessidade de produção",
+  "beats": [
+   { "shot": "nec", "focus": "tabela", "hl": "tabela", "label": "Somado por código",
+     "mobile": { "shot": "nec_tab" },
+     "say": "Na tela Produção, a necessidade é a soma dos pedidos de cada código, começando pela entrega mais próxima." },
+   { "shot": "nec", "focus": "calc", "hl": "calc", "label": "150 − 20 − 100 = 30",
+     "mobile": { "shot": "nec_mid", "focus": "r471", "hl": "r471" },
+     "say": "Veja a páprica defumada: 150 quilos pedidos, menos 20 quilos em estoque, menos 100 quilos de semiacabado. Faltam 30 quilos." },
+   { "shot": "nec", "focus": "minProd", "hl": "minProd", "label": "Mínimo de 50 kg",
+     "mobile": { "shot": "nec_end", "focus": "r471", "hl": "r471" },
+     "say": "Mas a produção mínima do semiacabado é de 50 quilos. Então a coluna Produzir mostra 50 quilos." },
+   { "shot": "nec", "focus": "alt", "hl": "alt", "label": "Alternativo só com SIM",
+     "mobile": { "shot": "nec_mid" },
+     "say": "O produto alternativo, a mesma páprica em outra embalagem, só entra se o vendedor marcou sim para trocar a embalagem, e se cobrir tudo." },
+   { "shot": "nec", "focus": "r264all", "hl": "r264all", "label": "Atendido",
+     "mobile": { "shot": "nec_end", "focus": "at264", "hl": "at264" },
+     "say": "Quando o estoque cobre o pedido, a linha aparece como atendido." }
+  ]
+ },
+ {
+  "ch": "3",
+  "title": "PCP: Em produção e Pronto",
+  "beats": [
+   { "shot": "prod", "focus": "c1", "cursor": "emprod", "click": true, "hl": "emprod", "label": "Em produção",
+     "say": "Na aba Pedidos na produção, o PCP clica em Em produção quando começa a fabricar." },
+   { "shot": "prod_em", "focus": "c1", "cursor": "pronto", "click": true, "hl": "botoes", "label": "Pronto: Faturamento",
+     "say": "O item fica amarelo. Ao terminar, clique em Pronto, Faturamento, e ele segue para o faturamento." },
+   { "shot": "fat_pronto", "focus": "g1", "hl": "itens", "label": "Liberado para faturar",
+     "say": "O item produzido aparece em Rotas de entrega, junto com o resto do pedido." }
+  ]
+ },
+ {
+  "ch": "4",
+  "title": "Faturamento",
+  "beats": [
+   { "shot": "fat", "focus": "f1", "cursor": "ciente", "click": true, "hl": "ciente", "label": "Faturamento ciente",
+     "say": "Em Rotas de entrega, na aba Faturamento, quem fatura clica em Faturamento ciente. O item fica verde." },
+   { "shot": "fat_ciente", "focus": "f1", "cursor": "entregue", "click": true, "hl": "entregue", "label": "Entregue",
+     "say": "Depois da entrega, clique em Entregue. Aí o item fica azul." },
+   { "shot": "fat_ciente", "focus": "f1", "cursor": "voltar", "hl": "voltar", "label": "Voltar para aberto",
+     "say": "Precisa mudar alguma coisa? Voltar para aberto devolve o item e libera o vendedor para editar o pedido." }
+  ]
+ },
+ {
+  "ch": "5",
+  "title": "Cores dos status",
+  "beats": [
+   { "shot": "pedidos", "focus": "tabela", "hl": "tabela", "label": "Uma cor por status",
+     "say": "Na tela Pedidos, cada status tem a sua cor: vermelho é aberto, amarelo é em produção, verde é faturamento e azul é entregue." },
+   { "shot": "pedidos", "focus": "cancel", "hl": "cancel", "label": "Cancelado",
+     "say": "E o pedido cancelado fica com fundo rosa e letras vermelhas." }
+  ]
+ },
+ {
+  "ch": "6",
+  "title": "Cadastro da produção",
+  "beats": [
+   { "shot": "importar_btn", "focus": "importar", "cursor": "importar", "click": true, "hl": "importar", "label": "Importar cadastro",
+     "say": "Para a conta funcionar, cada produto precisa do cadastro da produção. Clique em Importar cadastro da produção." },
+   { "shot": "importar", "focus": "colunas", "hl": "colunas", "label": "As colunas da planilha",
+     "say": "A planilha traz código, referência, descrição, unidade de venda, equivalência, código e descrição do semiacabado, estoque alternativo e quantidade mínima a produzir." },
+   { "shot": "importar_inc", "focus": "modos", "cursor": "incluir", "click": true, "hl": "modos", "label": "Incluir ou Substituir",
+     "say": "Antes de importar, escolha. Incluir acrescenta ao cadastro. Substituir limpa os dados de produção e aplica a planilha. Nenhum produto é apagado." }
+  ]
+ },
+ {
+  "ch": "",
+  "title": "Pronto!",
+  "outro": true,
+  "end1": "Produção e Faturamento",
+  "end2": "Este vídeo fica em Tutoriais",
+  "summary": [
+   "Revenda e estoque: Faturamento",
+   "O que falta: Produção",
+   "Em produção e Pronto: Faturamento",
+   "Faturamento ciente e Entregue"
+  ],
+  "beats": [
+   { "shot": "nec", "say": "Resumindo: revenda e estoque vão para o Faturamento, o que falta vai para a Produção, e cada item mostra a sua etapa. Bom trabalho!" }
+  ]
+ }
+]
