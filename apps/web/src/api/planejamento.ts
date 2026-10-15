@@ -6,6 +6,7 @@ import { normalizeHeader, pick, toNumber } from '@/domain/parsers/sheet';
 export interface PedidoNoFluxo {
   orderId: string; orderNumber: string | null; customer: string | null; deliveryDate: string | null; orderStatus: string;
   customerCode: string | null; cnpj: string | null; seller: string | null;
+  notes: string | null; subtotal: number | null; discount: number | null; total: number | null;
   /** itens deste fluxo */
   itens: Array<PlanItem & { motivo: string }>;
   /** todos os itens do pedido, com o fluxo de cada um (o faturamento vê o pedido inteiro) */
@@ -15,13 +16,13 @@ export interface PedidoNoFluxo {
 /** Pedidos em aberto (não cancelados, não entregues) com os itens, o cadastro e o estoque, já roteados. */
 export async function carregarPlanejamento() {
   const [orders, products, stock] = await Promise.all([
-    supabase.from('orders').select('id, order_number, customer_name, customer_cnpj, seller_name, delivery_date, created_at, allow_other_packaging, status, customer:customers(name, code, cnpj), items:order_items(id, product_code, product_name, product_reference, sale_unit, quantity, quantity_units, weight_kg, stage)')
+    supabase.from('orders').select('id, order_number, customer_name, customer_cnpj, seller_name, notes, subtotal_value, discount_value, total_value, delivery_date, created_at, allow_other_packaging, status, customer:customers(name, code, cnpj), items:order_items(id, product_code, product_name, product_reference, sale_unit, quantity, quantity_units, weight_kg, unit_price, total_price, stage)')
       .not('status', 'in', '(cancelado,entregue)').order('delivery_date', { ascending: true, nullsFirst: false }),
     supabase.from('products').select('code, description, reference, weight_g, equivalence_kg, semi_code, alt_code, min_production_kg, is_semi'),
     getCurrentStock(),
   ]);
-  const ords = unwrap(orders) as unknown as Array<{ id: string; order_number: string | null; customer_name: string | null; delivery_date: string | null; created_at: string; allow_other_packaging: boolean | null; status: string; customer_cnpj: string | null; seller_name: string | null; customer: { name: string; code: string | null; cnpj: string | null } | null;
-    items: Array<{ id: string; product_code: string | null; product_name: string | null; product_reference: string | null; sale_unit: 'kg' | 'un' | null; quantity: number | null; quantity_units: number | null; weight_kg: number | null; stage: Etapa }> }>;
+  const ords = unwrap(orders) as unknown as Array<{ id: string; order_number: string | null; customer_name: string | null; delivery_date: string | null; created_at: string; allow_other_packaging: boolean | null; status: string; customer_cnpj: string | null; seller_name: string | null; notes: string | null; subtotal_value: number | null; discount_value: number | null; total_value: number | null; customer: { name: string; code: string | null; cnpj: string | null } | null;
+    items: Array<{ id: string; product_code: string | null; product_name: string | null; product_reference: string | null; sale_unit: 'kg' | 'un' | null; quantity: number | null; quantity_units: number | null; weight_kg: number | null; unit_price: number | null; total_price: number | null; stage: Etapa }> }>;
   const prods = new Map((unwrap(products) as PlanProduct[]).map((p) => [p.code, p]));
   const est = new Map(stock.map((s) => [s.code, Number(s.location_1 ?? 0) + Number(s.location_5 ?? 0)]));
   const items: PlanItem[] = [];
@@ -30,7 +31,7 @@ export async function carregarPlanejamento() {
     items.push({
       itemId: it.id, orderId: o.id, orderNumber: o.order_number, customer: o.customer?.name ?? o.customer_name, productCode: it.product_code, productName: it.product_name,
       reference: it.product_reference, saleUnit: it.sale_unit, quantity: it.quantity, quantityUnits: it.quantity_units, weightKg: it.weight_kg,
-      deliveryDate: o.delivery_date, createdAt: o.created_at, allowSwap: o.allow_other_packaging, stage: it.stage,
+      deliveryDate: o.delivery_date, createdAt: o.created_at, allowSwap: o.allow_other_packaging, stage: it.stage, unitPrice: it.unit_price, totalPrice: it.total_price,
     });
   }
   const plan = planejar(items, prods, est);
@@ -42,6 +43,7 @@ export async function carregarPlanejamento() {
       const cur = m.get(o.id) ?? {
         orderId: o.id, orderNumber: o.order_number, customer: it.customer, deliveryDate: o.delivery_date, orderStatus: o.status,
         customerCode: o.customer?.code ?? null, cnpj: o.customer?.cnpj ?? o.customer_cnpj, seller: o.seller_name, itens: [],
+        notes: o.notes, subtotal: o.subtotal_value, discount: o.discount_value, total: o.total_value,
         todos: items.filter((x) => x.orderId === o.id).map((x) => { const rr = plan.routes.get(x.itemId); return { ...x, motivo: rr?.motivo ?? 'producao', fluxo: rr?.fluxo ?? 'producao' }; }),
       };
       cur.itens.push({ ...it, motivo: r.motivo }); m.set(o.id, cur);

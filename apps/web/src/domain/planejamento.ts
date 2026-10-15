@@ -24,6 +24,7 @@ export interface PlanItem {
   productCode: string; productName: string | null; reference: string | null;
   saleUnit: 'kg' | 'un' | null; quantity: number | null; quantityUnits: number | null; weightKg: number | null;
   deliveryDate: string | null; createdAt: string; allowSwap: boolean | null; stage: Etapa;
+  unitPrice?: number | null; totalPrice?: number | null;
 }
 export interface PlanRow {
   code: string; name: string; earliest: string | null;

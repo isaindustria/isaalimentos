@@ -8,12 +8,22 @@ import { mudarEtapa, type PedidoNoFluxo } from '@/api/planejamento';
 import type { Etapa } from '@/domain/planejamento';
 import { STATUS_COLOR } from '@/pages/OrdersPage';
 import { fmtCnpj } from '@/domain/sales';
-import { downloadBlob, fmtDate } from '@/lib/utils';
+import { downloadBlob, fmtBRL, fmtDate } from '@/lib/utils';
+import { isRevenda } from '@/domain/planejamento';
 
 const ETAPA: Record<Etapa, string> = { aberto: 'Aberto', em_producao: 'Em produção', faturado: 'Faturamento', entregue: 'Entregue' };
 const ETAPA_COR: Record<Etapa, string> = { aberto: STATUS_COLOR.aberto, em_producao: STATUS_COLOR.em_producao, faturado: STATUS_COLOR.faturado, entregue: STATUS_COLOR.entregue };
 type Item = PedidoNoFluxo['todos'][number];
-const qtd = (it: Item) => (it.saleUnit === 'kg' ? `${Number(it.quantity ?? 0).toLocaleString('pt-BR')} kg` : it.saleUnit === 'un' ? `${it.quantity ?? 0} un` : `${it.quantityUnits ?? 0} un`);
+const qtdNum = (it: Item) => Number(it.saleUnit ? it.quantity ?? 0 : it.quantityUnits ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+const equiv = (it: Item) => (it.saleUnit === 'kg' ? 'Kg' : 'UNIDADE');
+/** Situação do item (solicitação #16): revenda continua "revenda" mesmo depois do ciente; produção com cadeado; liberado pela produção. */
+function situacao(it: Item): { texto: string; travado: boolean } {
+  if (isRevenda(it.reference)) return { texto: 'revenda', travado: false };
+  if (it.fluxo === 'producao') return { texto: 'Produção', travado: true };
+  if (it.motivo === 'estoque') return { texto: 'estoque', travado: false };
+  if (it.motivo === 'alternativo') return { texto: 'alternativo', travado: false };
+  return { texto: 'liberado', travado: false };
+}
 
 /**
  * Aba Faturamento (Rotas de entrega, solicitação #15): cada cartão é o pedido inteiro, com cabeçalho do cliente.
@@ -47,19 +57,36 @@ export function FaturamentoPedidos({ pedidos, podeMudar }: { pedidos: PedidoNoFl
                 <div key={l} className="min-w-0"><div className="text-[11px] font-semibold uppercase tracking-wide text-muted">{l}</div><div className={`truncate ${l === 'Cliente' ? 'font-semibold' : ''}`} title={String(v)}>{l === 'Pedido' && p.orderNumber ? <Link to={`/pedidos/${p.orderId}`} className="text-brand">{v}</Link> : v}</div></div>
               ))}
             </div>
-            <ul className="divide-y divide-line">
-              {p.todos.map((i) => (
-                <li key={i.itemId} className="flex flex-wrap items-center gap-2 px-4 py-2 text-sm">
-                  <Badge className={ETAPA_COR[i.stage]} dot>{ETAPA[i.stage]}</Badge>
-                  <span className="font-mono text-xs text-muted">{i.productCode}</span>
-                  <span className="min-w-0 flex-1">{i.productName ?? '—'}</span>
-                  <span className="num font-semibold">{qtd(i)}</span>
-                  {i.fluxo === 'producao'
-                    ? <span className="inline-flex items-center gap-1 text-xs text-muted"><Lock className="size-3" />Produção · só visualizar</span>
-                    : <span className="text-xs text-muted">{i.motivo === 'revenda' ? 'revenda' : i.motivo === 'estoque' ? 'estoque atende' : i.motivo === 'alternativo' ? 'produto alternativo' : 'liberado pela produção'}</span>}
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead><tr className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <th className="px-4 py-2 text-left">Código</th><th className="px-2 py-2 text-left">Produto</th><th className="px-2 py-2 text-right">Quantidade</th><th className="px-2 py-2 text-left">Equivalênc.</th>
+                  <th className="px-2 py-2 text-right">Valor unitário</th><th className="px-2 py-2 text-right">Valor total</th><th className="px-2 py-2 text-left">Status</th><th className="px-4 py-2 text-left">Situação</th>
+                </tr></thead>
+                <tbody className="divide-y divide-line">
+                  {p.todos.map((i) => { const st = situacao(i); return (
+                    <tr key={i.itemId}>
+                      <td className="px-4 py-2 font-mono text-xs">{i.productCode}</td>
+                      <td className="px-2 py-2">{i.productName ?? '—'}</td>
+                      <td className="num px-2 py-2 text-right">{qtdNum(i)}</td>
+                      <td className="px-2 py-2 text-xs">{equiv(i)}</td>
+                      <td className="num px-2 py-2 text-right">{i.unitPrice != null ? fmtBRL(i.unitPrice) : '—'}</td>
+                      <td className="num px-2 py-2 text-right font-semibold">{i.totalPrice != null ? fmtBRL(i.totalPrice) : '—'}</td>
+                      <td className="px-2 py-2"><Badge className={ETAPA_COR[i.stage]} dot>{ETAPA[i.stage]}</Badge></td>
+                      <td className="px-4 py-2 text-xs text-muted">{st.travado ? <span className="inline-flex items-center gap-1"><Lock className="size-3" />{st.texto}</span> : st.texto}</td>
+                    </tr>
+                  ); })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-line p-4 text-sm sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 text-muted">Observações: <span className="text-fg">{p.notes || '—'}</span></div>
+              <dl className="grid w-full max-w-xs gap-1">
+                <div className="flex justify-between"><dt className="text-muted">Subtotal dos itens</dt><dd className="num">{fmtBRL(p.subtotal ?? p.total ?? 0)}</dd></div>
+                <div className="flex justify-between"><dt className="text-muted">Desconto financeiro</dt><dd className="num">− {fmtBRL(p.discount ?? 0)}</dd></div>
+                <div className="flex justify-between border-t border-line pt-1 font-semibold"><dt>Total</dt><dd className="num">{fmtBRL(p.total ?? 0)}</dd></div>
+              </dl>
+            </div>
             {podeMudar && (
               <div className="flex flex-wrap items-center gap-2 border-t border-line p-3">
                 {ciente.length > 0 && <Button size="sm" icon={<CheckCircle2 className="size-4" />} loading={go.isPending} onClick={() => go.mutate({ ids: ciente, etapa: 'faturado' })}>Faturamento ciente</Button>}
@@ -83,23 +110,33 @@ function exportarPdf(pedidos: PedidoNoFluxo[]) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} · ${pedidos.length} pedido(s), pela entrega mais próxima`, L, y + 5);
   y += 12;
   for (const p of pedidos) {
-    const h = 16 + p.todos.length * 5;
+    const h = 30 + p.todos.length * 5;
     if (y + h > 285) { doc.addPage(); y = 14; }
     doc.setDrawColor(200); doc.roundedRect(L, y, R - L, h, 2, 2);
     const cols: Array<[string, string, number]> = [['Código', p.customerCode ?? '-', L + 2], ['Cliente', (p.customer ?? '-').slice(0, 42), L + 20], ['CNPJ', fmtCnpj(p.cnpj), L + 95], ['Pedido', p.orderNumber ?? '-', L + 130], ['Vendedor', (p.seller ?? '-').slice(0, 14), L + 148], ['Entrega', fmtDate(p.deliveryDate), L + 170]];
     doc.setFontSize(6.5); doc.setTextColor(120); cols.forEach(([l, , x]) => doc.text(l.toUpperCase(), x, y + 4));
     doc.setFontSize(8.5); doc.setTextColor(0); cols.forEach(([, v, x]) => doc.text(String(v), x, y + 8.5));
     doc.setDrawColor(230); doc.line(L, y + 11, R, y + 11);
-    let yy = y + 15.5;
-    doc.setFontSize(8);
+    doc.setFontSize(6.5); doc.setTextColor(120);
+    [['CÓDIGO', 2], ['PRODUTO', 14], ['QTD', 92], ['EQUIV.', 104], ['VL. UNIT.', 122], ['VL. TOTAL', 142], ['STATUS', 160], ['SITUAÇÃO', 178]].forEach(([t, x]) => doc.text(String(t), L + Number(x), y + 14.5));
+    doc.setTextColor(0);
+    let yy = y + 19;
+    doc.setFontSize(7.5);
     for (const i of p.todos) {
-      doc.text(`[${ETAPA[i.stage]}]`, L + 2, yy);
-      doc.text(i.productCode, L + 25, yy);
-      doc.text((i.productName ?? '-').slice(0, 60), L + 38, yy);
-      doc.text(qtd(i), L + 140, yy);
-      doc.setTextColor(120); doc.text(i.fluxo === 'producao' ? 'Produção' : 'Faturamento', L + 160, yy); doc.setTextColor(0);
+      doc.text(i.productCode, L + 2, yy);
+      doc.text((i.productName ?? '-').slice(0, 44), L + 14, yy);
+      doc.text(qtdNum(i), L + 100, yy, { align: 'right' });
+      doc.text(equiv(i), L + 104, yy);
+      doc.text(i.unitPrice != null ? fmtBRL(i.unitPrice) : '-', L + 138, yy, { align: 'right' });
+      doc.text(i.totalPrice != null ? fmtBRL(i.totalPrice) : '-', L + 158, yy, { align: 'right' });
+      doc.text(ETAPA[i.stage], L + 160, yy);
+      doc.setTextColor(120); doc.text(situacao(i).texto, L + 178, yy); doc.setTextColor(0);
       yy += 5;
     }
+    doc.setDrawColor(230); doc.line(L, yy - 2, R, yy - 2);
+    doc.setFontSize(7.5);
+    doc.text(`Observações: ${(p.notes ?? '-').slice(0, 70)}`, L + 2, yy + 3);
+    doc.text(`Subtotal ${fmtBRL(p.subtotal ?? p.total ?? 0)}   Desconto − ${fmtBRL(p.discount ?? 0)}   Total ${fmtBRL(p.total ?? 0)}`, R - 2, yy + 3, { align: 'right' });
     y += h + 4;
   }
   downloadBlob(doc.output('blob'), `faturamento-${new Date().toISOString().slice(0, 10)}.pdf`);
