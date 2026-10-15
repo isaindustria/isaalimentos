@@ -220,8 +220,8 @@ export function computeSupplyNeeds(bom: ProductBom[], supplies: Supply[], demand
 export async function listRoutes(): Promise<DeliveryRoute[]> {
   return unwrap(await supabase.from('delivery_routes').select('*').order('route_date', { ascending: false }));
 }
-export async function saveRoute(r: Partial<DeliveryRoute> & { name: string; order_ids: string[] }) {
-  const payload = { name: r.name, route_date: r.route_date ?? new Date().toISOString().slice(0, 10), driver: r.driver ?? null, vehicle: r.vehicle ?? null, status: r.status ?? 'planejada', order_ids: r.order_ids, notes: r.notes ?? null };
+export async function saveRoute(r: Partial<DeliveryRoute> & { name: string; order_ids: string[]; vehicle_id?: string | null; total_weight_kg?: number | null }) {
+  const payload = { name: r.name, route_date: r.route_date ?? new Date().toISOString().slice(0, 10), driver: r.driver ?? null, vehicle: r.vehicle ?? null, vehicle_id: r.vehicle_id ?? null, total_weight_kg: r.total_weight_kg ?? null, status: r.status ?? 'planejada', order_ids: r.order_ids, notes: r.notes ?? null };
   if (r.id) unwrap(await supabase.from('delivery_routes').update(payload).eq('id', r.id));
   else unwrap(await supabase.from('delivery_routes').insert(payload));
 }

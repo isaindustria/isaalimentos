@@ -5,11 +5,11 @@ import { Plus, Printer, Truck, Trash2, QrCode } from 'lucide-react';
 import { deleteRoute, listRoutes, saveRoute, setRouteStatus } from '@/api/v14';
 import { listOrders, getOrder } from '@/api/orders';
 import { logActivity } from '@/api/activity';
-import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Table, Tabs } from '@/components/primitives';
-import { fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
+import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Select, Table, Tabs } from '@/components/primitives';
+import { fmtDate, fmtInt } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { FluxoPedidos } from '@/components/FluxoPedidos';
-import { carregarPlanejamento } from '@/api/planejamento';
+import { FaturamentoPedidos } from '@/components/FaturamentoPedidos';
+import { carregarPlanejamento, listVehicles, pesoPorPedido, removeVehicle, saveVehicle, type Vehicle } from '@/api/planejamento';
 import type { DeliveryRoute, Order, RouteStatus } from '@/lib/types';
 
 const RSTATUS: Record<RouteStatus, { label: string; tone: 'info' | 'brand' | 'ok' }> = { planejada: { label: 'Planejada', tone: 'info' }, em_rota: { label: 'Em rota', tone: 'brand' }, concluida: { label: 'Concluída', tone: 'ok' } };
@@ -24,6 +24,12 @@ export default function RoutesPage() {
   const { canWriteArea, session, profile } = useAuth();
   const [tab, setTab] = useState<'faturamento' | 'montar' | 'rotas'>('faturamento');
   const plano = useQuery({ queryKey: ['planejamento'], queryFn: carregarPlanejamento, refetchInterval: 30000 });
+  const pesos = useQuery({ queryKey: ['planejamento', 'pesos'], queryFn: pesoPorPedido });
+  const vehicles = useQuery({ queryKey: ['vehicles'], queryFn: listVehicles });
+  const [vehicleId, setVehicleId] = useState('');
+  const [cadVeiculo, setCadVeiculo] = useState(false);
+  const kgDe = (id: string) => pesos.data?.get(id) ?? 0;
+  const fmtKg = (n: number) => `${n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg`;
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [name, setName] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -42,7 +48,7 @@ export default function RoutesPage() {
 
   const invalidate = () => { qc.invalidateQueries({ queryKey: ['routes'] }); qc.invalidateQueries({ queryKey: ['activities'] }); };
   const create = useMutation({
-    mutationFn: () => saveRoute({ name: name.trim() || `Rota ${fmtDate(date)}`, route_date: date, driver: driver || null, vehicle: vehicle || null, order_ids: [...sel] }),
+    mutationFn: () => { const v = vehicles.data?.find((x) => x.id === vehicleId); return saveRoute({ name: name.trim() || `Rota ${fmtDate(date)}`, route_date: date, driver: driver || null, vehicle: v ? `${v.model} ${v.plate}` : vehicle || null, vehicle_id: v?.id ?? null, total_weight_kg: Math.round(cargaKg * 10) / 10, order_ids: [...sel] }); },
     onSuccess: async () => { toast.success('Rota criada.'); await logActivity({ kind: 'pedido', title: `Rota de entrega criada · ${sel.size} pedido(s)`, link: '/rotas', actor_id: session?.user.id, actor_name: profile?.name ?? null }); invalidate(); setSel(new Set()); setTab('rotas'); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -54,14 +60,16 @@ export default function RoutesPage() {
   });
 
   const selectedTotal = pending.filter((o) => sel.has(o.id));
+  const cargaKg = selectedTotal.reduce((s2, o) => s2 + kgDe(o.id), 0);
+  const veiculo = vehicles.data?.find((x) => x.id === vehicleId);
 
   return (
     <>
       <PageHeader title="Rotas de entrega" description="Agrupe pedidos por cidade ou rede, gere o romaneio para o motorista e as etiquetas de caixa." actions={<Tabs value={tab} onChange={setTab} items={[{ value: 'faturamento', label: 'Faturamento', count: plano.data?.faturamento.length }, { value: 'rotas', label: 'Rotas', count: routes.data?.length }, { value: 'montar', label: 'Montar rota' }]} />} />
       {tab === 'faturamento' ? (
         <>
-          <p className="mb-3 text-sm text-muted">Revenda, itens que o estoque já atende e o que a Produção liberou. O faturamento marca <b>Faturamento ciente</b> (verde) e depois <b>Entregue</b> (azul). Para liberar o vendedor a mudar o pedido, use Voltar para aberto.</p>
-          <FluxoPedidos fluxo="faturamento" pedidos={plano.data?.faturamento ?? []} podeMudar={canWriteArea('compras')} />
+          <p className="mb-3 text-sm text-muted">Cada cartão é o pedido inteiro, pela entrega mais próxima. O faturamento marca <b>Faturamento ciente</b> (verde) nos itens dele (revenda e o que o estoque atende); os itens da Produção aparecem só para visualizar, até o PCP liberar. <b>Entregue</b> (azul) fica liberado quando todos os itens estiverem em Faturamento.</p>
+          <FaturamentoPedidos pedidos={plano.data?.faturamento ?? []} podeMudar={canWriteArea('compras')} />
         </>
       ) : tab === 'montar' ? (
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
@@ -75,7 +83,7 @@ export default function RoutesPage() {
                     <input type="checkbox" className="size-4 accent-[var(--brand)]" checked={sel.has(o.id)} onChange={(e) => setSel((s) => { const n = new Set(s); e.target.checked ? n.add(o.id) : n.delete(o.id); return n; })} />
                     <span className="flex-1 truncate"><b>#{o.order_number}</b> · {o.customer?.name}</span>
                     <span className="text-muted">{fmtDate(o.delivery_date ?? o.order_date)}</span>
-                    <span className="num w-24 text-right">{fmtBRL(o.total_value)}</span>
+                    <span className="num w-24 text-right">{fmtKg(kgDe(o.id))}</span>
                   </label>
                 ))}
               </div>
@@ -86,11 +94,22 @@ export default function RoutesPage() {
               <Field label="Nome"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Santos e Guarujá" /></Field>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Data"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-                <Field label="Veículo"><Input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="Placa" /></Field>
+                <Field label="Veículo">
+                  {vehicles.data?.length ? (
+                    <Select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
+                      <option value="">Escolha o veículo</option>
+                      {vehicles.data.map((v) => <option key={v.id} value={v.id}>{v.model} · {v.plate}{v.capacity_kg ? ` · ${fmtKg(Number(v.capacity_kg))}` : ''}</option>)}
+                    </Select>
+                  ) : <Input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="Placa (ou cadastre o veículo)" />}
+                </Field>
               </div>
-              <Field label="Motorista"><Input value={driver} onChange={(e) => setDriver(e.target.value)} /></Field>
-              <div className="rounded-xl bg-surface-2 p-3 text-sm"><b>{sel.size}</b> pedido(s) · {fmtBRL(selectedTotal.reduce((s, o) => s + Number(o.total_value), 0))}</div>
+              <Field label="Motorista"><Input value={driver} onChange={(e) => setDriver(e.target.value)} placeholder="Digite o nome do motorista" /></Field>
+              <div className={`rounded-xl p-3 text-sm ${veiculo?.capacity_kg && cargaKg > Number(veiculo.capacity_kg) ? 'bg-danger/10 text-danger' : 'bg-surface-2'}`}>
+                <b>{sel.size}</b> pedido(s) · peso da carga <b>{fmtKg(cargaKg)}</b>
+                {veiculo?.capacity_kg ? <div className="text-xs">{cargaKg > Number(veiculo.capacity_kg) ? `Passa da capacidade do ${veiculo.model} (${fmtKg(Number(veiculo.capacity_kg))}) em ${fmtKg(cargaKg - Number(veiculo.capacity_kg))}.` : `Capacidade do ${veiculo.model}: ${fmtKg(Number(veiculo.capacity_kg))} · sobra ${fmtKg(Number(veiculo.capacity_kg) - cargaKg)}.`}</div> : null}
+              </div>
               {canWriteArea('compras') && <Button icon={<Plus className="size-4" />} disabled={!sel.size} loading={create.isPending} onClick={() => create.mutate()}>Criar rota</Button>}
+              {canWriteArea('compras') && <Button variant="outline" icon={<Truck className="size-4" />} onClick={() => setCadVeiculo(true)}>Cadastrar veículo</Button>}
             </div>
           </Card>
         </div>
@@ -135,6 +154,34 @@ export default function RoutesPage() {
           </div>
         )}
       </Dialog>
+      {cadVeiculo && <VeiculosDialog onClose={() => setCadVeiculo(false)} lista={vehicles.data ?? []} />}
     </>
+  );
+}
+
+/** Cadastro de veículos da rota: modelo, placa e peso que aguenta (o motorista é digitado em cada rota). */
+function VeiculosDialog({ onClose, lista }: { onClose: () => void; lista: Vehicle[] }) {
+  const qc = useQueryClient();
+  const [model, setModel] = useState('');
+  const [plate, setPlate] = useState('');
+  const [cap, setCap] = useState('');
+  const done = () => qc.invalidateQueries({ queryKey: ['vehicles'] });
+  const add = useMutation({ mutationFn: () => saveVehicle({ model, plate, capacity_kg: cap ? Number(cap.replace(/\./g, '').replace(',', '.')) : null }), onSuccess: () => { toast.success('Veículo cadastrado.'); setModel(''); setPlate(''); setCap(''); done(); }, onError: (e: Error) => toast.error(e.message) });
+  const del = useMutation({ mutationFn: removeVehicle, onSuccess: () => { toast.success('Veículo removido da lista.'); done(); } });
+  return (
+    <Dialog open onClose={onClose} title="Veículos" description="Modelo, placa e peso que o veículo aguenta. O motorista é digitado em cada rota."
+      footer={<Button variant="outline" onClick={onClose}>Fechar</Button>}>
+      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+        <Field label="Modelo"><Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Ducato" /></Field>
+        <Field label="Veículo (placa)"><Input value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="PLV1G74" /></Field>
+        <Field label="Peso (kg)"><Input inputMode="decimal" value={cap} onChange={(e) => setCap(e.target.value)} placeholder="3500" /></Field>
+        <Button disabled={!model.trim() || !plate.trim()} loading={add.isPending} onClick={() => add.mutate()}>Salvar</Button>
+      </div>
+      {lista.length > 0 && (
+        <ul className="mt-4 divide-y divide-line rounded-xl border border-line text-sm">
+          {lista.map((v) => <li key={v.id} className="flex items-center gap-3 px-3 py-2"><span className="flex-1"><b>{v.model}</b> · {v.plate}</span><span className="num text-muted">{v.capacity_kg ? `${Number(v.capacity_kg).toLocaleString('pt-BR')} kg` : '—'}</span><button className="text-muted hover:text-danger" aria-label={`Remover ${v.plate}`} onClick={() => del.mutate(v.id)}><Trash2 className="size-4" /></button></li>)}
+        </ul>
+      )}
+    </Dialog>
   );
 }
