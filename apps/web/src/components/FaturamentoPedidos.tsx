@@ -58,19 +58,19 @@ export function FaturamentoPedidos({ pedidos, podeMudar }: { pedidos: PedidoNoFl
               ))}
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
+              <table className="w-full text-sm sm:min-w-[640px]">
                 <thead><tr className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                  <th className="px-4 py-2 text-left">Código</th><th className="px-2 py-2 text-left">Produto</th><th className="px-2 py-2 text-right">Quantidade</th><th className="px-2 py-2 text-left">Equivalênc.</th>
-                  <th className="px-2 py-2 text-right">Valor unitário</th><th className="px-2 py-2 text-right">Valor total</th><th className="px-2 py-2 text-left">Status</th><th className="px-4 py-2 text-left">Situação</th>
+                  <th className="px-4 py-2 text-left">Código</th><th className="px-2 py-2 text-left">Produto</th><th className="px-2 py-2 text-right">Quantidade</th><th className="hidden px-2 py-2 text-left sm:table-cell">Equivalênc.</th>
+                  <th className="hidden px-2 py-2 text-right sm:table-cell">Valor unitário</th><th className="px-2 py-2 text-right">Valor total</th><th className="px-2 py-2 text-left">Status</th><th className="px-4 py-2 text-left">Situação</th>
                 </tr></thead>
                 <tbody className="divide-y divide-line">
                   {p.todos.map((i) => { const st = situacao(i); return (
                     <tr key={i.itemId}>
                       <td className="px-4 py-2 font-mono text-xs">{i.productCode}</td>
                       <td className="px-2 py-2">{i.productName ?? '—'}</td>
-                      <td className="num px-2 py-2 text-right">{qtdNum(i)}</td>
-                      <td className="px-2 py-2 text-xs">{equiv(i)}</td>
-                      <td className="num px-2 py-2 text-right">{i.unitPrice != null ? fmtBRL(i.unitPrice) : '—'}</td>
+                      <td className="num px-2 py-2 text-right">{qtdNum(i)}<span className="sm:hidden"> {i.saleUnit === 'kg' ? 'kg' : 'un'}</span></td>
+                      <td className="hidden px-2 py-2 text-xs sm:table-cell">{equiv(i)}</td>
+                      <td className="num hidden px-2 py-2 text-right sm:table-cell">{i.unitPrice != null ? fmtBRL(i.unitPrice) : '—'}</td>
                       <td className="num px-2 py-2 text-right font-semibold">{i.totalPrice != null ? fmtBRL(i.totalPrice) : '—'}</td>
                       <td className="px-2 py-2"><Badge className={ETAPA_COR[i.stage]} dot>{ETAPA[i.stage]}</Badge></td>
                       <td className="px-4 py-2 text-xs text-muted">{st.travado ? <span className="inline-flex items-center gap-1"><Lock className="size-3" />{st.texto}</span> : st.texto}</td>
@@ -118,25 +118,25 @@ function exportarPdf(pedidos: PedidoNoFluxo[]) {
     doc.setFontSize(8.5); doc.setTextColor(0); cols.forEach(([, v, x]) => doc.text(String(v), x, y + 8.5));
     doc.setDrawColor(230); doc.line(L, y + 11, R, y + 11);
     doc.setFontSize(6.5); doc.setTextColor(120);
-    [['CÓDIGO', 2], ['PRODUTO', 14], ['QTD', 92], ['EQUIV.', 104], ['VL. UNIT.', 122], ['VL. TOTAL', 142], ['STATUS', 160], ['SITUAÇÃO', 178]].forEach(([t, x]) => doc.text(String(t), L + Number(x), y + 14.5));
+    [['CÓDIGO', 2], ['PRODUTO', 14], ['QTD', 84], ['EQUIV.', 96], ['VL. UNIT.', 112], ['VL. TOTAL', 132], ['STATUS', 150], ['SITUAÇÃO', 168]].forEach(([t, x]) => doc.text(String(t), L + Number(x), y + 14.5));
     doc.setTextColor(0);
     let yy = y + 19;
     doc.setFontSize(7.5);
     for (const i of p.todos) {
       doc.text(i.productCode, L + 2, yy);
-      doc.text((i.productName ?? '-').slice(0, 44), L + 14, yy);
-      doc.text(qtdNum(i), L + 100, yy, { align: 'right' });
-      doc.text(equiv(i), L + 104, yy);
-      doc.text(i.unitPrice != null ? fmtBRL(i.unitPrice) : '-', L + 138, yy, { align: 'right' });
-      doc.text(i.totalPrice != null ? fmtBRL(i.totalPrice) : '-', L + 158, yy, { align: 'right' });
-      doc.text(ETAPA[i.stage], L + 160, yy);
-      doc.setTextColor(120); doc.text(situacao(i).texto, L + 178, yy); doc.setTextColor(0);
+      doc.text((i.productName ?? '-').slice(0, 38), L + 14, yy);
+      doc.text(qtdNum(i), L + 92, yy, { align: 'right' });
+      doc.text(equiv(i), L + 96, yy);
+      doc.text((i.unitPrice != null ? fmtBRL(i.unitPrice) : '-').replace(/ /g, ' '), L + 128, yy, { align: 'right' });
+      doc.text((i.totalPrice != null ? fmtBRL(i.totalPrice) : '-').replace(/ /g, ' '), L + 148, yy, { align: 'right' });
+      doc.text(ETAPA[i.stage], L + 150, yy);
+      doc.setTextColor(120); doc.text(situacao(i).texto, L + 168, yy); doc.setTextColor(0);
       yy += 5;
     }
     doc.setDrawColor(230); doc.line(L, yy - 2, R, yy - 2);
     doc.setFontSize(7.5);
     doc.text(`Observações: ${(p.notes ?? '-').slice(0, 70)}`, L + 2, yy + 3);
-    doc.text(`Subtotal ${fmtBRL(p.subtotal ?? p.total ?? 0)}   Desconto − ${fmtBRL(p.discount ?? 0)}   Total ${fmtBRL(p.total ?? 0)}`, R - 2, yy + 3, { align: 'right' });
+    doc.text(`Subtotal ${fmtBRL(p.subtotal ?? p.total ?? 0)}   Desconto - ${fmtBRL(p.discount ?? 0)}   Total ${fmtBRL(p.total ?? 0)}`.replace(/ /g, ' '), R - 2, yy + 3, { align: 'right' });
     y += h + 4;
   }
   downloadBlob(doc.output('blob'), `faturamento-${new Date().toISOString().slice(0, 10)}.pdf`);

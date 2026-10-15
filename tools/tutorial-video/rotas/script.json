@@ -1,0 +1,200 @@
+[
+ {
+  "ch": "",
+  "title": "Rotas de entrega",
+  "sub": "Faturamento e rota · versão 1.11",
+  "intro": true,
+  "beats": [
+   {
+    "shot": "fat",
+    "say": "Olá! Veja as novidades de Rotas de entrega: o cartão do faturamento e a montagem da rota."
+   }
+  ]
+ },
+ {
+  "ch": "1",
+  "title": "O cartão do faturamento",
+  "beats": [
+   {
+    "shot": "fat",
+    "focus": "card",
+    "hl": "head",
+    "label": "Cabeçalho do pedido",
+    "mobile": {
+     "focus": "head"
+    },
+    "say": "Cada cartão é o pedido inteiro. No alto: código e nome do cliente, cê ene pê jota, pedido, vendedor e entrega."
+   },
+   {
+    "shot": "fat",
+    "focus": "card",
+    "hl": "tabela",
+    "label": "Valores, status e situação",
+    "mobile": {
+     "shot": "fat_end",
+     "focus": "tabela",
+     "hl": "status"
+    },
+    "say": "Cada item mostra quantidade, valor unitário e valor total. O Status é a etapa, e a Situação diz de onde o item vem."
+   }
+  ]
+ },
+ {
+  "ch": "2",
+  "title": "Faturamento ciente e Entregue",
+  "beats": [
+   {
+    "shot": "fat",
+    "focus": "card",
+    "cursor": "ciente",
+    "click": true,
+    "hl": "ciente",
+    "label": "Faturamento ciente",
+    "mobile": {
+     "shot": "fat_foot",
+     "focus": null
+    },
+    "say": "Clique em Faturamento ciente. Só os itens do faturamento mudam: aqui, o alho de revenda, que fica verde."
+   },
+   {
+    "shot": "fat_ciente",
+    "focus": "card",
+    "hl": "libEnt",
+    "label": "Produção com cadeado",
+    "mobile": {
+     "shot": "fat_ciente_end",
+     "focus": "tabela",
+     "hl": "rProd"
+    },
+    "say": "A páprica está na Produção, com cadeado, e o faturamento só vê. Por isso, Entregue fica bloqueado até tudo estar em Faturamento."
+   },
+   {
+    "shot": "fat_lib",
+    "focus": "card",
+    "hl": "libEnt",
+    "label": "Tudo em Faturamento",
+    "mobile": {
+     "shot": "fat_lib_end",
+     "focus": "tabela",
+     "hl": "rProd"
+    },
+    "say": "Quando o PCP libera, a páprica aparece como liberado, e Entregue fica disponível."
+   }
+  ]
+ },
+ {
+  "ch": "3",
+  "title": "Observações, totais e PDF",
+  "beats": [
+   {
+    "shot": "fat_lib",
+    "focus": "card",
+    "hl": "foot",
+    "label": "Observações e totais",
+    "mobile": {
+     "shot": "fat_foot2",
+     "focus": null
+    },
+    "say": "No rodapé ficam as observações do pedido e, à direita, o subtotal, o desconto financeiro e o total."
+   },
+   {
+    "shot": "fat_pdf",
+    "cursor": "pdf",
+    "click": true,
+    "hl": "pdf",
+    "label": "Exportar PDF",
+    "say": "O botão Exportar PDF gera um arquivo com todos os cartões, pela entrega mais próxima."
+   }
+  ]
+ },
+ {
+  "ch": "4",
+  "title": "Cadastrar veículo",
+  "beats": [
+   {
+    "shot": "veic_btn",
+    "focus": "nova",
+    "cursor": "cad",
+    "click": true,
+    "hl": "cad",
+    "label": "Cadastrar veículo",
+    "mobile": {
+     "focus": null
+    },
+    "say": "Na aba Montar rota, clique em Cadastrar veículo, logo abaixo de Criar rota."
+   },
+   {
+    "shot": "veic_dlg",
+    "focus": "dialog",
+    "cursor": "salvar",
+    "click": true,
+    "hl": "campos",
+    "label": "Modelo, placa e peso",
+    "say": "Informe o modelo, a placa e o peso que o veículo aguenta, em quilos. Depois, clique em Salvar."
+   },
+   {
+    "shot": "veic_ok",
+    "focus": "dialog",
+    "hl": "lista",
+    "label": "Veículo na lista",
+    "say": "O veículo entra na lista. O motorista não é cadastrado aqui: ele é digitado em cada rota."
+   }
+  ]
+ },
+ {
+  "ch": "5",
+  "title": "Montar a rota",
+  "beats": [
+   {
+    "shot": "montar",
+    "focus": "lista",
+    "hl": "kg",
+    "label": "Peso de cada pedido",
+    "mobile": {
+     "focus": null
+    },
+    "say": "Os pedidos aguardando entrega aparecem por cidade, cada um com o seu peso em quilos."
+   },
+   {
+    "shot": "montar_sel",
+    "hl": "carga",
+    "label": "Peso da carga",
+    "say": "Marque os pedidos e escolha o veículo. O quadro soma o peso da carga e, se passar da capacidade, fica vermelho."
+   },
+   {
+    "shot": "montar_ok",
+    "cursor": "criar",
+    "click": true,
+    "hl": "motoCarga",
+    "label": "Cabe no veículo",
+    "say": "Tire um pedido e a carga volta a caber. Digite o nome do motorista e clique em Criar rota."
+   },
+   {
+    "shot": "rotas",
+    "focus": "tabela",
+    "hl": "nova",
+    "label": "Rota criada",
+    "say": "A rota aparece na aba Rotas, com o motorista e o veículo."
+   }
+  ]
+ },
+ {
+  "ch": "",
+  "title": "Pronto!",
+  "outro": true,
+  "end1": "Rotas de entrega",
+  "end2": "Este vídeo fica em Tutoriais",
+  "summary": [
+   "Cartão com o pedido inteiro",
+   "Ciente só nos itens do faturamento",
+   "Observações, totais e PDF",
+   "Veículo e peso da carga"
+  ],
+  "beats": [
+   {
+    "shot": "fat_lib",
+    "say": "Resumindo: o cartão mostra o pedido inteiro, o faturamento marca só os seus itens, e a rota confere o peso da carga. Bom trabalho!"
+   }
+  ]
+ }
+]

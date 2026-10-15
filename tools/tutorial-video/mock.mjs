@@ -24,14 +24,14 @@ export function installMock(page, opts = {}) {
   const session = { access_token: jwt, token_type: 'bearer', expires_in: 3600 * 24 * 30, expires_at: Math.floor(Date.now() / 1000) + 3600 * 24 * 30, refresh_token: 'demo-refresh', user };
   const log = opts.log || (() => {});
 
-  function embed(row, table, spec) {
+  function embed(row, table, spec, src = row) { // src: linha original (a chave estrangeira pode não estar entre as colunas pedidas)
     let m = spec.match(/^(?:(\w+):)?(\w+)(?:!\w+)?\((.*)\)$/s); if (!m) return;
     const [, alias, tgt, inner] = m, key = alias || tgt, rows = D[tgt] || [], s = singular(tgt);
-    let fk = row[`${s}_id`] !== undefined ? [`${s}_id`, 'id'] : null;
-    if (!fk && tgt === 'products' && 'product_code' in row) fk = ['product_code', 'code'];
+    let fk = src[`${s}_id`] !== undefined ? [`${s}_id`, 'id'] : null;
+    if (!fk && tgt === 'products' && 'product_code' in src) fk = ['product_code', 'code'];
     if (!fk && tgt === 'profiles') fk = ['created_by', 'id'];
-    if (fk) { const r = rows.find((x) => eqv(x[fk[1]], row[fk[0]])); row[key] = r ? project(r, tgt, inner) : null; return; }
-    const ps = singular(table); row[key] = rows.filter((x) => eqv(x[`${ps}_id`], row.id)).map((r) => project(r, tgt, inner));
+    if (fk) { const r = rows.find((x) => eqv(x[fk[1]], src[fk[0]])); row[key] = r ? project(r, tgt, inner) : null; return; }
+    const ps = singular(table); row[key] = rows.filter((x) => eqv(x[`${ps}_id`], src.id)).map((r) => project(r, tgt, inner));
   }
   function project(r, table, sel) {
     const parts = splitTop(sel || '*'); let out = {};
@@ -39,7 +39,7 @@ export function installMock(page, opts = {}) {
       if (p.includes('(')) continue;
       if (p === '*') out = { ...out, ...r }; else { const [a, c] = p.includes(':') ? p.split(':') : [p, p]; out[a] = r[c.split('::')[0]]; }
     }
-    for (const p of parts) if (p.includes('(')) embed(out, table, p);
+    for (const p of parts) if (p.includes('(')) embed(out, table, p, r);
     return out;
   }
   function query(table, url) {

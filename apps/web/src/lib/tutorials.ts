@@ -25,6 +25,43 @@ export interface Tutorial {
 
 export const TUTORIALS: Tutorial[] = [
   {
+    id: 'rotas-faturamento',
+    version: '1.11.4',
+    date: '2026-10-15',
+    title: 'Rotas de entrega: faturamento e rota',
+    summary: 'Em Rotas de entrega, o cartão do faturamento mostra o pedido inteiro com valores, status e situação de cada item, observações e totais, e exporta em PDF. Na montagem da rota, cadastre os veículos e confira o peso da carga contra a capacidade.',
+    web: 'rotas-faturamento-web.mp4',
+    mobile: 'rotas-faturamento-mobile.mp4',
+    poster: 'rotas-faturamento-web.jpg',
+    steps: [
+      { title: 'O cartão do faturamento', items: [
+        'Cada cartão é o pedido inteiro, pela entrega mais próxima.',
+        'No cabeçalho: código e nome do cliente, CNPJ, número do pedido, vendedor e data de entrega.',
+        'Nos itens: código, produto, quantidade, equivalência, valor unitário, valor total, Status (a etapa) e Situação (revenda, estoque, liberado ou Produção, com cadeado).',
+      ] },
+      { title: 'Faturamento ciente e Entregue', items: [
+        'Faturamento ciente muda só os itens do faturamento (revenda e o que o estoque atende); o item de revenda continua dizendo revenda.',
+        'Item da Produção aparece com cadeado: o faturamento só vê, até o PCP liberar.',
+        'Entregue só fica disponível quando todos os itens do pedido estão em Faturamento.',
+        'Voltar para aberto devolve os itens do faturamento.',
+      ] },
+      { title: 'Observações, totais e PDF', items: [
+        'No rodapé do cartão: observações à esquerda; subtotal dos itens, desconto financeiro e total à direita.',
+        'Exportar PDF gera um arquivo com todos os cartões do faturamento.',
+      ] },
+      { title: 'Cadastrar veículo', items: [
+        'Na aba Montar rota, clique em Cadastrar veículo (abaixo de Criar rota).',
+        'Informe Modelo, Veículo (placa) e Peso (kg) que ele aguenta e clique em Salvar.',
+        'O motorista não é cadastrado: ele é digitado em cada rota.',
+      ] },
+      { title: 'Montar a rota', items: [
+        'Os pedidos aguardando entrega aparecem por cidade, cada um com o peso em kg.',
+        'Marque os pedidos e escolha o veículo: o quadro mostra o peso da carga e a capacidade, e fica vermelho se passar.',
+        'Digite o nome do motorista e clique em Criar rota; ela aparece na aba Rotas.',
+      ] },
+    ],
+  },
+  {
     id: 'producao-faturamento',
     version: '1.11.1',
     date: '2026-10-14',

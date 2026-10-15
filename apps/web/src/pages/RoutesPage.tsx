@@ -98,7 +98,7 @@ export default function RoutesPage() {
                   {vehicles.data?.length ? (
                     <Select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
                       <option value="">Escolha o veículo</option>
-                      {vehicles.data.map((v) => <option key={v.id} value={v.id}>{v.model} · {v.plate}{v.capacity_kg ? ` · ${fmtKg(Number(v.capacity_kg))}` : ''}</option>)}
+                      {vehicles.data.map((v) => <option key={v.id} value={v.id}>{v.model} {v.plate}</option>)}
                     </Select>
                   ) : <Input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="Placa (ou cadastre o veículo)" />}
                 </Field>
