@@ -159,7 +159,19 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.11.4</span><span class="d">15/10/2026</span><span class="tag">atual</span>
+        <span class="v">v1.12.0</span><span class="d">16/10/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Rotas de entrega no fluxo</strong> (solicitação #17): abas na ordem <strong>Faturamento → Montar rota → Rotas → Relatório</strong>. O pedido sai de uma aba quando passa para a próxima.</li>
+          <li>Faturamento: sem o botão Entregue. Quando todos os itens estão em Faturamento, o pedido vai sozinho para Montar rota.</li>
+          <li>Montar rota: só os pedidos prontos (todos os itens em Faturamento e fora de rota), com a opção de voltar para o Faturamento.</li>
+          <li>Rotas: Saiu e depois <strong>Entregue</strong>, que fecha o ciclo (os itens ficam Entregue) e manda a rota para o Relatório; cada pedido pode voltar para Montar rota.</li>
+          <li>Relatório: tudo o que foi entregue, com data e hora; o ADM pode voltar a rota para Rotas.</li>
+          <li><strong>Romaneio</strong> (sem as etiquetas de caixa): pedido, cliente, cidade, bairro, produto e quantidade de saída em unidades (o kg é convertido pelo cadastro: 10 kg do 471 de 10 kg = 1 unidade).</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.11.4</span><span class="d">15/10/2026</span>
         <ul>
           <li><strong>Vídeo tutorial "Rotas de entrega: faturamento e rota"</strong> (computador e celular), com a voz em português do Brasil.</li>
           <li>Correções: no PDF do faturamento, a linha de totais não sai mais cortada; o nome do veículo cabe na lista da rota; no celular, a tabela de itens do cartão cabe na tela.</li>

@@ -6,7 +6,7 @@ import { normalizedKey } from '@/domain/normalize';
 import { onlyDigits } from '@/lib/utils';
 import { addAlias } from './products';
 
-const ORDER_SELECT = '*, customer:customers(id, name, cnpj, city, state, group_name)';
+const ORDER_SELECT = '*, customer:customers(id, name, cnpj, city, state, district, code, group_name)';
 
 export interface OrderFilters {
   status?: OrderStatus | 'todos';
@@ -31,7 +31,7 @@ export async function listOrders(f: OrderFilters = {}): Promise<Order[]> {
 export async function getOrder(id: string): Promise<Order & { items: OrderItem[] }> {
   const order = unwrap(await supabase.from('orders').select(ORDER_SELECT).eq('id', id).single()) as Order;
   const items = unwrap(
-    await supabase.from('order_items').select('*, product:products(code, description)').eq('order_id', id).order('seq'),
+    await supabase.from('order_items').select('*, product:products(code, description, weight_g, equivalence_kg)').eq('order_id', id).order('seq'),
   ) as OrderItem[];
   return { ...order, items };
 }

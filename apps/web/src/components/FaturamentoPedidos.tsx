@@ -30,7 +30,7 @@ function situacao(it: Item): { texto: string; travado: boolean } {
  * O faturamento só muda os itens dele (revenda e os que o estoque atende); os itens da Produção ele só vê, até o PCP liberar.
  * Entregue só quando todos os itens do pedido estão em Faturamento ciente.
  */
-export function FaturamentoPedidos({ pedidos, podeMudar }: { pedidos: PedidoNoFluxo[]; podeMudar: boolean }) {
+export function FaturamentoPedidos({ pedidos, podeMudar, onEnviarMontar }: { pedidos: PedidoNoFluxo[]; podeMudar: boolean; onEnviarMontar?: (orderId: string) => void }) {
   const qc = useQueryClient();
   const go = useMutation({
     mutationFn: (v: { ids: string[]; etapa: Etapa }) => mudarEtapa(v.ids, v.etapa),
@@ -90,9 +90,10 @@ export function FaturamentoPedidos({ pedidos, podeMudar }: { pedidos: PedidoNoFl
             {podeMudar && (
               <div className="flex flex-wrap items-center gap-2 border-t border-line p-3">
                 {ciente.length > 0 && <Button size="sm" icon={<CheckCircle2 className="size-4" />} loading={go.isPending} onClick={() => go.mutate({ ids: ciente, etapa: 'faturado' })}>Faturamento ciente</Button>}
-                <Button size="sm" variant={todosCiente ? 'primary' : 'outline'} icon={<Truck className="size-4" />} disabled={!todosCiente || go.isPending} onClick={() => go.mutate({ ids: p.todos.map((i) => i.itemId), etapa: 'entregue' })}>Entregue</Button>
+                {/* solicitação #17: o Entregue saiu daqui (fica na aba Rotas); com tudo em Faturamento o pedido vai para Montar rota */}
+                {todosCiente && onEnviarMontar && <Button size="sm" variant="outline" icon={<Truck className="size-4" />} onClick={() => onEnviarMontar(p.orderId)}>Enviar para Montar rota</Button>}
                 {voltar.length > 0 && <Button size="sm" variant="ghost" icon={<Undo2 className="size-4" />} onClick={() => go.mutate({ ids: voltar, etapa: 'aberto' })}>Voltar para aberto</Button>}
-                {!todosCiente && <span className="text-xs text-muted">Entregue fica liberado quando todos os itens estiverem em Faturamento.</span>}
+                {!todosCiente && <span className="text-xs text-muted">Com todos os itens em Faturamento, o pedido vai para Montar rota.</span>}
               </div>
             )}
           </Card>

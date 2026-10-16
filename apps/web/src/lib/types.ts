@@ -187,6 +187,8 @@ export interface Order {
   status: OrderStatus;
   source: string;
   notes: string | null;
+  /** solicitação #17: 'faturamento' = devolvido de Montar rota para o Faturamento */
+  rota_etapa?: string | null;
   /** Vendas parte 4: pode enviar em outras embalagens de medida (ex.: 2 × 5 kg no lugar de 10 kg); null = sem resposta */
   allow_other_packaging?: boolean | null;
   stock_posted?: boolean;
@@ -200,7 +202,7 @@ export interface Order {
   discount_value?: number | null;
   created_at: string;
   updated_at: string;
-  customer?: Pick<Customer, 'id' | 'name' | 'cnpj' | 'city' | 'state' | 'group_name'> | null;
+  customer?: Pick<Customer, 'id' | 'name' | 'cnpj' | 'city' | 'state' | 'group_name'> & { district?: string | null; code?: string | null } | null;
 }
 
 export interface OrderItem {
@@ -316,7 +318,7 @@ export type PurchaseStatus = 'rascunho' | 'enviado' | 'recebido' | 'cancelado';
 export interface PurchaseOrder { id: string; supplier: string | null; status: PurchaseStatus; notes: string | null; production_run_id: string | null; created_by: string | null; created_at: string; received_at: string | null; items?: PurchaseOrderItem[] }
 export interface PurchaseOrderItem { id: string; purchase_order_id: string; supply_id: string; qty: number; unit_cost: number | null; supply?: Supply | null }
 export type RouteStatus = 'planejada' | 'em_rota' | 'concluida';
-export interface DeliveryRoute { id: string; name: string; route_date: string; driver: string | null; vehicle: string | null; status: RouteStatus; order_ids: string[]; notes: string | null; created_at: string }
+export interface DeliveryRoute { id: string; name: string; route_date: string; driver: string | null; vehicle: string | null; status: RouteStatus; order_ids: string[]; notes: string | null; created_at: string; total_weight_kg?: number | null; delivered_at?: string | null }
 export interface AuditEntry { id: string; table_name: string; row_id: string; action: 'INSERT' | 'UPDATE' | 'DELETE'; old_data: Record<string, unknown> | null; new_data: Record<string, unknown> | null; changed_by: string | null; changed_by_name: string | null; changed_at: string }
 export interface ProductStats { code: string; description: string; min_stock: number; weekly_avg_units: number; total_units_all: number; revenue_all: number }
 export interface DbStats { db_bytes: number; tables: Array<{ name: string; bytes: number; rows: number }>; audit_rows: number; activities_rows: number }
