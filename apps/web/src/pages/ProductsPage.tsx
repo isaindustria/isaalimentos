@@ -11,6 +11,7 @@ import { getCurrentStock } from '@/api/stock';
 import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Select, Table, Tabs } from '@/components/primitives';
 import type { Product } from '@/lib/types';
 import { fmtInt } from '@/lib/utils';
+import { useColunas, CabecalhoColunas } from '@/components/Colunas';
 import { useAuth } from '@/hooks/useAuth';
 
 /** 60 -> "60 g"; 1500 -> "1,5 kg". */
@@ -79,6 +80,18 @@ export default function ProductsPage() {
     save.mutate(editing);
   }
 
+  // solicitação #18: o ADM arrasta as colunas para mudar a ordem (vale para todos)
+  const colunasProd = useColunas<Product>('produtos', [
+    { key: 'codigo', label: 'Código', fixa: true, td: 'font-mono text-xs font-semibold', cell: (p) => p.code },
+    { key: 'descricao', label: 'Descrição', fixa: true, td: 'font-medium', cell: (p) => p.description },
+    { key: 'referencia', label: 'Referência', td: 'text-muted text-xs', cell: (p) => p.reference ?? '—' },
+    { key: 'un_caixa', label: 'Un/caixa', th: 'text-right', td: 'text-right num', cell: (p) => p.units_per_box },
+    { key: 'peso', label: 'Peso', th: 'text-right', td: 'text-right num text-muted', cell: (p) => fmtWeight(p.weight_g) },
+    { key: 'estoque', label: 'Estoque', th: 'text-right', td: 'text-right num font-semibold', cell: (p) => { const st = stockMap.get(p.code); return st ? fmtInt(st.total) : '—'; } },
+    { key: 'status', label: 'Status', cell: (p) => (p.active ? <Badge tone="ok" dot>Ativo</Badge> : <Badge>Inativo</Badge>) },
+    { key: 'acoes', label: '', fixa: true, td: 'text-right', cell: (p) => <Button size="sm" variant="ghost" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => setEditing(p)}>Editar</Button> },
+  ]);
+
   return (
     <>
       <PageHeader
@@ -102,45 +115,25 @@ export default function ProductsPage() {
       </div>
 
       {tab === 'produtos' ? (
+        <>
+        {colunasProd.botao && <div className="mb-2 flex justify-end">{colunasProd.botao}</div>}
         <Card padded={false}>
           {filtered.length ? (
             <Table>
-              <thead>
-                <tr>
-                  <th className="th">Código</th>
-                  <th className="th">Descrição</th>
-                  <th className="th">Referência</th>
-                  <th className="th text-right">Un/caixa</th>
-                  <th className="th text-right">Peso</th>
-                  <th className="th text-right">Estoque</th>
-                  <th className="th">Status</th>
-                  <th className="th" />
-                </tr>
-              </thead>
+              <thead><CabecalhoColunas cols={colunasProd.visiveis} thProps={colunasProd.thProps} /></thead>
               <tbody>
-                {filtered.map((p) => {
-                  const s = stockMap.get(p.code);
-                  return (
-                    <tr key={p.code} className="hover:bg-surface-2/60">
-                      <td className="td font-mono text-xs font-semibold">{p.code}</td>
-                      <td className="td font-medium">{p.description}</td>
-                      <td className="td text-muted text-xs">{p.reference ?? '—'}</td>
-                      <td className="td text-right num">{p.units_per_box}</td>
-                      <td className="td text-right num text-muted">{fmtWeight(p.weight_g)}</td>
-                      <td className="td text-right num font-semibold">{s ? fmtInt(s.total) : '—'}</td>
-                      <td className="td">{p.active ? <Badge tone="ok" dot>Ativo</Badge> : <Badge>Inativo</Badge>}</td>
-                      <td className="td text-right">
-                        <Button size="sm" variant="ghost" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => setEditing(p)}>Editar</Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filtered.map((p) => (
+                  <tr key={p.code} className="hover:bg-surface-2/60">
+                    {colunasProd.visiveis.map((c) => <td key={c.key} className={`td ${c.td ?? ''}`}>{c.cell(p)}</td>)}
+                  </tr>
+                ))}
               </tbody>
             </Table>
           ) : (
             <EmptyState title="Nenhum produto" description="Importe a planilha de estoque ou cadastre manualmente." />
           )}
         </Card>
+        </>
       ) : (
         <Card padded={false}>
           {aliases.data?.length ? (

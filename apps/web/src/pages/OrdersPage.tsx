@@ -6,9 +6,10 @@ import { listOrders, listPendingItems, type OrderFilters } from '@/api/orders';
 import { listCustomers } from '@/api/customers';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select, Table } from '@/components/primitives';
 import { fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
-import type { OrderStatus } from '@/lib/types';
+import type { Order, OrderStatus } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import { SalesCards } from '@/components/SalesCards';
+import { useColunas, CabecalhoColunas } from '@/components/Colunas';
 
 export const STATUS_LABEL: Record<OrderStatus, { label: string; tone: 'info' | 'brand' | 'ok' | 'neutral' | 'danger' | 'warn' }> = {
   aberto: { label: 'Aberto', tone: 'danger' },
@@ -42,6 +43,16 @@ export default function OrdersPage() {
   const pending = useQuery({ queryKey: ['pending-items'], queryFn: listPendingItems });
   const canNew = canWriteArea('compras') || isSeller;
 
+  // solicitação #18: o ADM arrasta as colunas para mudar a ordem (vale para todos)
+  const colunas = useColunas<Order>('pedidos', [
+    { key: 'pedido', label: 'Pedido', fixa: true, td: 'font-semibold', cell: (o) => <>#{o.order_number ?? '—'}<div className="text-[11px] font-normal text-muted">{o.import_id ? 'PDF' : 'manual'}<span className="sm:hidden"> · {fmtDate(o.order_date)}</span></div></> },
+    { key: 'cliente', label: 'Cliente', fixa: true, cell: (o) => <><div className="font-medium">{o.customer?.name ?? o.customer_name ?? '—'}</div><div className="text-xs text-muted">{[o.customer?.city, o.customer?.state].filter(Boolean).join(' - ')}</div></> },
+    { key: 'data', label: 'Data', th: 'hidden sm:table-cell', td: 'hidden text-muted sm:table-cell', cell: (o) => fmtDate(o.order_date) },
+    { key: 'entrega', label: 'Entrega', th: 'hidden sm:table-cell', td: 'hidden text-muted sm:table-cell', cell: (o) => fmtDate(o.delivery_date) },
+    { key: 'valor', label: 'Valor', th: 'text-right', td: 'text-right num font-semibold', cell: (o) => <>{fmtBRL(o.total_value)}<div className="mt-1 sm:hidden"><StatusBadge status={o.status} /></div></> },
+    { key: 'status', label: 'Status', th: 'hidden sm:table-cell', td: 'hidden sm:table-cell', cell: (o) => <StatusBadge status={o.status} /> },
+    { key: 'vendedor', label: 'Vendedor', th: 'hidden sm:table-cell', td: 'hidden text-muted sm:table-cell', cell: (o) => o.seller_name ?? '—' },
+  ]);
   const totalValue = (orders.data ?? []).reduce((s, o) => s + Number(o.total_value), 0);
 
   return (
@@ -76,40 +87,22 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {colunas.botao && <div className="mb-2 flex justify-end">{colunas.botao}</div>}
       <Card padded={false}>
         {orders.data?.length ? (
           <Table className="[&>table]:min-w-0">
-            <thead>
-              <tr>
-                <th className="th">Pedido</th>
-                <th className="th">Cliente</th>
-                <th className="th hidden sm:table-cell">Data</th>
-                <th className="th hidden sm:table-cell">Entrega</th>
-                <th className="th text-right">Valor</th>
-                <th className="th hidden sm:table-cell">Status</th>
-              </tr>
-            </thead>
+            <thead><CabecalhoColunas cols={colunas.visiveis} thProps={colunas.thProps} /></thead>
             <tbody>
               {orders.data.map((o) => (
                 <tr key={o.id} className={`cursor-pointer ${o.status === 'cancelado' ? CANCELADO_ROW : 'hover:bg-surface-2/60'}`} onClick={() => navigate(`/pedidos/${o.id}`)}>
-                  <td className="td font-semibold">#{o.order_number ?? '—'}<div className="text-[11px] font-normal text-muted">{o.import_id ? 'PDF' : 'manual'}<span className="sm:hidden"> · {fmtDate(o.order_date)}</span></div></td>
-                  <td className="td">
-                    <div className="font-medium">{o.customer?.name ?? o.customer_name ?? '—'}</div>
-                    <div className="text-xs text-muted">{[o.customer?.city, o.customer?.state].filter(Boolean).join(' - ')}</div>
-                  </td>
-                  <td className="td hidden text-muted sm:table-cell">{fmtDate(o.order_date)}</td>
-                  <td className="td hidden text-muted sm:table-cell">{fmtDate(o.delivery_date)}</td>
-                  <td className="td text-right num font-semibold">{fmtBRL(o.total_value)}<div className="mt-1 sm:hidden"><StatusBadge status={o.status} /></div></td>
-                  <td className="td hidden sm:table-cell"><StatusBadge status={o.status} /></td>
+                  {colunas.visiveis.map((c) => <td key={c.key} className={`td ${c.td ?? ''}`}>{c.cell(o)}</td>)}
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className="bg-surface-2/50">
-                <td className="td font-semibold sm:hidden" colSpan={2}>{fmtInt(orders.data.length)} pedido(s)</td>
-                <td className="td hidden font-semibold sm:table-cell" colSpan={4}>{fmtInt(orders.data.length)} pedido(s) · {fmtInt(orders.data.filter((o) => o.import_id).length)} do PDF · {fmtInt(orders.data.filter((o) => !o.import_id).length)} manuais</td>
-                <td className="td text-right num font-bold">{fmtBRL(totalValue)}</td>
-                <td className="td hidden sm:table-cell" />
+                <td className="td font-semibold" colSpan={Math.max(1, colunas.visiveis.length - 1)}>{fmtInt(orders.data.length)} pedido(s)<span className="hidden sm:inline"> · {fmtInt(orders.data.filter((o) => o.import_id).length)} do PDF · {fmtInt(orders.data.filter((o) => !o.import_id).length)} manuais</span> · total <b className="num">{fmtBRL(totalValue)}</b></td>
+                <td className="td" />
               </tr>
             </tfoot>
           </Table>
