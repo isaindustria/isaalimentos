@@ -31,6 +31,7 @@ function unidadesDeSaida(i: ItemRomaneio): number {
 /**
  * Rotas de entrega (solicitação #17), na ordem do fluxo: Faturamento → Montar rota → Rotas → Relatório.
  * O pedido sai de uma aba e vai para a próxima; dá para voltar cada passo (Relatório → Rotas só o ADM).
+ * No romaneio, cada pedido tem o campo da NF (solicitação #19).
  */
 export default function RoutesPage() {
   const qc = useQueryClient();
