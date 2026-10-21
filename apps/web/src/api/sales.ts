@@ -131,7 +131,7 @@ export interface SalesItemInput { product: Pick<Product, 'code' | 'description' 
 export interface SalesOrderInput {
   id?: string;
   customer: Pick<Customer, 'id' | 'name' | 'cnpj' | 'seller_name'>;
-  order_number: string | null;
+  /** solicitação #19: o número é gerado pelo sistema (gatilho no banco); não vai no payload */
   order_date: string | null;
   delivery_date: string | null;
   status: string;
@@ -149,7 +149,6 @@ export async function saveSalesOrder(input: SalesOrderInput): Promise<{ id: stri
     customer_name: input.customer.name,
     customer_cnpj: input.customer.cnpj,
     seller_name: input.customer.seller_name ?? null,
-    order_number: input.order_number || null,
     order_date: input.order_date,
     delivery_date: input.delivery_date,
     status: input.status,
@@ -163,16 +162,11 @@ export async function saveSalesOrder(input: SalesOrderInput): Promise<{ id: stri
     allow_other_packaging: input.allow_other_packaging,
   };
   let id = input.id;
-  try {
-    if (id) {
-      unwrap(await supabase.from('orders').update(payload).eq('id', id));
-      unwrap(await supabase.from('order_items').delete().eq('order_id', id));
-    } else {
-      id = (unwrap(await supabase.from('orders').insert(payload).select('id').single()) as { id: string }).id;
-    }
-  } catch (e) {
-    if (/duplicate key|orders_number/i.test((e as Error).message)) throw new Error(`Já existe um pedido nº ${input.order_number} para este cliente.`);
-    throw e;
+  if (id) {
+    unwrap(await supabase.from('orders').update(payload).eq('id', id));
+    unwrap(await supabase.from('order_items').delete().eq('order_id', id));
+  } else {
+    id = (unwrap(await supabase.from('orders').insert(payload).select('id').single()) as { id: string }).id;
   }
   const rows = input.items.map((i, idx) => {
     const upb = i.product.units_per_box > 0 ? i.product.units_per_box : 48;

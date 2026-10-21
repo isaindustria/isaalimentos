@@ -156,3 +156,8 @@ export async function tirarDaRota(route: { id: string; order_ids: string[] }, or
 export async function marcarRotaEtapa(orderId: string, etapa: 'faturamento' | null) {
   unwrap(await supabase.from('orders').update({ rota_etapa: etapa }).eq('id', orderId));
 }
+
+/** Solicitação #19: número da NF do pedido, digitado no romaneio. */
+export async function salvarNF(orderId: string, nf: string): Promise<void> {
+  unwrap(await supabase.from('orders').update({ nf_number: nf || null }).eq('id', orderId));
+}

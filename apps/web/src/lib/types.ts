@@ -189,6 +189,8 @@ export interface Order {
   notes: string | null;
   /** solicitação #17: 'faturamento' = devolvido de Montar rota para o Faturamento */
   rota_etapa?: string | null;
+  /** solicitação #19: número da NF digitado no romaneio */
+  nf_number?: string | null;
   /** Vendas parte 4: pode enviar em outras embalagens de medida (ex.: 2 × 5 kg no lugar de 10 kg); null = sem resposta */
   allow_other_packaging?: boolean | null;
   stock_posted?: boolean;

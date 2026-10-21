@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cnpjDigits, fmtCnpj, orderTotals, parseDiscounts, quantityError, saleUnitFor } from './sales';
+import { cnpjDigits, fmtCnpj, orderTotals, parseDiscounts, podeEditarPedido, quantityError, saleUnitFor } from './sales';
 
 describe('vendas', () => {
   it('CNPJ: pontuação ignorada e zeros à esquerda preservados', () => {
@@ -36,5 +36,21 @@ describe('vendas', () => {
     expect(t.subtotal).toBe(70);
     expect(t.discount).toBe(2.1);
     expect(t.total).toBe(67.9);
+  });
+});
+
+describe('podeEditarPedido (solicitação #19)', () => {
+  const base = { status: 'aberto', created_by: 'u1', items: [{ stage: 'aberto' }] };
+  it('só quem lançou edita, enquanto está em Aberto', () => {
+    expect(podeEditarPedido(base, 'u1', false)).toBe(true);
+    expect(podeEditarPedido(base, 'u2', true)).toBe(false);
+  });
+  it('trava depois que sai de Aberto (Produção, Faturamento, rota, Relatório)', () => {
+    expect(podeEditarPedido({ ...base, status: 'entregue' }, 'u1', true)).toBe(false);
+    expect(podeEditarPedido({ ...base, items: [{ stage: 'faturado' }] }, 'u1', false)).toBe(false);
+  });
+  it('pedido sem autor (importado) fica com o ADM', () => {
+    expect(podeEditarPedido({ ...base, created_by: null }, 'u1', true)).toBe(true);
+    expect(podeEditarPedido({ ...base, created_by: null }, 'u1', false)).toBe(false);
   });
 });

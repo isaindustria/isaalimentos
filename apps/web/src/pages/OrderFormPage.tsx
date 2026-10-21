@@ -149,7 +149,7 @@ function LegacyOrderForm() {
               </Select>
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Nº do pedido"><Input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} placeholder="opcional" /></Field>
+              <Field label="Nº do pedido"><Input value={orderNumber} readOnly tabIndex={-1} className="bg-surface-2" placeholder="automático" /></Field>
               <Field label="Status">
                 <Select value={status} onChange={(e) => setStatus(e.target.value as OrderStatus)}>
                   {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}

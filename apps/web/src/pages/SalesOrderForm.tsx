@@ -10,7 +10,7 @@ import { logActivity } from '@/api/activity';
 import { Button, Card, Dialog, Field, Input, PageHeader, Select, Textarea } from '@/components/primitives';
 import { SearchSelect, type SearchOption } from '@/components/SearchSelect';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { fmtCnpj, normalizeKey, orderTotals, quantityError, saleUnitFor, type SaleUnit } from '@/domain/sales';
+import { fmtCnpj, normalizeKey, orderTotals, podeEditarPedido, quantityError, saleUnitFor, type SaleUnit } from '@/domain/sales';
 import { fmtBRL, fmtDate } from '@/lib/utils';
 import type { Order, OrderItem, OrderStatus, Product } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,7 +26,7 @@ const fmtQty = (n: number, u: SaleUnit | null) => (u === 'kg' ? n.toLocaleString
 export default function SalesOrderForm({ existing }: { existing?: Order & { items: OrderItem[] } }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { session, profile, isSeller } = useAuth();
+  const { session, profile, isAdmin } = useAuth();
   const editing = Boolean(existing);
   const editors = useEditLock(existing ? `order:${existing.id}` : 'order:new');
 
@@ -36,7 +36,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
 
   const [customerId, setCustomerId] = useState<string | null>(existing?.customer_id ?? null);
   const [discount, setDiscount] = useState<number>(Number(existing?.discount_pct ?? 0));
-  const [orderNumber, setOrderNumber] = useState(existing?.order_number ?? '');
+  const orderNumber = existing?.order_number ?? '';
   const [orderDate, setOrderDate] = useState(existing?.order_date ?? new Date().toISOString().slice(0, 10));
   const [deliveryDate, setDeliveryDate] = useState(existing?.delivery_date ?? '');
   // O status saiu desta tela (vai para outra tela): pedido novo nasce Aberto; na edição, mantém o que já tinha.
@@ -99,7 +99,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   }
   /** "Não" no aviso de pedido em aberto: limpa tudo e recomeça um pedido novo do zero. */
   function resetForm() {
-    setCustomerId(null); setDiscount(0); setOrderNumber(''); setOrderDate(new Date().toISOString().slice(0, 10)); setDeliveryDate('');
+    setCustomerId(null); setDiscount(0); setOrderDate(new Date().toISOString().slice(0, 10)); setDeliveryDate('');
     setNotes(''); setOtherPack(null); setLines([emptyLine()]); setShowErrors(false); setDirty(false); setDupAsk(null);
   }
 
@@ -154,7 +154,6 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
     mutationFn: () => saveSalesOrder({
       id: existing?.id,
       customer: customer!,
-      order_number: orderNumber.trim() || null,
       order_date: orderDate || null,
       delivery_date: deliveryDate || null,
       status,
@@ -184,11 +183,13 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
   function back() { if (!dirty || window.confirm('Há alterações não salvas neste pedido. Sair mesmo assim?')) { setDirty(false); navigate(-1); } }
   const err = (m?: string) => (showErrors && m ? <p className="mt-1 text-xs text-danger">{m}</p> : null);
 
-  // Vendas parte 5: depois que o pedido sai de Aberto, o vendedor não edita mais
-  if (editing && isSeller && existing && (existing.status !== 'aberto' || existing.items.some((i) => (i.stage ?? 'aberto') !== 'aberto'))) {
+  // Solicitação #19: só quem lançou edita, e só enquanto o pedido está em Aberto (voltando as etapas, ele reabre)
+  if (editing && existing && !podeEditarPedido(existing, session?.user.id, isAdmin)) {
     return (
-      <Card title="Este pedido não pode mais ser editado">
-        <p className="text-sm text-muted">O pedido já saiu de Aberto ({existing.status.replace('_', ' ')}). Para mudar alguma coisa, fale com o escritório.</p>
+      <Card title="Este pedido não pode ser editado">
+        <p className="text-sm text-muted">{existing.status !== 'aberto' || existing.items.some((i) => (i.stage ?? 'aberto') !== 'aberto')
+          ? `O pedido já saiu de Aberto (${existing.status.replace('_', ' ')}). Para mudar, ele precisa voltar as etapas até ficar Aberto.`
+          : 'Só quem lançou o pedido pode editá-lo.'}</p>
         <Button className="mt-3" variant="outline" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(`/pedidos/${existing.id}`)}>Voltar ao pedido</Button>
       </Card>
     );
@@ -217,7 +218,7 @@ export default function SalesOrderForm({ existing }: { existing?: Order & { item
             {/* Ordem pedida pelo comercial (Vendas parte 2): Vendedor | Nº do pedido; Cliente; CNPJ | Desc. Fin.; Data | Entrega; Observações. O status saiu desta tela. */}
             <div className="grid grid-cols-2 gap-3">
               <Field label="Vendedor"><Input id="vendedor" value={customer ? customer.seller_name || 'sem vendedor' : ''} placeholder="—" readOnly tabIndex={-1} className="bg-surface-2" /></Field>
-              <Field label="Nº do pedido"><Input id="numero" value={orderNumber} onChange={(e) => { setOrderNumber(e.target.value); touch(); }} placeholder="opcional" /></Field>
+              <Field label="Nº do pedido" hint="Gerado pelo sistema"><Input id="numero" value={orderNumber} placeholder="automático" readOnly tabIndex={-1} className="bg-surface-2" /></Field>
             </div>
             <Field label="Cliente / loja">
               <SearchSelect id="cliente" ariaLabel="Cliente / loja" options={nameOptions} value={customerId} onChange={pickCustomer} placeholder="Digite o nome do cliente…" invalid={showErrors && !!formErrors.customer} digitsSearch />

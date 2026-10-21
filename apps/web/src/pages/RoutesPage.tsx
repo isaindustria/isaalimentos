@@ -10,7 +10,7 @@ import { Badge, Button, Card, Dialog, EmptyState, Field, Input, PageHeader, Sele
 import { fmtDate, fmtDateTime } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { FaturamentoPedidos } from '@/components/FaturamentoPedidos';
-import { carregarPlanejamento, entregarRota, listVehicles, marcarRotaEtapa, pesoPorPedido, removeVehicle, saveVehicle, tirarDaRota, voltarParaRotas, type Vehicle } from '@/api/planejamento';
+import { carregarPlanejamento, entregarRota, salvarNF, listVehicles, marcarRotaEtapa, pesoPorPedido, removeVehicle, saveVehicle, tirarDaRota, voltarParaRotas, type Vehicle } from '@/api/planejamento';
 import { equivalencia } from '@/domain/planejamento';
 import type { DeliveryRoute, Order, OrderItem, RouteStatus } from '@/lib/types';
 
@@ -207,10 +207,11 @@ export default function RoutesPage() {
         {print && (
           <div className="print:text-black">
             <div className="mb-3 text-sm text-muted">{fmtDate(print.route.route_date)} · {print.route.driver ?? 'sem motorista'}{print.route.vehicle ? ` · ${print.route.vehicle}` : ''}</div>
-            <Table dense><thead><tr><th className="th">Pedido</th><th className="th">Cliente</th><th className="th">Cidade</th><th className="th">Bairro</th><th className="th">Produto</th><th className="th text-right">Quantidade (un)</th><th className="th">Assinatura</th></tr></thead>
+            <Table dense><thead><tr><th className="th">Pedido</th><th className="th">NF</th><th className="th">Cliente</th><th className="th">Cidade</th><th className="th">Bairro</th><th className="th">Produto</th><th className="th text-right">Quantidade (un)</th><th className="th">Assinatura</th></tr></thead>
               <tbody>{print.orders.flatMap((o) => o.items.filter((i) => i.product_code).map((i, k) => (
                 <tr key={o.id + k} className={k === 0 ? 'border-t-2 border-line' : ''}>
                   <td className="td font-semibold">{k === 0 ? `#${o.order_number ?? '—'}` : ''}</td>
+                  <td className="td">{k === 0 ? <CampoNF pedido={o} pode={pode} /> : null}</td>
                   <td className="td">{k === 0 ? o.customer?.name ?? o.customer_name : ''}</td>
                   <td className="td text-xs">{k === 0 ? [o.customer?.city, o.customer?.state].filter(Boolean).join(' - ') : ''}</td>
                   <td className="td text-xs">{k === 0 ? o.customer?.district ?? '' : ''}</td>
@@ -223,6 +224,27 @@ export default function RoutesPage() {
         )}
       </Dialog>
       {cadVeiculo && <VeiculosDialog onClose={() => setCadVeiculo(false)} lista={vehicles.data ?? []} />}
+    </>
+  );
+}
+
+/** Solicitação #19: número da NF do pedido, digitado no romaneio (grava ao sair do campo). */
+function CampoNF({ pedido, pode }: { pedido: Order; pode: boolean }) {
+  const qc = useQueryClient();
+  const [v, setV] = useState(pedido.nf_number ?? '');
+  const salvar = useMutation({
+    mutationFn: (nf: string) => salvarNF(pedido.id, nf),
+    onSuccess: () => { toast.success(`NF do pedido #${pedido.order_number ?? ''} salva.`); qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['order', pedido.id] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  if (!pode) return <span className="num">{pedido.nf_number ?? ''}</span>;
+  return (
+    <>
+      <input aria-label={`NF do pedido ${pedido.order_number ?? ''}`} inputMode="numeric" value={v} placeholder="nº NF"
+        className="h-8 w-24 rounded-md border border-line bg-surface px-2 text-sm num print:hidden"
+        onChange={(e) => setV(e.target.value)} onBlur={() => { if (v.trim() !== (pedido.nf_number ?? '')) salvar.mutate(v.trim()); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+      <span className="hidden num print:inline">{v}</span>
     </>
   );
 }

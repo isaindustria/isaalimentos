@@ -93,3 +93,19 @@ export function sortByLastOrder<T extends { id: string; name: string }>(list: T[
   const sem = list.filter((c) => !last.has(c.id)).sort(byName);
   return { comPedido: com, semPedido: sem };
 }
+
+/**
+ * Solicitação #19: o pedido só é editado enquanto está em Aberto (nenhum item saiu para Produção,
+ * Faturamento, rota ou Relatório) e só por quem o lançou. Para editar um pedido que já andou,
+ * é preciso voltar as etapas até ele ficar Aberto de novo. Pedido sem autor (importado) fica com o ADM.
+ */
+export function podeEditarPedido(
+  o: { status: string; created_by?: string | null; items?: Array<{ stage?: string | null }> },
+  userId: string | null | undefined,
+  isAdmin: boolean,
+): boolean {
+  if (o.status !== 'aberto') return false;
+  if ((o.items ?? []).some((i) => (i.stage ?? 'aberto') !== 'aberto')) return false;
+  if (o.created_by) return !!userId && o.created_by === userId;
+  return isAdmin;
+}
