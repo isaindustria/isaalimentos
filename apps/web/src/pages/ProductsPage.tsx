@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Search, Pencil, Link2, Trash2, Upload } from 'lucide-react';
 import { ImportSheetDialog } from '@/components/ImportSheetDialog';
+import { ImportarCadastro } from '@/components/ImportarCadastroProducao';
 import { pick, toNumber } from '@/domain/parsers/sheet';
 import { bulkUpsertProducts, type ProductInput } from '@/api/products';
 import { deleteAlias, deleteProduct, listAliases, listProducts, upsertProduct } from '@/api/products';
@@ -35,6 +36,7 @@ export default function ProductsPage() {
   const qc = useQueryClient();
   const { isAdmin, canWriteArea, session, profile } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
+  const [cadProducao, setCadProducao] = useState(false);
   const [tab, setTab] = useState<'produtos' | 'apelidos'>('produtos');
   const [search, setSearch] = useState('');
   const [weightUnit, setWeightUnit] = useState<'g' | 'kg'>('g');
@@ -100,6 +102,7 @@ export default function ProductsPage() {
         actions={canWriteArea('estoque') && (
           <>
             <Button variant="outline" icon={<Upload className="h-4 w-4" />} onClick={() => setImportOpen(true)}>Importar planilha</Button>
+            <Button variant="outline" icon={<Upload className="h-4 w-4" />} onClick={() => setCadProducao(true)}>Importar cadastro da produção</Button>
             <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing({ ...empty })}>Novo produto</Button>
           </>
         )}
@@ -170,6 +173,7 @@ export default function ProductsPage() {
         </Card>
       )}
 
+      {cadProducao && <ImportarCadastro onClose={() => setCadProducao(false)} />}
       <ImportSheetDialog<ProductInput>
         open={importOpen}
         onClose={() => setImportOpen(false)}

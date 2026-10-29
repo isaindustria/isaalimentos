@@ -159,7 +159,20 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.12.2</span><span class="d">21/10/2026</span><span class="tag">atual</span>
+        <span class="v">v1.13.0</span><span class="d">28/10/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Produção nova</strong> (solicitação #21): abas <strong>Fórmula → Estoque → Pedido → Produção → Relatório</strong>. Produtos e o cadastro de produtos ficam no menu Produtos (o botão "Importar cadastro da produção" foi para lá).</li>
+          <li><strong>Fórmula</strong>: importar a planilha (pergunta Incluir ou Substituir e mostra todas as alterações antes de gravar) e alterar à mão insumos, quantidades, produção mínima e o produto que a fórmula fabrica. A fórmula é ligada ao produto pelo nome; a que não ligar fica marcada para escolher em Alterar.</li>
+          <li><strong>Estoque</strong>: importar os locais 1, 2 e 5 (Incluir ou Substituir, com as alterações na tela). Filtros por referência, produto e local, juntos. Unidade ou pote no local 2 aparece como erro. Matéria-prima fica de fora.</li>
+          <li><strong>Pedido</strong>: cada produto numa linha, pela data de entrega e pelo número do pedido. Clicar em Aberto passa para Firmado. Filtros por número, produto, código e status.</li>
+          <li><strong>Produção</strong>: só o firmado entra. O estoque do acabado atende primeiro (sem usar o mesmo saldo duas vezes); o que falta vira semiacabado, inclusive semiacabado dentro de outro, com a produção mínima (em branco = o pedido). Datas diferentes somam na mais próxima. <strong>Em produção</strong> abre a ordem de produção; <strong>Pronto: Faturamento</strong> só libera quando o estoque atende e manda para Rotas de entrega.</li>
+          <li><strong>Relatório</strong>: o que saiu da Produção para Rotas de entrega, com as ordens de produção.</li>
+          <li>Dica: importe primeiro o estoque e depois as fórmulas (o estoque cadastra os semiacabados que faltam e mais fórmulas se ligam sozinhas).</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.12.2</span><span class="d">21/10/2026</span>
         <ul>
           <li><strong>Número do pedido automático</strong> (solicitação #19): o sistema numera cada pedido novo em ordem, não importa quem lançou. Ninguém digita nem troca o número. Os pedidos antigos sem número foram numerados pela data em que foram criados.</li>
           <li><strong>Coluna NF no romaneio</strong>: em Rotas de entrega, ao abrir o Romaneio, cada pedido tem um campo para digitar o número da NF. Grava ao sair do campo.</li>
