@@ -36,7 +36,7 @@ export function AbaFormula({ formulas, produtos, pode }: { formulas: Formula[]; 
           <tbody>{lista.map((f) => (
             <tr key={f.code}>
               <td className="td num">{f.code}</td>
-              <td className="td">{f.description}</td>
+              <td className="td">{f.description}{!/SEMI\s*-?\s*ACABADO/i.test(f.description.normalize('NFD').replace(/[̀-ͯ]/g, '')) && <Badge className="ml-2" tone="neutral">acabado · fracionamento (fase posterior)</Badge>}</td>
               <td className="td text-xs">{f.product_code ? <><b className="num">{f.product_code}</b> · {nome.get(f.product_code) ?? ''}</> : <Badge tone="warn">sem produto ligado</Badge>}</td>
               <td className="td num text-right">{f.items.length}</td>
               <td className="td num text-right">{f.min_production_kg ? `${qtd(f.min_production_kg)} kg` : 'pedido'}</td>

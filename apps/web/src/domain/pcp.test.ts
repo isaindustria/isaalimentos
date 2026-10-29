@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chaveNome, compararFormulas, lerFormulas, planejarProducao, vincularProduto, type Formula } from './pcp';
+import { alocarAcabados, chaveNome, compararFormulas, lerFormulas, pedidoCompleto, planejarProducao, vincularProduto, type EstoqueLocal, type Formula } from './pcp';
 import type { PlanItem, PlanProduct } from './planejamento';
 
 const prods: Array<PlanProduct & { is_semi?: boolean }> = [
@@ -58,35 +58,57 @@ describe('planilha de fórmulas', () => {
   });
 });
 
-describe('cálculo da aba Produção (exemplo da planilha)', () => {
-  const estoque = new Map([['464', { l1: 8, l2: 0, l5: 0 }], ['400', { l1: 0, l2: 134.199, l5: 0 }]]);
-  const r = planejarProducao([item('a', '464', 1000, '2026-10-30', '14'), item('b', '468', 150, '2026-11-05', '15')], pmap, formulas, estoque);
+const plano = (itens: PlanItem[], est: Array<[string, EstoqueLocal]>) => {
+  const e = new Map(est);
+  const aloc = alocarAcabados(itens, pmap, e);
+  return { aloc, ...planejarProducao([...aloc.values()], pmap, formulas, e) };
+};
 
-  it('estoque do acabado atende primeiro; só a falta vai para a produção', () => {
-    expect(r.acabados.find((a) => a.item.itemId === 'a')).toMatchObject({ atendidoKg: 80, faltaKg: 920, atendido: false });
+describe('cálculo da aba Produção (Produção 4)', () => {
+  const r = plano([item('a', '464', 1000, '2026-10-30', '14'), item('b', '468', 150, '2026-11-05', '15')], [['464', { l1: 8, l2: 0, l5: 0 }], ['400', { l1: 0, l2: 134.199, l5: 0 }]]);
+
+  it('consulta o estoque acabado antes: 100 un pedidas, 8 em estoque, faltam 92 un = 920 kg', () => {
+    expect(r.aloc.get('a')).toMatchObject({ pedidoUn: 100, estoqueUn: 8, faltaUn: 92, faltaKg: 920, atendido: false });
   });
-  it('soma o semiacabado vindo de outro semiacabado e fica na data mais próxima', () => {
+  it('usa só a fórmula do semiacabado (a do acabado é fracionamento) e mantém os pedidos de origem', () => {
     const costela = r.producao.find((l) => l.code === '424')!;
-    expect(costela).toMatchObject({ pedidoKg: 920, estoqueKg: 0, necessidadeKg: -920, produzirKg: 920 });
+    expect(costela).toMatchObject({ formulaCode: 245, pedidoKg: 920, estoqueKg: 0, necessidadeKg: -920, produzirKg: 920 });
+    expect(costela.origens.map((o) => o.orderNumber)).toEqual(['14']);
+  });
+  it('semiacabado dentro de semiacabado: soma com o pedido e fica na data mais próxima', () => {
     const colorau = r.producao.find((l) => l.code === '425')!;
-    // 150 kg do pedido 468 + 920 × 0,0225 = 20,7 kg do caldo de costela
-    expect(colorau.pedidoKg).toBe(170.7);
-    expect(colorau.earliest).toBe('2026-10-30');
+    expect(colorau).toMatchObject({ pedidoKg: 170.7, deOutrosKg: 20.7, earliest: '2026-10-30' });
     expect(colorau.itemIds.sort()).toEqual(['a', 'b']);
+    expect(colorau.usadoEm).toEqual([{ code: '424', kg: 20.7 }]);
   });
-  it('semiacabado com estoque suficiente não pede produção', () => {
-    const curcuma = r.producao.find((l) => l.code === '400')!;
-    expect(curcuma.necessidadeKg).toBeGreaterThan(0);
-    expect(curcuma.produzirKg).toBe(0);
-  });
-  it('produção mínima vale quando a falta é menor; sem mínimo, produz a falta', () => {
-    const urucum = r.producao.find((l) => l.code === '426')!;
-    expect(urucum.produzirKg).toBe(urucum.pedidoKg); // 426 sem fórmula e sem mínimo
-    const r2 = planejarProducao([item('c', '468', 100, '2026-11-01', '16')], pmap, formulas, new Map([['425', { l1: 0, l2: 90, l5: 0 }]]));
-    expect(r2.producao.find((l) => l.code === '425')).toMatchObject({ necessidadeKg: -10, produzirKg: 25 });
+  it('semiacabado com estoque suficiente não programa fabricação', () => {
+    expect(r.producao.find((l) => l.code === '400')).toMatchObject({ produzirKg: 0 });
   });
   it('o mesmo saldo não atende dois pedidos', () => {
-    const r3 = planejarProducao([item('x', '464', 50, '2026-10-30', '1'), item('y', '464', 50, '2026-10-31', '2')], pmap, formulas, new Map([['464', { l1: 8, l2: 0, l5: 0 }]]));
-    expect(r3.acabados.map((a) => [a.item.itemId, a.atendido, a.faltaKg])).toEqual([['x', true, 0], ['y', false, 20]]);
+    const x = plano([item('x', '464', 50, '2026-10-30', '1'), item('y', '464', 50, '2026-10-31', '2')], [['464', { l1: 8, l2: 0, l5: 0 }]]);
+    expect([x.aloc.get('x')!.atendido, x.aloc.get('y')!.faltaUn]).toEqual([true, 2]);
+  });
+  it('semiacabado em estoque não é acabado: falta fracionar, sem fabricar', () => {
+    const x = plano([item('z', '464', 100, '2026-10-30', '3')], [['424', { l1: 0, l2: 500, l5: 0 }]]);
+    expect(x.producao.find((l) => l.code === '424')).toMatchObject({ produzirKg: 0, soFracionar: true });
+  });
+});
+
+describe('lote mínimo (tabela da Produção 4)', () => {
+  const casos: Array<[number, number]> = [[0, 0], [20, 50], [39.8, 50], [50, 50], [51, 51], [120, 120]];
+  for (const [falta, produzir] of casos) it(`necessidade ${falta} kg, mínimo 50 kg: produz ${produzir} kg`, () => {
+    const f2 = formulas.map((f) => (f.code === 246 ? { ...f, min_production_kg: 50 } : f));
+    const e = new Map<string, EstoqueLocal>([['425', { l1: 0, l2: 200 - falta, l5: 0 }]]);
+    const aloc = alocarAcabados([item('m', '468', 200, '2026-11-01', '9')], pmap, e);
+    const l = planejarProducao([...aloc.values()], pmap, f2, e).producao.find((x) => x.code === '425')!;
+    expect(l.produzirKg).toBe(produzir);
+  });
+});
+
+describe('pedido completo para faturamento', () => {
+  it('só libera quando todos os itens estão atendidos (revenda conta como atendido)', () => {
+    const { aloc } = plano([item('p1', '464', 50, '2026-10-30', '7'), item('p2', '468', 10, '2026-10-30', '7')], [['464', { l1: 8, l2: 0, l5: 0 }]]);
+    expect(pedidoCompleto([{ itemId: 'p1', revenda: false, faturado: false }, { itemId: 'p2', revenda: false, faturado: false }], aloc)).toBe(false);
+    expect(pedidoCompleto([{ itemId: 'p1', revenda: false, faturado: false }, { itemId: 'r', revenda: true, faturado: false }], aloc)).toBe(true);
   });
 });

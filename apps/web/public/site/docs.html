@@ -159,7 +159,19 @@
       <p>Web, celular e Windows compartilham o mesmo número de versão e atualizam sozinhos.</p>
 
       <div class="rel cur">
-        <span class="v">v1.13.0</span><span class="d">28/10/2026</span><span class="tag">atual</span>
+        <span class="v">v1.14.0</span><span class="d">29/10/2026</span><span class="tag">atual</span>
+        <ul>
+          <li><strong>Produção 4 e 5</strong> (solicitações #22 e #23): o item anda <strong>Pedido (Aberto) → Produção (Firmado) → Relatório (Em produção) → Faturamento</strong> (Rotas de entrega).</li>
+          <li><strong>Só a fórmula do semiacabado</strong> entra no cálculo (insumos → semiacabado). A fórmula do produto acabado (fracionamento e envase) fica para depois e aparece marcada na aba Fórmula.</li>
+          <li><strong>Pedido</strong>: em unidades, com o estoque acabado que atende cada item (vermelho quando não atende tudo), cabeçalho que quebra linha e letra menor para caber na tela. Colunas <strong>Firmado</strong> (vai para a Produção) e <strong>Faturamento</strong> (só o pedido completo).</li>
+          <li><strong>Produção</strong>: mostra de onde vem cada número: pedido de origem, pedido/estoque/falta do acabado em unidades e em kg, necessidade consolidada do semiacabado, estoque do semiacabado, necessidade líquida, lote mínimo e programado. Lote mínimo: abaixo dele produz o mínimo; acima, produz a necessidade (sem arredondar). Semiacabado dentro de semiacabado calculado pela quantidade programada. Botão <strong>Exportar</strong> (não muda status, estoque nem faturamento). <strong>Em produção</strong> (depois da produção física) leva para o Relatório.</li>
+          <li><strong>Relatório</strong>: o pedido inteiro, com cada produto completo ou faltando. <strong>Voltar</strong> devolve à Produção para refazer o cálculo, sem duplicar. <strong>Faturamento</strong> só quando todos os produtos e quantidades estão completos (não há faturamento parcial).</li>
+          <li>Sem ordem de produção automática, sem baixa de estoque e sem matéria-prima nesta etapa.</li>
+        </ul>
+      </div>
+
+      <div class="rel">
+        <span class="v">v1.13.0</span><span class="d">28/10/2026</span>
         <ul>
           <li><strong>Produção nova</strong> (solicitação #21): abas <strong>Fórmula → Estoque → Pedido → Produção → Relatório</strong>. Produtos e o cadastro de produtos ficam no menu Produtos (o botão "Importar cadastro da produção" foi para lá).</li>
           <li><strong>Fórmula</strong>: importar a planilha (pergunta Incluir ou Substituir e mostra todas as alterações antes de gravar) e alterar à mão insumos, quantidades, produção mínima e o produto que a fórmula fabrica. A fórmula é ligada ao produto pelo nome; a que não ligar fica marcada para escolher em Alterar.</li>

@@ -6,7 +6,7 @@ import { supabase, unwrap } from '@/lib/supabase';
 import { createStockImport } from '@/api/stock';
 import { mudarEtapa } from '@/api/planejamento';
 import { isRevenda, type Etapa, type PlanItem, type PlanProduct } from '@/domain/planejamento';
-import { vincularProduto, type EstoqueLocal, type Formula, type LinhaProducao, type AcabadoItem } from '@/domain/pcp';
+import { vincularProduto, type EstoqueLocal, type Formula } from '@/domain/pcp';
 import type { StockAggregate } from '@/domain/parsers/stockXlsx';
 
 export type Modo = 'incluir' | 'substituir';
@@ -121,65 +121,51 @@ export async function importarEstoque(input: { fileName: string; aggregates: Sto
 }
 
 // ---------------------------------------------------------------- Pedido
-export type ItemPcp = PlanItem & { pcpStatus: 'aberto' | 'firmado' };
+/** Item do pedido no fluxo da Produção: Pedido (Aberto) → Produção (Firmado) → Relatório (Em produção / Faturamento). */
+export type ItemPcp = PlanItem & { pcpStatus: 'aberto' | 'firmado'; revenda: boolean };
 
-/** Itens fabricados (sem revenda) de pedidos em aberto que ainda não foram para o faturamento. */
+/** Itens dos pedidos em aberto (não cancelados, não entregues), inclusive os já no Faturamento (cópia no Relatório). */
 export async function listarItensPcp(): Promise<ItemPcp[]> {
   const rows = unwrap(await supabase.from('order_items')
     .select('id, product_code, product_name, product_reference, sale_unit, quantity, quantity_units, weight_kg, unit_price, total_price, stage, pcp_status, order:orders!inner(id, order_number, customer_name, delivery_date, created_at, allow_other_packaging, status, customer:customers(name))')
-    .in('stage', ['aberto', 'em_producao']).not('order.status', 'in', '(cancelado,entregue)').not('product_code', 'is', null).range(0, 9999)) as unknown as Array<{
+    .in('stage', ['aberto', 'em_producao', 'faturado']).not('order.status', 'in', '(cancelado,entregue)').not('product_code', 'is', null).range(0, 9999)) as unknown as Array<{
       id: string; product_code: string; product_name: string | null; product_reference: string | null; sale_unit: 'kg' | 'un' | null; quantity: number | null; quantity_units: number | null; weight_kg: number | null;
       unit_price: number | null; total_price: number | null; stage: Etapa; pcp_status: 'aberto' | 'firmado';
       order: { id: string; order_number: string | null; customer_name: string | null; delivery_date: string | null; created_at: string; allow_other_packaging: boolean | null; status: string; customer: { name: string } | null };
     }>;
-  return rows.filter((r) => !isRevenda(r.product_reference)).map((r) => ({
+  return rows.map((r) => ({
     itemId: r.id, orderId: r.order.id, orderNumber: r.order.order_number, customer: r.order.customer?.name ?? r.order.customer_name, productCode: r.product_code, productName: r.product_name,
     reference: r.product_reference, saleUnit: r.sale_unit, quantity: r.quantity, quantityUnits: r.quantity_units, weightKg: r.weight_kg, deliveryDate: r.order.delivery_date, createdAt: r.order.created_at,
-    allowSwap: r.order.allow_other_packaging, stage: r.stage, unitPrice: r.unit_price, totalPrice: r.total_price, pcpStatus: r.pcp_status ?? 'aberto',
+    allowSwap: r.order.allow_other_packaging, stage: r.stage, unitPrice: r.unit_price, totalPrice: r.total_price, pcpStatus: r.pcp_status ?? 'aberto', revenda: isRevenda(r.product_reference),
   }));
 }
 
+/** Firmado (vai para a Produção) ou de volta para Aberto (volta para a aba Pedido). */
 export async function mudarPcp(ids: string[], status: 'aberto' | 'firmado') {
   const n = unwrap(await supabase.rpc('set_item_pcp', { p_item_ids: ids, p_status: status })) as number;
   if (!n) throw new Error('Nenhum item foi alterado.');
 }
 
-// ---------------------------------------------------------------- Produção
-export interface OrdemProducao { id: string; numero: number; formula_code: number | null; product_code: string | null; description: string | null; quantity_kg: number; need_kg: number | null; due_date: string | null; item_ids: string[]; status: 'em_producao' | 'concluida'; created_by_name: string | null; created_at: string; done_at: string | null }
+// ---------------------------------------------------------------- Produção → Relatório
+/** Em produção (depois da produção física): os itens vão para a aba Relatório. Não mexe em estoque. */
+export async function enviarRelatorio(ids: string[]) { if (ids.length) await mudarEtapa(ids, 'em_producao'); }
 
-export async function listarOPs(): Promise<OrdemProducao[]> {
-  return unwrap(await supabase.from('production_orders').select('*').order('created_at', { ascending: false }).limit(300)) as OrdemProducao[];
-}
+/** Voltar (Relatório → Produção): só para refazer o cálculo; não cancela, não mexe em estoque. */
+export async function voltarProducao(ids: string[]) { if (ids.length) await mudarEtapa(ids, 'aberto'); }
 
-/** Botão Em produção: abre a ordem de produção e passa os itens dos pedidos para Em produção. */
-export async function colocarEmProducao(l: LinhaProducao, itens: ItemPcp[], quem: { id?: string | null; nome?: string | null }) {
-  unwrap(await supabase.from('production_orders').insert({ formula_code: l.formulaCode, product_code: l.code, description: l.description, quantity_kg: l.produzirKg, need_kg: -l.necessidadeKg, due_date: l.earliest, item_ids: l.itemIds, created_by: quem.id ?? null, created_by_name: quem.nome ?? null }));
-  const abertos = itens.filter((i) => l.itemIds.includes(i.itemId) && i.stage === 'aberto').map((i) => i.itemId);
-  if (abertos.length) await mudarEtapa(abertos, 'em_producao');
-}
-
-export async function concluirOP(id: string) {
-  unwrap(await supabase.from('production_orders').update({ status: 'concluida', done_at: new Date().toISOString() }).eq('id', id));
-}
-
-/** Botão Pronto: Faturamento: o estoque atende; os itens vão para o Faturamento (Rotas de entrega) e ficam no Relatório. */
-export async function prontoFaturamento(acabados: AcabadoItem[], ops: OrdemProducao[], quem: { id?: string | null; nome?: string | null }) {
-  const ok = acabados.filter((a) => a.atendido);
-  if (!ok.length) throw new Error('O estoque ainda não atende este pedido.');
-  await mudarEtapa(ok.map((a) => a.item.itemId), 'faturado');
-  unwrap(await supabase.from('production_reports').insert(ok.map((a) => {
-    const daOp = ops.filter((o) => o.item_ids.includes(a.item.itemId));
-    return {
-      order_id: a.item.orderId, order_number: a.item.orderNumber, customer_name: a.item.customer, item_ids: [a.item.itemId], product_code: a.item.productCode, product_name: a.item.productName,
-      quantity_kg: a.kg, delivery_date: a.item.deliveryDate, created_by: quem.id ?? null, created_by_name: quem.nome ?? null,
-      details: { ops: daOp.map((o) => ({ numero: o.numero, formula: o.formula_code, descricao: o.description, kg: Number(o.quantity_kg), status: o.status, inicio: o.created_at, fim: o.done_at })) },
-    };
-  })));
-}
-
-// ---------------------------------------------------------------- Relatório
-export interface LinhaRelatorio { id: string; order_number: string | null; customer_name: string | null; product_code: string | null; product_name: string | null; quantity_kg: number | null; delivery_date: string | null; created_by_name: string | null; created_at: string; details: { ops?: Array<{ numero: number; formula: number | null; descricao: string | null; kg: number; status: string; inicio: string; fim: string | null }> } }
-
-export async function listarRelatorio(): Promise<LinhaRelatorio[]> {
-  return unwrap(await supabase.from('production_reports').select('*').order('created_at', { ascending: false }).limit(500)) as LinhaRelatorio[];
+/**
+ * Faturamento: só o pedido completo (todos os produtos e quantidades atendidos pelo estoque acabado).
+ * Os itens vão para Rotas de entrega e ficam no Relatório com o status Faturamento.
+ */
+export async function faturarPedido(itensDoPedido: ItemPcp[], completo: boolean, quem: { id?: string | null; nome?: string | null }) {
+  if (!completo) throw new Error('O pedido ainda não está completo: todos os produtos precisam estar atendidos para ir ao Faturamento.');
+  const pend = itensDoPedido.filter((i) => i.stage !== 'faturado');
+  if (!pend.length) return;
+  await mudarEtapa(pend.map((i) => i.itemId), 'faturado');
+  const o = pend[0];
+  unwrap(await supabase.from('production_reports').insert({
+    order_id: o.orderId, order_number: o.orderNumber, customer_name: o.customer, item_ids: pend.map((i) => i.itemId), delivery_date: o.deliveryDate,
+    created_by: quem.id ?? null, created_by_name: quem.nome ?? null,
+    details: { itens: pend.map((i) => ({ code: i.productCode, name: i.productName, qty: i.quantity, unit: i.saleUnit })) },
+  }));
 }

@@ -1,16 +1,15 @@
 /**
  * Produção 3 (solicitação #21): Fórmula, Estoque, Pedido, Produção e Relatório.
  *
- * Cálculo da aba Produção (sem matéria-prima, só acabados e semiacabados; nada baixa estoque):
- * 1. Pedidos firmados, por produto, pela entrega mais próxima. O estoque do próprio acabado (locais 1 e 5,
- *    unidades × equivalência em kg) atende primeiro; o mesmo saldo não é usado duas vezes. Item atendido por
- *    inteiro fica liberado para o faturamento; do resto, só o que falta vai para a produção.
- * 2. O que falta do acabado vira semiacabado pela fórmula do acabado (kg de semiacabado por unidade) ou,
- *    sem fórmula, pelo semiacabado do cadastro (1 kg = 1 kg).
- * 3. Cada semiacabado soma o que vem dos acabados e de outros semiacabados (fórmula dentro de fórmula),
- *    desconta o próprio estoque (local 2) e, se faltar, produz o maior entre a falta e a produção mínima
- *    (sem mínimo informado, produz a falta). O que for produzido pede os semiacabados da fórmula dele.
- * 4. Necessidades em datas diferentes somam e ficam na data mais próxima.
+ * Produção 4 e 5 (solicitações #22 e #23). Nesta fase só a fórmula do SEMIACABADO (insumos → semiacabado);
+ * a fórmula do acabado (fracionamento e envase) fica para depois. Sem matéria-prima; nada baixa estoque.
+ * 1. Estoque do acabado (locais 1 e 5, em unidades) atende os itens pela entrega mais próxima, sem usar o mesmo
+ *    saldo duas vezes. Só a falta segue; ela vira kg (unidades × kg da apresentação cadastrada).
+ * 2. Acabado → semiacabado pelo cadastro do produto (ou pelo semiacabado da fórmula do acabado): kg = kg.
+ * 3. Cada semiacabado soma os pedidos firmados e o que outros semiacabados pedem e desconta o estoque do
+ *    semiacabado (local 2): necessidade líquida. Falta menor que o lote mínimo produz o lote mínimo; igual ou
+ *    maior produz a falta (não arredonda para múltiplos). Os semiacabados da fórmula saem da quantidade programada.
+ * 4. Datas diferentes somam na mais próxima; os pedidos de origem continuam ligados à linha.
  */
 import { equivalencia, itemKg, type PlanItem, type PlanProduct } from './planejamento';
 
@@ -109,98 +108,137 @@ export function compararFormulas(atuais: Formula[], novas: Formula[], modo: 'inc
 }
 
 // ---------------------------------------------------------------------------
-// Cálculo da aba Produção
+// Cálculo
 // ---------------------------------------------------------------------------
 export interface EstoqueLocal { l1: number; l2: number; l5: number }
 
 export interface AcabadoItem {
-  item: PlanItem; kg: number; atendidoKg: number; faltaKg: number; atendido: boolean;
+  item: PlanItem;
+  /** kg de uma unidade da apresentação cadastrada */
+  kgUn: number | null;
+  pedidoUn: number; pedidoKg: number;
+  /** unidades do estoque acabado que atendem este item */
+  estoqueUn: number;
+  faltaUn: number; faltaKg: number;
+  atendido: boolean;
 }
+
+/** Quantidade do item em unidades (o kg vendido vira unidades pela apresentação). */
+export function unidadesDoItem(it: PlanItem, p: PlanProduct | undefined): number {
+  const eq = equivalencia(p);
+  if (it.saleUnit === 'un') return Number(it.quantity ?? 0);
+  if (it.saleUnit === 'kg') return eq ? Number(it.quantity ?? 0) / eq : Number(it.quantity ?? 0);
+  return Number(it.quantityUnits ?? 0);
+}
+
+/** Estoque acabado (locais 1 e 5) pelos itens, na ordem da entrega e do número do pedido; o mesmo saldo não é usado duas vezes. */
+export function alocarAcabados(itens: PlanItem[], produtos: Map<string, PlanProduct>, estoque: Map<string, EstoqueLocal>): Map<string, AcabadoItem> {
+  const livre = new Map<string, number>();
+  const out = new Map<string, AcabadoItem>();
+  const ord = [...itens].sort((a, b) => (a.deliveryDate ?? '9999').localeCompare(b.deliveryDate ?? '9999') || String(a.orderNumber ?? '').localeCompare(String(b.orderNumber ?? ''), undefined, { numeric: true }) || a.itemId.localeCompare(b.itemId));
+  for (const it of ord) {
+    const p = produtos.get(it.productCode);
+    const eq = equivalencia(p);
+    const un = r3(unidadesDoItem(it, p));
+    if (!livre.has(it.productCode)) { const e = estoque.get(it.productCode); livre.set(it.productCode, Math.max(0, (e?.l1 ?? 0) + (e?.l5 ?? 0))); }
+    const disp = livre.get(it.productCode)!;
+    const usa = Math.min(disp, un);
+    livre.set(it.productCode, r3(disp - usa));
+    const faltaUn = r3(un - usa);
+    const kg = itemKg(it, p) ?? 0;
+    out.set(it.itemId, { item: it, kgUn: eq, pedidoUn: un, pedidoKg: kg, estoqueUn: r3(usa), faltaUn, faltaKg: r3(eq ? faltaUn * eq : (un ? (kg * faltaUn) / un : 0)), atendido: faltaUn <= 1e-9 });
+  }
+  return out;
+}
+
+export interface OrigemProducao { itemId: string; orderNumber: string | null; customer: string | null; productCode: string; productName: string | null; pedidoUn: number; estoqueUn: number; faltaUn: number; faltaKg: number; deliveryDate: string | null }
 export interface LinhaProducao {
-  /** produto semiacabado (código do produto) */
+  /** semiacabado (código do produto) */
   code: string; formulaCode: number | null; description: string; earliest: string | null;
-  pedidoKg: number; estoqueKg: number; necessidadeKg: number; minKg: number | null; produzirKg: number;
-  itemIds: string[];
+  /** kg pedidos (falta dos acabados + o que outros semiacabados pedem) e a parte que vem de outros semiacabados */
+  pedidoKg: number; deOutrosKg: number;
+  estoqueKg: number; necessidadeKg: number; minKg: number | null; produzirKg: number;
+  /** o semiacabado em estoque cobre: falta só fracionar/envasar o acabado */
+  soFracionar: boolean;
+  itemIds: string[]; origens: OrigemProducao[]; usadoEm: Array<{ code: string; kg: number }>;
+}
+
+/** Semiacabado do acabado: cadastro do produto ou o semiacabado da fórmula do acabado. */
+export function semiDoAcabado(code: string, produtos: Map<string, PlanProduct & { is_semi?: boolean | null }>, formulas: Formula[]): string | null {
+  const p = produtos.get(code);
+  if (p?.semi_code) return p.semi_code;
+  const f = formulas.find((x) => x.product_code === code);
+  const s = f?.items.find((i) => produtos.get(i.input_code)?.is_semi || ehSemiNome(i.input_description ?? ''));
+  return s?.input_code ?? null;
 }
 
 export function planejarProducao(
-  firmados: PlanItem[],
+  acabados: AcabadoItem[],
   produtos: Map<string, PlanProduct & { is_semi?: boolean | null }>,
   formulas: Formula[],
   estoque: Map<string, EstoqueLocal>,
-): { acabados: AcabadoItem[]; producao: LinhaProducao[]; semFormula: string[] } {
-  const porProduto = new Map<string, Formula>();
-  for (const f of formulas) if (f.product_code && !porProduto.has(f.product_code)) porProduto.set(f.product_code, f);
-  const ehSemi = (code: string) => !!produtos.get(code)?.is_semi || (porProduto.has(code) && ehSemiNome(porProduto.get(code)!.description));
+): { producao: LinhaProducao[]; semSemi: string[] } {
+  // só a fórmula do semiacabado (a do acabado é fracionamento, fase posterior)
+  const formulaDoSemi = new Map<string, Formula>();
+  for (const f of formulas) if (f.product_code && (produtos.get(f.product_code)?.is_semi || ehSemiNome(f.description)) && !formulaDoSemi.has(f.product_code)) formulaDoSemi.set(f.product_code, f);
+  const ehSemi = (code: string) => !!produtos.get(code)?.is_semi || formulaDoSemi.has(code);
+  const filhos = (code: string) => (formulaDoSemi.get(code)?.items ?? []).filter((i) => ehSemi(i.input_code)).map((i) => ({ code: i.input_code, qty: i.qty }));
 
-  // 1) acabados: estoque do próprio produto pela entrega mais próxima
-  const byDate = (a: PlanItem, b: PlanItem) => (a.deliveryDate ?? '9999').localeCompare(b.deliveryDate ?? '9999') || String(a.orderNumber ?? '').localeCompare(String(b.orderNumber ?? ''), undefined, { numeric: true });
-  const livre = new Map<string, number>();
-  const acabados: AcabadoItem[] = [];
-  for (const it of [...firmados].sort(byDate)) {
-    const p = produtos.get(it.productCode);
-    const kg = itemKg(it, p) ?? 0;
-    if (!livre.has(it.productCode)) { const e = estoque.get(it.productCode); const eq = equivalencia(p) ?? 1; livre.set(it.productCode, r3(((e?.l1 ?? 0) + (e?.l5 ?? 0)) * eq)); }
-    const disp = livre.get(it.productCode)!;
-    const usa = Math.min(disp, kg);
-    livre.set(it.productCode, r3(disp - usa));
-    acabados.push({ item: it, kg, atendidoKg: r3(usa), faltaKg: r3(kg - usa), atendido: kg - usa <= 1e-9 });
-  }
-
-  // 2) falta dos acabados → semiacabados
-  type Dem = { kg: number; earliest: string | null; itemIds: Set<string> };
+  type Dem = { kg: number; deOutros: number; earliest: string | null; itemIds: Set<string>; origens: OrigemProducao[]; usadoEm: Map<string, number> };
   const dem = new Map<string, Dem>();
-  const filhos = new Map<string, Array<{ code: string; qty: number }>>(); // semi → semis da fórmula (por kg)
-  const add = (code: string, kg: number, date: string | null, ids: Iterable<string>) => {
-    if (kg <= 0) return;
-    const d = dem.get(code) ?? { kg: 0, earliest: null, itemIds: new Set<string>() };
-    d.kg = r3(d.kg + kg);
-    if (date && (!d.earliest || date < d.earliest)) d.earliest = date;
-    for (const i of ids) d.itemIds.add(i);
-    dem.set(code, d);
-  };
-  const semFormula = new Set<string>();
+  const get = (code: string) => { let d = dem.get(code); if (!d) { d = { kg: 0, deOutros: 0, earliest: null, itemIds: new Set(), origens: [], usadoEm: new Map() }; dem.set(code, d); } return d; };
+  const data = (d: Dem, date: string | null) => { if (date && (!d.earliest || date < d.earliest)) d.earliest = date; };
+  const semSemi = new Set<string>();
   for (const a of acabados) {
     if (a.faltaKg <= 0) continue;
-    const code = a.item.productCode; const p = produtos.get(code);
-    const f = porProduto.get(code);
-    const semisDaFormula = f?.items.filter((i) => ehSemi(i.input_code)) ?? [];
-    if (f && semisDaFormula.length) {
-      const eq = equivalencia(p) ?? 1;
-      const un = a.faltaKg / eq; // unidades que faltam (fórmula do acabado é por unidade)
-      for (const i of semisDaFormula) add(i.input_code, r3(un * i.qty), a.item.deliveryDate, [a.item.itemId]);
-    } else if (p?.semi_code) {
-      add(p.semi_code, a.faltaKg, a.item.deliveryDate, [a.item.itemId]);
-    } else semFormula.add(code);
+    const semi = semiDoAcabado(a.item.productCode, produtos, formulas);
+    if (!semi) { semSemi.add(a.item.productCode); continue; }
+    const d = get(semi);
+    d.kg = r3(d.kg + a.faltaKg); data(d, a.item.deliveryDate); d.itemIds.add(a.item.itemId);
+    d.origens.push({ itemId: a.item.itemId, orderNumber: a.item.orderNumber, customer: a.item.customer, productCode: a.item.productCode, productName: a.item.productName, pedidoUn: a.pedidoUn, estoqueUn: a.estoqueUn, faltaUn: a.faltaUn, faltaKg: a.faltaKg, deliveryDate: a.item.deliveryDate });
   }
 
-  // 3) semiacabados em ordem (pai antes do filho), descontando o estoque do local 2
-  for (const f of formulas) if (f.product_code) filhos.set(f.product_code, f.items.filter((i) => ehSemi(i.input_code)).map((i) => ({ code: i.input_code, qty: i.qty })));
+  // pai antes do filho (fórmula dentro de fórmula, vários níveis)
   const nivel = new Map<string, number>();
-  const visit = (code: string, d: number, path: Set<string>) => {
-    if (path.has(code)) return; // ciclo na fórmula: ignora a volta
-    if ((nivel.get(code) ?? -1) >= d) return;
-    nivel.set(code, d);
-    path.add(code);
-    for (const c of filhos.get(code) ?? []) visit(c.code, d + 1, path);
+  const visit = (code: string, n: number, path: Set<string>) => {
+    if (path.has(code) || (nivel.get(code) ?? -1) >= n) return;
+    nivel.set(code, n); path.add(code);
+    for (const c of filhos(code)) visit(c.code, n + 1, path);
     path.delete(code);
   };
-  for (const code of dem.keys()) visit(code, 0, new Set());
+  for (const code of [...dem.keys()]) visit(code, 0, new Set());
   const ordem = [...nivel.entries()].sort((a, b) => a[1] - b[1]).map(([c]) => c);
+
   const producao: LinhaProducao[] = [];
   for (const code of ordem) {
     const d = dem.get(code); if (!d || d.kg <= 0) continue;
-    const e = estoque.get(code);
-    const estoqueKg = r3((e?.l2 ?? 0) + (ehSemi(code) ? 0 : ((e?.l1 ?? 0) + (e?.l5 ?? 0)) * (equivalencia(produtos.get(code)) ?? 1)));
+    const estoqueKg = r3(Math.max(0, estoque.get(code)?.l2 ?? 0));
     const necessidade = r3(estoqueKg - d.kg);
-    const f = porProduto.get(code); const p = produtos.get(code);
-    const minKg = f?.min_production_kg ?? (p?.min_production_kg != null ? Number(p.min_production_kg) : null);
+    const f = formulaDoSemi.get(code); const p = produtos.get(code);
+    const minKg = f?.min_production_kg ?? (p?.min_production_kg != null && Number(p.min_production_kg) > 0 ? Number(p.min_production_kg) : null);
     const falta = necessidade < 0 ? -necessidade : 0;
     const produzir = falta > 0 ? r3(Math.max(falta, minKg ?? 0)) : 0;
-    producao.push({ code, formulaCode: f?.code ?? null, description: f?.description ?? p?.description ?? code, earliest: d.earliest, pedidoKg: d.kg, estoqueKg, necessidadeKg: necessidade, minKg, produzirKg: produzir, itemIds: [...d.itemIds] });
-    if (produzir > 0) for (const c of filhos.get(code) ?? []) add(c.code, r3(produzir * c.qty), d.earliest, d.itemIds);
+    producao.push({
+      code, formulaCode: f?.code ?? null, description: f?.description ?? p?.description ?? code, earliest: d.earliest,
+      pedidoKg: d.kg, deOutrosKg: d.deOutros, estoqueKg, necessidadeKg: necessidade, minKg, produzirKg: produzir,
+      soFracionar: falta === 0 && d.origens.length > 0, itemIds: [...d.itemIds], origens: d.origens,
+      usadoEm: [...d.usadoEm.entries()].map(([c, kg]) => ({ code: c, kg })),
+    });
+    if (produzir > 0) for (const c of filhos(code)) {
+      const kg = r3(produzir * c.qty);
+      if (kg <= 0) continue;
+      const dc = get(c.code);
+      dc.kg = r3(dc.kg + kg); dc.deOutros = r3(dc.deOutros + kg); data(dc, d.earliest);
+      d.itemIds.forEach((i) => dc.itemIds.add(i));
+      dc.usadoEm.set(code, r3((dc.usadoEm.get(code) ?? 0) + kg));
+    }
   }
-  // semis que entraram por filhos depois de calculados (ciclo raro) já ficaram de fora; ordena pela data
   producao.sort((a, b) => (a.earliest ?? '9999').localeCompare(b.earliest ?? '9999') || a.description.localeCompare(b.description));
-  return { acabados, producao, semFormula: [...semFormula] };
+  return { producao, semSemi: [...semSemi] };
+}
+
+/** Pedido completo: todos os itens que ainda não foram para o faturamento estão atendidos pelo estoque acabado (ou são revenda). */
+export function pedidoCompleto(itensDoPedido: Array<{ itemId: string; revenda: boolean; faturado: boolean }>, aloc: Map<string, AcabadoItem>): boolean {
+  const pend = itensDoPedido.filter((i) => !i.faturado);
+  return pend.length > 0 && pend.every((i) => i.revenda || aloc.get(i.itemId)?.atendido === true);
 }
