@@ -54,3 +54,6 @@ export function soAba(buffer: ArrayBuffer, nome: string): Uint8Array {
   XLSX.utils.book_append_sheet(novo, wb.Sheets[nome], 'Estoque');
   return new Uint8Array(XLSX.write(novo, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer);
 }
+
+/** Tabela compacta (Produção 7): título quebra linha, pouco espaço entre colunas, cabe na tela sem rolar para o lado. */
+export const COMPACTA = '[&>table]:min-w-0 [&>table]:table-auto [&_th]:whitespace-normal [&_th]:leading-tight [&_th]:align-bottom [&_th]:px-2 [&_td]:px-2 [&_td]:py-1.5';

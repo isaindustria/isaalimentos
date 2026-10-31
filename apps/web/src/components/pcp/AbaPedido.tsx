@@ -7,7 +7,7 @@ import type { AcabadoItem } from '@/domain/pcp';
 import { faturarPedido, mudarPcp, type ItemPcp } from '@/api/pcp';
 import { fmtDate } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { qtd } from './comum';
+import { qtd, COMPACTA } from './comum';
 
 /**
  * Aba Pedido (Produção 5, solicitação #23): cada produto do pedido numa linha, em UNIDADES, com o estoque acabado
@@ -51,7 +51,7 @@ export function AbaPedido({ itens, aloc, completo, todosDoPedido, pode }: {
         {pode && ids.length > 0 && <Button className="ml-auto" size="sm" variant="outline" loading={firmar.isPending} onClick={() => confirm(`Firmar os ${ids.length} item(ns) da lista? Eles vão para a aba Produção.`) && firmar.mutate(ids)}>Firmar os da lista ({ids.length})</Button>}
       </div>
       {lista.length ? (
-        <Table dense className="[&_th]:whitespace-normal [&_th]:align-bottom [&_th]:leading-tight [&_td]:py-1.5">
+        <Table dense className={COMPACTA}>
           <thead><tr>
             <th className="th w-14">Cód. seq.</th><th className="th w-20">Data da entrega</th><th className="th w-14">Cód. prod.</th><th className="th">Produto</th>
             <th className="th w-16 text-right">Pedidos (un)</th><th className="th w-16 text-right">Estoque (un)</th><th className="th w-16">Troca de embalagem</th>

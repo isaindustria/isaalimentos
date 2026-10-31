@@ -6,7 +6,7 @@ import { Badge, Button, Card, Dialog, Dropzone, EmptyState, Field, Input, Select
 import { compararFormulas, lerFormulas, type Formula } from '@/domain/pcp';
 import { excluirFormula, importarFormulas, salvarFormula, type Modo, type ProdutoPcp } from '@/api/pcp';
 import { useAuth } from '@/hooks/useAuth';
-import { EscolhaModo, lerAba, qtd } from './comum';
+import { EscolhaModo, lerAba, qtd, COMPACTA } from './comum';
 
 /** Aba Fórmula: importar (Incluir/Substituir com as alterações na tela) e alterar à mão. */
 export function AbaFormula({ formulas, produtos, pode }: { formulas: Formula[]; produtos: ProdutoPcp[]; pode: boolean }) {
@@ -31,12 +31,12 @@ export function AbaFormula({ formulas, produtos, pode }: { formulas: Formula[]; 
         </div>
       </div>
       {lista.length ? (
-        <Table className="[&>table]:min-w-max">
+        <Table dense className={COMPACTA}>
           <thead><tr><th className="th">Cód. fórmula</th><th className="th">Descrição da fórmula</th><th className="th">Produto fabricado</th><th className="th text-right">Insumos</th><th className="th text-right">Prod. mínima</th><th className="th" /></tr></thead>
           <tbody>{lista.map((f) => (
             <tr key={f.code}>
               <td className="td num">{f.code}</td>
-              <td className="td">{f.description}{!/SEMI\s*-?\s*ACABADO/i.test(f.description.normalize('NFD').replace(/[̀-ͯ]/g, '')) && <Badge className="ml-2" tone="neutral">acabado · fracionamento (fase posterior)</Badge>}</td>
+              <td className="td text-xs leading-snug">{f.description}{!/SEMI\s*-?\s*ACABADO/i.test(f.description.normalize('NFD').replace(/[̀-ͯ]/g, '')) && <Badge className="ml-2" tone="neutral">acabado · fracionamento (fase posterior)</Badge>}</td>
               <td className="td text-xs">{f.product_code ? <><b className="num">{f.product_code}</b> · {nome.get(f.product_code) ?? ''}</> : <Badge tone="warn">sem produto ligado</Badge>}</td>
               <td className="td num text-right">{f.items.length}</td>
               <td className="td num text-right">{f.min_production_kg ? `${qtd(f.min_production_kg)} kg` : 'pedido'}</td>

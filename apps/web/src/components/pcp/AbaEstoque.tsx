@@ -8,7 +8,7 @@ import { compararEstoque, importarEstoque, type LinhaEstoque, type Modo } from '
 import type { EstoqueLocal } from '@/domain/pcp';
 import { fmtDateTime } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { Chips, EscolhaModo, lerAba, qtd, soAba } from './comum';
+import { Chips, EscolhaModo, lerAba, qtd, soAba, COMPACTA } from './comum';
 
 /**
  * Aba Estoque: código, referência, nome, unidade e os locais 1 (venda, UN), 2 (MP e semiacabado, kg) e 5 (venda, UN).
@@ -41,13 +41,13 @@ export function AbaEstoque({ linhas, mapa, importadoEm, pode }: { linhas: LinhaE
         {erros > 0 && <p className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 p-2 text-sm text-danger"><AlertTriangle className="size-4" /> {erros} produto(s) de venda (unidade ou pote) no local 2, que é de MP e semiacabado. Confira o estoque.</p>}
       </div>
       {lista.length ? (
-        <Table className="[&>table]:min-w-max">
-          <thead><tr><th className="th">Código</th><th className="th">Referência</th><th className="th">Nome do produto</th><th className="th">UN.</th><th className="th text-right">Estoque 1 (UN)</th><th className="th text-right">Estoque 2 (kg)</th><th className="th text-right">Estoque 5 (UN)</th><th className="th text-right">Estoque total</th></tr></thead>
+        <Table dense className={COMPACTA}>
+          <thead><tr><th className="th">Código</th><th className="th">Referência</th><th className="th">Nome do produto</th><th className="th">UN.</th><th className="th text-right">Estoque 1 (UN)</th><th className="th text-right">Estoque 2 (kg)</th><th className="th text-right">Estoque 5 (UN)</th><th className="th text-right">Estoque total (un ou kg)</th></tr></thead>
           <tbody>{lista.map((l) => (
             <tr key={l.code} className={l.erro ? 'bg-danger/5' : ''}>
               <td className="td num">{l.code}</td>
               <td className="td text-xs">{l.reference ?? '—'}</td>
-              <td className="td">{l.description}{l.erro && <Badge tone="danger" className="ml-2">local 2 com unidade</Badge>}</td>
+              <td className="td text-xs leading-snug">{l.description}{l.erro && <Badge tone="danger" className="ml-2">local 2 com unidade</Badge>}</td>
               <td className="td text-xs">{l.unit ?? '—'}</td>
               <td className="td num text-right">{qtd(l.l1)}</td>
               <td className="td num text-right">{qtd(l.l2)}</td>

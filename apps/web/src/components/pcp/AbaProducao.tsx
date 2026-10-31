@@ -7,7 +7,7 @@ import type { AcabadoItem, LinhaProducao } from '@/domain/pcp';
 import { enviarRelatorio, mudarPcp } from '@/api/pcp';
 import { exportWorkbook } from '@/domain/parsers/sheet';
 import { downloadBlob, fmtDate } from '@/lib/utils';
-import { kg, qtd } from './comum';
+import { kg, qtd, COMPACTA } from './comum';
 
 /**
  * Aba Produção (Produção 4, solicitação #22): só os itens firmados. Mostra de onde vem cada número:
@@ -45,7 +45,7 @@ export function AbaProducao({ acabados, producao, semSemi, pode }: { acabados: A
           {pode && todos.length > 0 && <Button size="sm" icon={<Factory className="size-4" />} loading={relatorio.isPending} onClick={() => confirm(`Marcar os ${todos.length} item(ns) firmados como Em produção? Eles vão para a aba Relatório.`) && relatorio.mutate(todos)}>Em produção (todos)</Button>}
         </div>}>
         {producao.length ? (
-          <Table dense className="[&>table]:min-w-max [&_th]:whitespace-normal [&_th]:leading-tight">
+          <Table dense className={COMPACTA}>
             <thead><tr><th className="th w-6" /><th className="th">Entrega</th><th className="th">Cód. form.</th><th className="th">Semiacabado</th><th className="th text-right">Necessidade consolidada</th><th className="th text-right">Estoque semiacabado</th><th className="th text-right">Necessidade líquida</th><th className="th text-right">Lote mínimo</th><th className="th text-right">Programado</th><th className="th">Pedidos</th></tr></thead>
             <tbody>{producao.map((l) => {
               const open = aberta.has(l.code);
@@ -53,9 +53,9 @@ export function AbaProducao({ acabados, producao, semSemi, pode }: { acabados: A
                 <Fragment key={l.code}>
                   <tr className={l.produzirKg > 0 ? '' : 'text-muted'}>
                     <td className="td"><button type="button" aria-label={open ? 'Fechar origem' : 'Ver origem'} onClick={() => setAberta((s) => { const n = new Set(s); if (open) n.delete(l.code); else n.add(l.code); return n; })}>{open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button></td>
-                    <td className="td whitespace-nowrap">{fmtDate(l.earliest)}</td>
+                    <td className="td whitespace-nowrap text-xs">{fmtDate(l.earliest)}</td>
                     <td className="td num">{l.formulaCode ?? <Badge tone="warn">sem fórmula</Badge>}</td>
-                    <td className="td">{l.description}<div className="text-[11px] text-muted">semiacabado {l.code}{l.deOutrosKg ? ` · ${kg(l.deOutrosKg)} pedidos por outros semiacabados` : ''}</div></td>
+                    <td className="td text-xs leading-snug">{l.description}<div className="text-[10px] text-muted">semiacabado {l.code}{l.deOutrosKg ? ` · ${kg(l.deOutrosKg)} pedidos por outros semiacabados` : ''}</div></td>
                     <td className="td num text-right">{kg(l.pedidoKg)}</td>
                     <td className="td num text-right">{kg(l.estoqueKg)}</td>
                     <td className={`td num text-right ${l.necessidadeKg < 0 ? 'font-semibold text-danger' : ''}`}>{kg(l.necessidadeKg < 0 ? -l.necessidadeKg : 0)}</td>
@@ -81,12 +81,12 @@ export function AbaProducao({ acabados, producao, semSemi, pode }: { acabados: A
 
       <Card title="Pedidos firmados" padded={false}>
         {acabados.length ? (
-          <Table dense className="[&>table]:min-w-max">
+          <Table dense className={COMPACTA}>
             <thead><tr><th className="th">Pedido</th><th className="th">Entrega</th><th className="th">Produto acabado</th><th className="th text-right">Pedido (un)</th><th className="th text-right">Estoque acabado (un)</th><th className="th text-right">Falta (un)</th><th className="th text-right">Falta (kg)</th><th className="th" /></tr></thead>
             <tbody>{acabados.map((a) => (
               <tr key={a.item.itemId}>
                 <td className="td num font-semibold">{a.item.orderNumber ?? '—'}</td>
-                <td className="td whitespace-nowrap">{fmtDate(a.item.deliveryDate)}</td>
+                <td className="td whitespace-nowrap text-xs">{fmtDate(a.item.deliveryDate)}</td>
                 <td className="td text-xs"><span className="num">{a.item.productCode}</span> · {a.item.productName ?? ''}<span className="block text-[10px] text-muted">{a.item.customer ?? ''}</span></td>
                 <td className="td num text-right">{qtd(a.pedidoUn)}</td>
                 <td className="td num text-right">{qtd(a.estoqueUn)}</td>

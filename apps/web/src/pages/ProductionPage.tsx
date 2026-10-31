@@ -35,7 +35,8 @@ export default function ProductionPage() {
   const todosDoPedido = useCallback((id: string) => porPedido.get(id) ?? [], [porPedido]);
   const completo = useCallback((id: string) => pedidoCompleto(todosDoPedido(id).map((i) => ({ itemId: i.itemId, revenda: i.revenda, faturado: i.stage === 'faturado' })), aloc), [todosDoPedido, aloc]);
 
-  const naAbaPedido = todos.filter((i) => i.stage === 'aberto' && i.pcpStatus === 'aberto');
+  // revenda não passa por Pedido nem Produção (vai direto para Rotas de entrega; no Relatório só para consulta)
+  const naAbaPedido = todos.filter((i) => i.stage === 'aberto' && i.pcpStatus === 'aberto' && !i.revenda);
   const firmados = useMemo(() => todos.filter((i) => i.stage === 'aberto' && i.pcpStatus === 'firmado' && !i.revenda), [todos]);
   const acabados = useMemo(() => firmados.map((i) => aloc.get(i.itemId)).filter((a): a is NonNullable<typeof a> => !!a), [firmados, aloc]);
   const plano = useMemo(() => planejarProducao(acabados, pmap, formulas.data ?? [], estoque.data?.mapa ?? new Map()), [acabados, pmap, formulas.data, estoque.data]);

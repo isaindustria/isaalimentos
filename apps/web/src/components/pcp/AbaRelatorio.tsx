@@ -16,7 +16,7 @@ const onde = (i: ItemPcp) => (i.stage === 'faturado' ? 'faturado' : i.stage === 
 
 /**
  * Aba Relatório (Produção 4): os pedidos que têm item Em produção ou no Faturamento, com o pedido inteiro.
- * Voltar devolve à Produção para refazer o cálculo. Faturamento só com o pedido completo (sem faturamento parcial).
+ * Voltar (em cada produto) devolve só aquele produto à Produção. Revenda aparece só para consulta. Faturamento só com o pedido completo (sem faturamento parcial).
  */
 export function AbaRelatorio({ itens, aloc, completo, todosDoPedido, pode }: {
   itens: ItemPcp[]; aloc: Map<string, AcabadoItem>; completo: (orderId: string) => boolean; todosDoPedido: (orderId: string) => ItemPcp[]; pode: boolean;
@@ -26,7 +26,7 @@ export function AbaRelatorio({ itens, aloc, completo, todosDoPedido, pode }: {
   const [busca, setBusca] = useState('');
   const refresh = () => ['pcp', 'planejamento', 'orders', 'order'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
   const fail = (e: Error) => toast.error(e.message);
-  const voltar = useMutation({ mutationFn: voltarProducao, onSuccess: () => { toast.success('Voltou para a Produção: o cálculo é refeito com os pedidos firmados.'); refresh(); }, onError: fail });
+  const voltar = useMutation({ mutationFn: voltarProducao, onSuccess: () => { toast.success('O produto voltou para a Produção; os outros do pedido continuam onde estavam.'); refresh(); }, onError: fail });
   const faturar = useMutation({ mutationFn: (orderId: string) => faturarPedido(todosDoPedido(orderId), completo(orderId), { id: session?.user.id, nome: profile?.name ?? null }), onSuccess: () => { toast.success('Pedido completo enviado para o Faturamento (Rotas de entrega).'); refresh(); }, onError: fail });
 
   const pedidos = useMemo(() => {
@@ -44,14 +44,12 @@ export function AbaRelatorio({ itens, aloc, completo, todosDoPedido, pode }: {
         const faturado = lista.every((i) => i.stage === 'faturado');
         const ok = completo(o.orderId);
         const prontos = lista.filter((i) => i.stage === 'faturado' || i.revenda || aloc.get(i.itemId)?.atendido).length;
-        const emProd = lista.filter((i) => i.stage === 'em_producao').map((i) => i.itemId);
         return (
           <Card key={o.orderId} padded={false}>
             <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
               <b className="num">Pedido {o.orderNumber ?? '—'}</b><span className="text-sm">{o.customer ?? ''}</span><span className="text-xs text-muted">entrega {fmtDate(o.deliveryDate)}</span>
               {faturado ? <Badge tone="ok" dot>Faturamento</Badge> : <Badge tone={ok ? 'ok' : 'warn'}>{prontos}/{lista.length} produto(s) completo(s)</Badge>}
               {pode && !faturado && <div className="ml-auto flex gap-2">
-                {emProd.length > 0 && <Button size="sm" variant="ghost" icon={<Undo2 className="size-3.5" />} onClick={() => confirm('Voltar os itens Em produção deste pedido para a Produção? Serve para refazer o cálculo; nada é cancelado e o estoque não muda.') && voltar.mutate(emProd)}>Voltar</Button>}
                 <Button size="sm" disabled={!ok} title={ok ? 'Enviar o pedido inteiro para Rotas de entrega' : 'Só o pedido completo vai para o Faturamento'} icon={<Truck className="size-3.5" />} loading={faturar.isPending && faturar.variables === o.orderId}
                   onClick={() => confirm(`Enviar o pedido ${o.orderNumber ?? ''} inteiro para o Faturamento?`) && faturar.mutate(o.orderId)}>Faturamento</Button>
               </div>}
@@ -66,7 +64,11 @@ export function AbaRelatorio({ itens, aloc, completo, todosDoPedido, pode }: {
                     <span className="min-w-0 flex-1 text-xs">{i.productName ?? ''}</span>
                     <span className="num text-xs text-muted">{a ? `${qtd(a.pedidoUn)} un · estoque ${qtd(a.estoqueUn)}` : i.revenda ? 'revenda' : ''}</span>
                     <Badge tone={pronto ? 'ok' : 'danger'}>{pronto ? 'completo' : `falta ${qtd(a?.faltaUn ?? 0)} un`}</Badge>
-                    <Badge tone={w.tone} dot>{w.l}</Badge>
+                    {i.revenda ? <Badge>revenda · só consulta</Badge> : <Badge tone={w.tone} dot>{w.l}</Badge>}
+                    {pode && i.stage === 'em_producao' && !i.revenda && (
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" icon={<Undo2 className="size-3.5" />} loading={voltar.isPending && voltar.variables?.includes(i.itemId)}
+                        onClick={() => voltar.mutate([i.itemId])} title="Volta só este produto para a Produção; os outros do pedido não mudam">Voltar</Button>
+                    )}
                   </li>
                 );
               })}
