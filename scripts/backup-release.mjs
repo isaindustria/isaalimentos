@@ -47,3 +47,10 @@ const ref = (() => {
 execSync(`git archive --format=zip --prefix="isaalimentos-${tag}/" -o "${path.join(dest, `codigo-fonte-${tag}.zip`)}" ${ref}`, { cwd: root, stdio: 'inherit' });
 writeFileSync(path.join(dest, 'LEIA-ME.txt'), `ISA Alimentos ${tag}\nGerado em ${new Date().toLocaleString('pt-BR')}\nFonte: ${ref}\n\nSetup: instalador Windows com atualização automática\nPortable: roda sem instalar\ncodigo-fonte: snapshot do repositório nesta versão\n`);
 console.log('backup pronto em', dest);
+
+// Todo lançamento: avisa os aparelhos com notificações ativadas (Web Push) que a versão chegou.
+try {
+  execSync(`node "${path.join(root, 'scripts/avisar-versao.mjs')}" ${version}`, { cwd: root, stdio: 'inherit', env: process.env });
+} catch {
+  console.log('aviso de versão não enviado (o backup está pronto).');
+}
