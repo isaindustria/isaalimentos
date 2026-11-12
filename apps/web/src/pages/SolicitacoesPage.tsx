@@ -86,7 +86,11 @@ export default function SolicitacoesPage() {
           {isResp && (s.status === 'aprovada' || s.status === 'em_andamento') && <Button size="sm" variant="outline" icon={<Check className="size-4" />} onClick={() => setAcao({ s, tipo: 'concluir' })}>Concluir</Button>}
           {isResp && (s.status === 'nova' || s.status === 'aprovada') && <Button size="sm" variant="ghost" icon={<Clock className="size-4" />} onClick={() => mudar.mutate({ id: s.id, patch: { status: 'adiada' } })}>Para depois</Button>}
           {isResp && s.status === 'adiada' && <Button size="sm" variant="outline" icon={<Undo2 className="size-4" />} onClick={() => mudar.mutate({ id: s.id, patch: { status: 'aprovada' } })}>Voltar para a fila</Button>}
-          {s.status === 'nova' && (isResp || s.created_by === session?.user.id) && <Button size="sm" variant="ghost" className="text-danger" aria-label={`Apagar solicitação ${s.numero}`} icon={<Trash2 className="size-4" />} onClick={() => apagar.mutate(s.id)} />}
+          {/* quem enviou exclui enquanto é nova; o responsável exclui em qualquer situação, menos concluída (fica no registro) */}
+          {((s.status === 'nova' && s.created_by === session?.user.id) || (isResp && s.status !== 'concluida')) && (
+            <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-4" />} loading={apagar.isPending && apagar.variables === s.id}
+              onClick={() => confirm(`Excluir a solicitação #${s.numero} "${s.titulo}"? Use quando o pedido de atualização foi enviado por engano. Não dá para desfazer.`) && apagar.mutate(s.id)}>Excluir</Button>
+          )}
         </div>
       </div>
     </Card>
