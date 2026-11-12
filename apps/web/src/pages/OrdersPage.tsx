@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { StatusMultiplo } from '@/components/StatusMultiplo';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, AlertTriangle, Filter, Plus, PlayCircle } from 'lucide-react';
 import { listOrders, listPendingItems, type OrderFilters } from '@/api/orders';
 import { listCustomers } from '@/api/customers';
-import { Badge, Button, Card, EmptyState, Input, PageHeader, Select, Table } from '@/components/primitives';
+import { Badge, Button, Card, EmptyState, Input, Select, Table } from '@/components/primitives';
 import { fmtBRL, fmtDate, fmtInt } from '@/lib/utils';
 import type { Order, OrderStatus } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -57,25 +58,29 @@ export default function OrdersPage() {
 
   return (
     <>
-      <PageHeader title="Pedidos" description="Pedidos das lojas e dos vendedores, importados do PDF ou lançados manualmente: todos ficam na mesma lista." />
-      {/* Vendas parte 4/5: Como usar, Novo pedido e Importar PDF na mesma linha, no alto da tela */}
-      <div className="-mt-3 mb-4 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-        <Link to="/tutoriais" className="shrink-0"><Button size="sm" variant="ghost" icon={<PlayCircle className="h-4 w-4" />}>Como usar</Button></Link>
-        {canNew && <Link to="/pedidos/novo" className="shrink-0"><Button size="sm" icon={<Plus className="h-4 w-4" />}>Novo pedido</Button></Link>}
-        {canWriteArea('compras') && <Link to="/pedidos/importar" className="shrink-0"><Button size="sm" variant="outline" icon={<FileText className="h-4 w-4" />}>Importar PDF</Button></Link>}
-        {!!pending.data?.length && !isSeller && (
-          <Link to="/pedidos/conferencia" className="ml-auto shrink-0"><Button size="sm" variant="outline" icon={<AlertTriangle className="h-4 w-4 text-warn" />}>Conferir {pending.data.length} item(ns)</Button></Link>
-        )}
+      {/* Vendas parte 7: sem a descrição; Pedidos, Como usar e Novo pedido na mesma linha */}
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">Pedidos</h1>
+        <Link to="/tutoriais" className="shrink-0"><Button size="sm" variant="ghost" className="underline underline-offset-4" icon={<PlayCircle className="h-4 w-4" />}>Como usar</Button></Link>
+        <div className="ml-auto flex items-center gap-2">
+          {canWriteArea('compras') && <Link to="/pedidos/importar" className="hidden shrink-0 sm:block"><Button size="sm" variant="outline" icon={<FileText className="h-4 w-4" />}>Importar PDF</Button></Link>}
+          {canNew && <Link to="/pedidos/novo" className="shrink-0"><Button icon={<Plus className="h-4 w-4" />}>Novo pedido</Button></Link>}
+        </div>
       </div>
+      {(canWriteArea('compras') || (!!pending.data?.length && !isSeller)) && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 sm:justify-end">
+          {canWriteArea('compras') && <Link to="/pedidos/importar" className="shrink-0 sm:hidden"><Button size="sm" variant="outline" icon={<FileText className="h-4 w-4" />}>Importar PDF</Button></Link>}
+          {!!pending.data?.length && !isSeller && (
+            <Link to="/pedidos/conferencia" className="shrink-0"><Button size="sm" variant="outline" icon={<AlertTriangle className="h-4 w-4 text-warn" />}>Conferir {pending.data.length} item(ns)</Button></Link>
+          )}
+        </div>
+      )}
       <SalesCards />
 
       <div className="mb-4 space-y-2 lg:flex lg:items-center lg:gap-2 lg:space-y-0">
         <div className="flex items-center gap-2 lg:flex-1">
           <Filter className="h-4 w-4 shrink-0 text-muted" />
-          <Select aria-label="Status" className="min-w-0 flex-1 sm:max-w-48" value={filters.status ?? 'todos'} onChange={(e) => setFilters({ ...filters, status: e.target.value as OrderStatus | 'todos' })}>
-            <option value="todos">Todos os status</option>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </Select>
+          <StatusMultiplo valor={filters.statuses ?? []} onChange={(v) => setFilters({ ...filters, status: 'todos', statuses: v })} opcoes={Object.entries(STATUS_LABEL).map(([k, v]) => ({ v: k as OrderStatus, l: v.label }))} />
           <Select aria-label="Cliente" className="min-w-0 flex-1 sm:max-w-72" value={filters.customerId ?? ''} onChange={(e) => setFilters({ ...filters, customerId: e.target.value || undefined })}>
             <option value="">Todos os clientes</option>
             {customers.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

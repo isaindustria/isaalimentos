@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Download, RotateCcw, Trash2, Upload, Users } from 'lucide-react';
+import { ChevronRight, Download, RotateCcw, Trash2, Upload, Users } from 'lucide-react';
 import { Badge, Button, Dialog, Input, Select, Table } from '@/components/primitives';
 import { SalesImportDialog } from '@/components/SalesImportDialog';
 import { CustomerImportDialog } from '@/components/CustomerImportDialog';
@@ -34,15 +34,20 @@ export function SalesCards() {
     <>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         {(isAdmin || isSeller) && (
-          <section className="card flex flex-wrap items-center gap-3 p-4">
-            <span className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand"><Users className="size-5" /></span>
+          <section className="card flex items-center gap-3 p-3 sm:p-4">
+            {/* Vendas parte 7: informação à esquerda, Ver clientes (navegação) maior à direita */}
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand"><Users className="size-5" /></span>
             <div className="min-w-0 flex-1">
-              <div className="font-display font-bold">{isSeller && !isAdmin ? 'Meus clientes' : 'Clientes'}</div>
+              <div className="font-display font-bold leading-tight">{isSeller && !isAdmin ? 'Meus clientes' : 'Clientes'}</div>
               <div className="text-xs text-muted">{ativos.length} cadastrado(s){isAdmin && noSeller ? ` · ${noSeller} sem vendedor` : ''}</div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setDlg('list-cli')}>Ver clientes</Button>
+            <span className="h-10 w-px shrink-0 bg-line" aria-hidden="true" />
+            <button type="button" onClick={() => setDlg('list-cli')}
+              className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border-2 border-brand/40 px-3 font-semibold text-brand hover:bg-brand-soft sm:px-4">
+              <Users className="size-4" />Ver clientes<ChevronRight className="size-4" />
+            </button>
             {/* Vendas parte 4: vendedor não importa clientes; vê só os cadastrados no nome dele */}
-            {isAdmin && <Button size="sm" icon={<Upload className="size-4" />} onClick={() => setDlg('imp-cli')}>Importar cadastro de clientes</Button>}
+            {isAdmin && <Button size="sm" variant="ghost" className="shrink-0" title="Importar cadastro de clientes" aria-label="Importar cadastro de clientes" icon={<Upload className="size-4" />} onClick={() => setDlg('imp-cli')}><span className="hidden xl:inline">Importar cadastro</span></Button>}
           </section>
         )}
         {/* Vendas parte 6: o cartão Produtos saiu da tela Pedidos (o cadastro de produtos fica na aba Produtos) */}

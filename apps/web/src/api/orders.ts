@@ -10,6 +10,8 @@ const ORDER_SELECT = '*, customer:customers(id, name, cnpj, city, state, distric
 
 export interface OrderFilters {
   status?: OrderStatus | 'todos';
+  /** Vendas parte 7: vários status ao mesmo tempo (vazio = todos) */
+  statuses?: OrderStatus[];
   customerId?: string;
   importId?: string;
   from?: string;
@@ -20,6 +22,7 @@ export interface OrderFilters {
 export async function listOrders(f: OrderFilters = {}): Promise<Order[]> {
   let q = supabase.from('orders').select(ORDER_SELECT).order('order_date', { ascending: false }).order('created_at', { ascending: false });
   if (f.status && f.status !== 'todos') q = q.eq('status', f.status);
+  if (f.statuses?.length) q = q.in('status', f.statuses);
   if (f.customerId) q = q.eq('customer_id', f.customerId);
   if (f.importId) q = q.eq('import_id', f.importId);
   if (f.from) q = q.gte('order_date', f.from);

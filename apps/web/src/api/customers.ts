@@ -147,3 +147,11 @@ export async function bulkUpsertCustomers(rows: CustomerInput[]): Promise<number
   for (let i = 0; i < without.length; i += 200) unwrap(await supabase.from('customers').insert(without.slice(i, i + 200)));
   return withCnpj.length + without.length;
 }
+
+/** Condição de pagamento do pedido mais recente de cada cliente (o cadastro de clientes não tem esse campo). */
+export async function lastPaymentTerms(): Promise<Map<string, string>> {
+  const rows = unwrap(await supabase.from('orders').select('customer_id, payment_terms, created_at').not('customer_id', 'is', null).not('payment_terms', 'is', null).order('created_at', { ascending: false }).limit(2000)) as Array<{ customer_id: string; payment_terms: string }>;
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.payment_terms.trim() && !m.has(r.customer_id)) m.set(r.customer_id, r.payment_terms.trim());
+  return m;
+}
