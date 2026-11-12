@@ -5,6 +5,7 @@ import {
   LayoutDashboard, Package, Boxes, ClipboardList, Users, Factory, Settings, LogOut, Moon, Sun, Menu, X, Download, RefreshCw, AlertTriangle, ChevronRight, Sparkles, Tag, FlaskConical, Truck, BarChart3, History, PanelLeftClose, PanelLeftOpen, PlayCircle, MessageSquarePlus, ReceiptText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { WhatsNew } from './WhatsNew';
+import { AvisoVersao } from './AvisoVersao';
 import { NfeWorker } from './NfeWorker';
 import { useUpdates } from '@/hooks/useUpdates';
 import { listPendingItems } from '@/api/orders';
@@ -241,6 +242,7 @@ export default function AppShell() {
             <PushPrompt />
             {sellerBlocked ? <Navigate to="/pedidos" replace /> : <Outlet />}
             <WhatsNew />
+            <AvisoVersao />
             {modules.data?.nfe && <NfeWorker />}
           </div>
         </main>
